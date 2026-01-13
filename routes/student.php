@@ -1,7 +1,6 @@
-<?php
+<?php 
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Landing\PagesController;
 
 /*
 |--------------------------------------------------------------------------
@@ -13,5 +12,3 @@ use App\Http\Controllers\Landing\PagesController;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
-
-Route::get('/', [PagesController::class, 'index'])->name('home');

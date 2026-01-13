@@ -15,3 +15,13 @@ use App\Http\Controllers\Landing\PagesController;
 */
 
 Route::get('/', [PagesController::class, 'index'])->name('home');
+
+Route::get('/students', [PagesController::class, 'students'])->name('students');
+
+Route::get('/entrepreneurs', [PagesController::class, 'entrepreneurs'])->name('entrepreneurs');
+
+Route::get('/mentorship', [PagesController::class, 'mentorship'])->name('mentorship');
+
+Route::get('/about', [PagesController::class, 'about'])->name('about');
+
+Route::get('/contact', [PagesController::class, 'contact'])->name('contact');

@@ -18,19 +18,19 @@
                 <h4 class="text-[#0d141b] dark:text-white font-bold text-sm uppercase tracking-wider">Platform
                 </h4>
                 <a class="text-sm text-gray-600 dark:text-gray-400 hover:text-primary transition-colors"
-                    href="#">Students</a>
+                    href="{{ route('students') }}">Students</a>
                 <a class="text-sm text-gray-600 dark:text-gray-400 hover:text-primary transition-colors"
-                    href="#">Entrepreneurs</a>
+                    href="{{ route('entrepreneurs') }}">Entrepreneurs</a>
                 <a class="text-sm text-gray-600 dark:text-gray-400 hover:text-primary transition-colors"
-                    href="#">Mentorship</a>
+                    href="{{ route('mentorship') }}">Mentorship</a>
             </div>
             <div class="flex flex-col gap-3">
                 <h4 class="text-[#0d141b] dark:text-white font-bold text-sm uppercase tracking-wider">Company
                 </h4>
                 <a class="text-sm text-gray-600 dark:text-gray-400 hover:text-primary transition-colors"
-                    href="#">About Us</a>
+                    href="{{ route('about') }}">About Us</a>
                 <a class="text-sm text-gray-600 dark:text-gray-400 hover:text-primary transition-colors"
-                    href="#">Contact</a>
+                    href="{{ route('contact') }}">Contact</a>
                 <a class="text-sm text-gray-600 dark:text-gray-400 hover:text-primary transition-colors"
                     href="#">Privacy Policy</a>
             </div>

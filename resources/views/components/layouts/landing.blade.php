@@ -7,7 +7,7 @@
 
 
 <body>
-    <div class="relative flex h-auto min-h-screen w-full flex-col bg-background-light dark:bg-background-dark group/design-root overflow-x-hidden">
+    <div class="relative flex h-auto min-h-screen w-full flex-col bg-background-light group/design-root overflow-x-hidden">
         <!-- Navigation -->
         @include('partials.landing.navbar')
 

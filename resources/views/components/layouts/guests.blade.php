@@ -14,7 +14,10 @@
          <!-- Main content container -->
         <main class="flex-1 flex items-center justify-center p-5">
             <div class="w-full max-w-4xl mx-auto mb-10 mt-10">
-                {{ $slot }}
+                <div class="bg-gray-50 dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8 lg:p-10 border border-gray-100 dark:border-gray-700">
+                    {{ $slot }}
+                </div>
+                
             </div>
         </main>
         

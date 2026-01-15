@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html class="light" lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+
+<head>
+    @include('partials.landing.head')
+</head>
+
+
+<body>
+    <div class="relative flex h-auto min-h-screen w-full flex-col bg-background-light group/design-root overflow-x-hidden">
+        <!-- Navigation -->
+        @include('partials.landing.navbar')
+
+         <!-- Main content container -->
+        <main class="flex-1 flex items-center justify-center p-5">
+            <div class="w-full max-w-4xl mx-auto mb-10 mt-10">
+                {{ $slot }}
+            </div>
+        </main>
+        
+        <!-- Footer -->
+        @include('partials.landing.foot')
+    </div>
+
+    @stack('scripts')
+</body>
+
+</html>

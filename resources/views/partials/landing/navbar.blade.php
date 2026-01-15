@@ -15,7 +15,7 @@
         <div class="hidden lg:flex items-center gap-9">
             <a class="text-[#0d141b] text-sm font-medium leading-normal hover:text-primary transition-colors {{ request()->routeIs('students') ? 'text-primary font-semibold' : '' }}"
                 href="{{ route('students') }}" wire:navigate>
-                Students    
+                Students
             </a>
             <a class="text-[#0d141b] text-sm font-medium leading-normal hover:text-primary transition-colors {{ request()->routeIs('entreprenuers') ? 'text-primary font-semibold' : '' }}"
                 href="{{ route('entrepreneurs') }}" wire:navigate>Entrepreneurs
@@ -31,10 +31,10 @@
             </a>
         </div>
         <div class="flex gap-2">
-            <a href="" class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-colors" wire:navigate>
+            <a href="{{ route('register') }}" class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-colors" wire:navigate>
                 <span class="truncate">Get Started</span>
             </a>
-            <a href="" class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#e7edf3] text-[#0d141b] text-sm font-bold leading-normal tracking-[0.015em] hover:bg-gray-200 transition-colors" wire:navigate>
+            <a href="{{ route('login') }}" class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#e7edf3] text-[#0d141b] text-sm font-bold leading-normal tracking-[0.015em] hover:bg-gray-200 transition-colors" wire:navigate>
                 <span class="truncate">Log In</span>
             </a>
         </div>

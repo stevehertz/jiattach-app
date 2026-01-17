@@ -221,7 +221,6 @@ class Register extends Component
                 'gender' => $this->gender,
                 'national_id' => $this->national_id,
                 'county' => $this->county,
-                'user_type' => 'student',
                 'password' => Hash::make($this->password),
                 'is_active' => true,
                 'verification_token' => Str::random(60),
@@ -276,7 +275,7 @@ class Register extends Component
             Log::info('Email updated to: ' . $this->email);
         }
     }
-    
+
     public function render()
     {
         return view('livewire.auth.register');

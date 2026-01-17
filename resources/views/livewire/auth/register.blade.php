@@ -213,7 +213,7 @@
 
             <div class="flex justify-end mt-4">
                 <button type="button" wire:click="nextStep" wire:loading.attr="disabled"
-                    wire:loading.class="btn-loading"
+                    wire:loading.class="btn-loading" 
                     class="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-primary text-white text-base font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-all shadow-md hover:shadow-lg">
                     <span class="truncate">Next: Academic Details →</span>
                 </button>

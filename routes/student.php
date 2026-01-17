@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 use Illuminate\Support\Facades\Route;
 
@@ -17,8 +17,9 @@ Route::middleware([
     'auth:sanctum',
     config('jetstream.auth_session'),
     'verified',
+    'redirect.by.role',
 ])->group(function () {
     Route::get('/student/dashboard', function () {
         return view('student_dashboard');
-    })->name('student/dashboard');
+    })->name('student.dashboard');
 });

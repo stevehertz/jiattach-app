@@ -106,4 +106,71 @@ class User extends Authenticatable
     {
         return $this->hasOne(StudentProfile::class);
     }
+
+     /**
+     * Get the placements for this user (as a student).
+     */
+    public function placements()
+    {
+        return $this->hasMany(Placement::class, 'student_id');
+    }
+
+    /**
+     * Get the placements assigned to this user (as an admin).
+     */
+    public function assignedPlacements()
+    {
+        return $this->hasMany(Placement::class, 'admin_id');
+    }
+
+    /**
+     * Get the current active placement.
+     */
+    public function currentPlacement()
+    {
+        return $this->hasOne(Placement::class, 'student_id')
+            ->where('status', 'placed')
+            ->whereDate('start_date', '<=', now())
+            ->whereDate('end_date', '>=', now())
+            ->latest();
+    }
+
+    /**
+     * Get the latest placement.
+     */
+    public function latestPlacement()
+    {
+        return $this->hasOne(Placement::class, 'student_id')->latest();
+    }
+
+    /**
+     * Check if user has an active placement.
+     */
+    public function hasActivePlacement(): bool
+    {
+        return $this->placements()
+            ->where('status', 'placed')
+            ->whereDate('start_date', '<=', now())
+            ->whereDate('end_date', '>=', now())
+            ->exists();
+    }
+
+    /**
+     * Get the placement status.
+     */
+    public function getPlacementStatusAttribute()
+    {
+        $placement = $this->latestPlacement;
+        return $placement ? $placement->status : 'pending';
+    }
+
+    /**
+     * Get the placement status label.
+     */
+    public function getPlacementStatusLabelAttribute()
+    {
+        $placement = $this->latestPlacement;
+        return $placement ? $placement->status_label : 'Not Applied';
+    }
+
 }

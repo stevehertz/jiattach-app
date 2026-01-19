@@ -11,6 +11,7 @@
 <!-- Theme style -->
 <link rel="stylesheet" href="{{ asset('css/adminlte.min.css') }}">
 
+
 <style>
     /* Custom styling for student portal */
     .student-header {

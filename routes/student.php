@@ -1,8 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Student\ProfileController;
+use App\Http\Controllers\Student\DashboardController;
 use App\Http\Controllers\Student\Dashboard\ActivityController;
-use App\Http\Controllers\Student\Dashboard\DashboardController;
 use App\Http\Controllers\Student\Dashboard\PlacementController;
 use App\Http\Controllers\Student\Dashboard\NotificationController;
 
@@ -21,9 +22,23 @@ Route::middleware([
     'auth:sanctum',
     config('jetstream.auth_session'),
     'verified',
-    'redirect.by.role',
+    'redirect.by.role'
 ])->prefix('student/')->name('student.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Profile routes
+    Route::prefix('profile')->name('profile.')->group(function(){
+        
+        Route::get('/create', [ProfileController::class, 'create'])->name('create');
+
+        Route::post('/store', [ProfileController::class, 'store'])->name('store');
+
+        Route::get('/edit', [ProfileController::class, 'edit'])->name('edit');
+
+        Route::put('/update', [ProfileController::class, 'update'])->name('update');
+
+    });
+    
 
     // Placement Routes
     Route::get('/placement/status', [PlacementController::class, 'status'])

@@ -1,5 +1,43 @@
 <x-layouts.student>
 
+    @if (Auth::user()->studentProfile)
+        <p class="text-muted mb-0">
+            <i class="fas fa-graduation-cap mr-1"></i>
+            {{ Auth::user()->studentProfile->institution_name ?? 'Institution not set' }}
+            |
+            <i class="fas fa-book mr-1"></i>
+            {{ Auth::user()->studentProfile->course_name ?? 'Course not set' }}
+        </p>
+    @endif
+
+    <!-- And in the avatar section -->
+    @php
+        $initials = getInitials(Auth::user()->full_name);
+        $colors = ['primary', 'success', 'info', 'warning', 'danger', 'secondary'];
+        $color = $colors[crc32(Auth::user()->email) % count($colors)] ?? 'primary';
+    @endphp
+
+    <div class="avatar-initials bg-{{ $color }} img-circle elevation-3"
+        style="width: 100px; height: 100px; line-height: 100px; font-size: 2.5rem; margin: 0 auto;">
+        {{ $initials }}
+    </div>
+
+    <!-- Profile Progress Card - Fixed -->
+    @php
+        $profile = Auth::user()->studentProfile;
+        $profileCompleteness = $profile ? $profile->profile_completeness : 0;
+
+        // Get missing fields
+        $missingFields = $profile ? $profile->getMissingFields() : [];
+
+        // Get progress breakdown
+        $progressBreakdown = $profile ? $profile->getProfileProgressBreakdown() : [];
+
+        // Check documents
+        $hasCV = $profile && $profile->cv_url;
+        $hasTranscript = $profile && $profile->transcript_url;
+    @endphp
+
     <!-- Content Header (Page header) -->
     <div class="content-header">
         <div class="container-fluid">
@@ -302,42 +340,53 @@
                         <div class="card-body">
                             <div class="text-center mb-3">
                                 <div class="position-relative d-inline-block">
-                                    <div class="avatar-initials bg-info img-circle"
+                                    <div class="avatar-initials @if ($profileCompleteness >= 80) bg-success @elseif($profileCompleteness >= 50) bg-warning @else bg-danger @endif img-circle"
                                         style="width: 100px; height: 100px; line-height: 100px; font-size: 2rem;">
-                                        {{ Auth::user()->studentProfile->profile_completeness ?? 0 }}%
+                                        {{ $profileCompleteness }}%
                                     </div>
+                                    @if ($profileCompleteness < 100)
+                                        <div class="mt-2">
+                                            <small class="text-muted">
+                                                {{ 100 - $profileCompleteness }}% remaining
+                                            </small>
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
 
-                            @php
-                                $profile = Auth::user()->studentProfile;
-                                $missingFields = [];
+                            <!-- Progress Breakdown -->
+                            @if ($profileCompleteness < 100)
+                                <div class="mb-4">
+                                    <h6 class="font-weight-bold mb-3">Progress Breakdown</h6>
+                                    @php
+                                        $breakdown = Auth::user()->studentProfile->getProfileProgressBreakdown();
+                                    @endphp
 
-                                if (!$profile) {
-                                    $missingFields = [
-                                        'student_reg_number',
-                                        'institution_name',
-                                        'course_name',
-                                        'year_of_study',
-                                        'skills',
-                                    ];
-                                } elseif ($profile->profile_completeness < 100) {
-                                    if (!$profile->student_reg_number) {
-                                        $missingFields[] = 'Registration Number';
-                                    }
-                                    if (!$profile->institution_name) {
-                                        $missingFields[] = 'Institution';
-                                    }
-                                    if (!$profile->course_name) {
-                                        $missingFields[] = 'Course';
-                                    }
-                                    if (!$profile->year_of_study) {
-                                        $missingFields[] = 'Year of Study';
-                                    }
-                                    if (empty($profile->skills)) {
-                                        $missingFields[] = 'Skills';
-                                    }
-                                }
+                                    @foreach ($breakdown as $category)
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <span class="font-weight-bold">{{ $category['label'] }}</span>
+                                                <span class="text-muted">{{ $category['percentage'] }}%</span>
+                                            </div>
+                                            <div class="progress" style="height: 8px;">
+                                                <div class="progress-bar
+                                                    @if ($category['percentage'] == 100) bg-success
+                                                    @elseif($category['percentage'] >= 50) bg-warning
+                                                    @else bg-danger @endif"
+                                                    role="progressbar" style="width: {{ $category['percentage'] }}%">
+                                                </div>
+                                            </div>
+                                            <small class="text-muted">
+                                                {{ $category['completed'] }}/{{ $category['total'] }} fields complete
+                                            </small>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+
+                            <!-- Missing Fields -->
+                            @php
+                                $missingFields = Auth::user()->studentProfile->getMissingFields();
                             @endphp
 
                             @if (!empty($missingFields))
@@ -348,28 +397,234 @@
                                             Complete these to improve placement matching:
                                         </small>
                                     </p>
-                                    <ul class="list-unstyled mb-0">
-                                        @foreach ($missingFields as $field)
-                                            <li class="mb-1">
-                                                <i class="fas fa-circle text-warning mr-2"
-                                                    style="font-size: 0.5rem;"></i>
-                                                <small>{{ $field }}</small>
-                                            </li>
+                                    <div class="row">
+                                        @foreach ($missingFields as $missing)
+                                            <div class="col-md-6 mb-2">
+                                                <div
+                                                    class="card border-{{ $missing['priority'] == 'high' ? 'danger' : 'warning' }} border-left-3">
+                                                    <div class="card-body py-2">
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="mr-3">
+                                                                @if ($missing['priority'] == 'high')
+                                                                    <i
+                                                                        class="fas fa-exclamation-triangle text-danger"></i>
+                                                                @else
+                                                                    <i class="fas fa-info-circle text-warning"></i>
+                                                                @endif
+                                                            </div>
+                                                            <div class="flex-grow-1">
+                                                                <h6 class="mb-0">{{ $missing['label'] }}</h6>
+                                                                <small class="text-muted">
+                                                                    @if ($missing['field'] == 'cv_url')
+                                                                        Upload your CV/Resume
+                                                                    @elseif($missing['field'] == 'skills')
+                                                                        Add at least one skill
+                                                                    @else
+                                                                        Fill in this information
+                                                                    @endif
+                                                                </small>
+                                                            </div>
+                                                            <div>
+                                                                <a href="{{ route('student.profile.edit') }}#{{ $missing['field'] }}"
+                                                                    class="btn btn-sm btn-{{ $missing['priority'] == 'high' ? 'danger' : 'warning' }}">
+                                                                    <i class="fas fa-edit"></i>
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         @endforeach
-                                    </ul>
+                                    </div>
                                 </div>
                             @endif
 
+                            <!-- Document Status -->
+                            @php
+                                $documents = [
+                                    'cv_url' => 'CV/Resume',
+                                    'transcript_url' => 'Academic Transcript',
+                                ];
+                                $uploadedDocs = [];
+                                foreach ($documents as $field => $label) {
+                                    if (Auth::user()->studentProfile->isFieldComplete($field)) {
+                                        $uploadedDocs[] = $label;
+                                    }
+                                }
+                            @endphp
+
+                            @if (!empty($uploadedDocs))
+                                <div class="mt-3">
+                                    <h6 class="font-weight-bold mb-2">✅ Uploaded Documents</h6>
+                                    <div class="d-flex flex-wrap">
+                                        @foreach ($uploadedDocs as $doc)
+                                            <span class="badge badge-success mr-2 mb-2 p-2">
+                                                <i class="fas fa-file-pdf mr-1"></i> {{ $doc }}
+                                            </span>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+
+                            <!-- Action Button -->
                             <div class="mt-4">
-                                <a href="#" class="btn btn-primary btn-block">
-                                    <i class="fas fa-user-edit mr-2"></i>
-                                    Complete Your Profile
-                                </a>
+                                @if ($profileCompleteness < 100)
+                                    <a href="{{ route('student.profile.edit') }}" class="btn btn-primary btn-block">
+                                        <i class="fas fa-user-edit mr-2"></i>
+                                        Complete Your Profile ({{ $profileCompleteness }}%)
+                                    </a>
+                                @else
+                                    <a href="{{ route('student.profile.edit') }}" class="btn btn-success btn-block">
+                                        <i class="fas fa-check-circle mr-2"></i>
+                                        Profile Complete! Update if needed
+                                    </a>
+                                @endif
+
+                                @if ($profileCompleteness < 80)
+                                    <p class="text-center text-muted mt-2 mb-0">
+                                        <small>
+                                            <i class="fas fa-info-circle mr-1"></i>
+                                            Profiles with 80%+ completion get priority placement
+                                        </small>
+                                    </p>
+                                @endif
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <!-- Important Dates -->
+            <!-- Recent Activity & Updates -->
+            <div class="row">
+                <div class="col-lg-4">
+                    <div class="card student-card">
+                        <div class="card-header">
+                            <h3 class="card-title mb-0">
+                                <i class="fas fa-history mr-2"></i>
+                                Recent Activity
+                            </h3>
+                        </div>
+                        <div class="card-body p-0">
+                            @php
+                                // Get recent activity logs for this student
+                                $recentActivity = \App\Models\ActivityLog::where('causer_id', Auth::id())
+                                    ->latest()
+                                    ->limit(5)
+                                    ->get();
+                            @endphp
+
+                            @if ($recentActivity->count() > 0)
+                                <div class="list-group list-group-flush">
+                                    @foreach ($recentActivity as $activity)
+                                        <div class="list-group-item border-0">
+                                            <div class="d-flex">
+                                                <div class="mr-3">
+                                                    <i
+                                                        class="fas fa-{{ $activity->icon }} text-{{ $activity->event == 'created' ? 'success' : ($activity->event == 'updated' ? 'warning' : 'info') }}"></i>
+                                                </div>
+                                                <div class="flex-grow-1">
+                                                    <h6 class="mb-1">{{ $activity->description }}</h6>
+                                                    <small class="text-muted">
+                                                        <i class="far fa-clock mr-1"></i>
+                                                        {{ $activity->getTimeAgoAttribute() }}
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="text-center py-5">
+                                    <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted mb-0">No recent activity</p>
+                                </div>
+                            @endif
+
+                            @if ($recentActivity->count() > 0)
+                                <div class="card-footer text-center">
+                                    <a href="{{ route('student.activity') }}" class="btn btn-sm btn-outline-primary">
+                                        View All Activity
+                                    </a>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card student-card">
+                        <div class="card-header">
+                            <h3 class="card-title mb-0">
+                                <i class="fas fa-newspaper mr-2"></i>
+                                Placement Updates
+                            </h3>
+                        </div>
+                        <div class="card-body p-0">
+                            @php
+                                // Get placement-related notifications
+                                $placementUpdates = Auth::user()
+                                    ->notifications()
+                                    ->where('type', 'placement')
+                                    ->orWhere('data', 'like', '%placement%')
+                                    ->latest()
+                                    ->limit(5)
+                                    ->get();
+                            @endphp
+
+                            @if ($placementUpdates->count() > 0)
+                                <div class="list-group list-group-flush">
+                                    @foreach ($placementUpdates as $notification)
+                                        <div class="list-group-item border-0">
+                                            <div class="d-flex">
+                                                <div class="mr-3">
+                                                    <div class="avatar-initials bg-primary img-circle"
+                                                        style="width: 35px; height: 35px; line-height: 35px;">
+                                                        <i class="fas fa-briefcase text-white"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="flex-grow-1">
+                                                    <h6 class="mb-1">
+                                                        {{ $notification->data['title'] ?? 'Placement Update' }}</h6>
+                                                    <p class="mb-1 text-muted small">
+                                                        {{ Str::limit($notification->data['message'] ?? '', 60) }}
+                                                    </p>
+                                                    <small class="text-muted">
+                                                        <i class="far fa-clock mr-1"></i>
+                                                        {{ $notification->created_at->diffForHumans() }}
+                                                    </small>
+                                                </div>
+                                                @if (!$notification->read_at)
+                                                    <div class="ml-3">
+                                                        <span class="badge badge-danger">New</span>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="text-center py-5">
+                                    <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted mb-0">No placement updates yet</p>
+                                    <small class="text-muted">
+                                        Updates will appear here when admins process your placement
+                                    </small>
+                                </div>
+                            @endif
+
+                            @if ($placementUpdates->count() > 0)
+                                <div class="card-footer text-center">
+                                    <a href="{{ route('student.notifications') }}"
+                                        class="btn btn-sm btn-outline-primary">
+                                        View All Updates
+                                    </a>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
                     <div class="card student-card">
                         <div class="card-header">
                             <h3 class="card-title mb-0">
@@ -443,137 +698,6 @@
                                     </li>
                                 @endif
                             </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Recent Activity & Updates -->
-            <div class="row">
-                <div class="col-lg-6">
-                    <div class="card student-card">
-                        <div class="card-header">
-                            <h3 class="card-title mb-0">
-                                <i class="fas fa-history mr-2"></i>
-                                Recent Activity
-                            </h3>
-                        </div>
-                        <div class="card-body p-0">
-                            @php
-                                // Get recent activity logs for this student
-                                $recentActivity = \App\Models\ActivityLog::where('causer_id', Auth::id())
-                                    ->latest()
-                                    ->limit(5)
-                                    ->get();
-                            @endphp
-
-                            @if ($recentActivity->count() > 0)
-                                <div class="list-group list-group-flush">
-                                    @foreach ($recentActivity as $activity)
-                                        <div class="list-group-item border-0">
-                                            <div class="d-flex">
-                                                <div class="mr-3">
-                                                    <i
-                                                        class="fas fa-{{ $activity->icon }} text-{{ $activity->event == 'created' ? 'success' : ($activity->event == 'updated' ? 'warning' : 'info') }}"></i>
-                                                </div>
-                                                <div class="flex-grow-1">
-                                                    <h6 class="mb-1">{{ $activity->description }}</h6>
-                                                    <small class="text-muted">
-                                                        <i class="far fa-clock mr-1"></i>
-                                                        {{ $activity->getTimeAgoAttribute() }}
-                                                    </small>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            @else
-                                <div class="text-center py-5">
-                                    <i class="fas fa-history fa-3x text-muted mb-3"></i>
-                                    <p class="text-muted mb-0">No recent activity</p>
-                                </div>
-                            @endif
-
-                            @if ($recentActivity->count() > 0)
-                                <div class="card-footer text-center">
-                                    <a href="{{ route('student.activity') }}" class="btn btn-sm btn-outline-primary">
-                                        View All Activity
-                                    </a>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-lg-6">
-                    <div class="card student-card">
-                        <div class="card-header">
-                            <h3 class="card-title mb-0">
-                                <i class="fas fa-newspaper mr-2"></i>
-                                Placement Updates
-                            </h3>
-                        </div>
-                        <div class="card-body p-0">
-                            @php
-                                // Get placement-related notifications
-                                $placementUpdates = Auth::user()
-                                    ->notifications()
-                                    ->where('type', 'placement')
-                                    ->orWhere('data', 'like', '%placement%')
-                                    ->latest()
-                                    ->limit(5)
-                                    ->get();
-                            @endphp
-
-                            @if ($placementUpdates->count() > 0)
-                                <div class="list-group list-group-flush">
-                                    @foreach ($placementUpdates as $notification)
-                                        <div class="list-group-item border-0">
-                                            <div class="d-flex">
-                                                <div class="mr-3">
-                                                    <div class="avatar-initials bg-primary img-circle"
-                                                        style="width: 35px; height: 35px; line-height: 35px;">
-                                                        <i class="fas fa-briefcase text-white"></i>
-                                                    </div>
-                                                </div>
-                                                <div class="flex-grow-1">
-                                                    <h6 class="mb-1">
-                                                        {{ $notification->data['title'] ?? 'Placement Update' }}</h6>
-                                                    <p class="mb-1 text-muted small">
-                                                        {{ Str::limit($notification->data['message'] ?? '', 60) }}
-                                                    </p>
-                                                    <small class="text-muted">
-                                                        <i class="far fa-clock mr-1"></i>
-                                                        {{ $notification->created_at->diffForHumans() }}
-                                                    </small>
-                                                </div>
-                                                @if (!$notification->read_at)
-                                                    <div class="ml-3">
-                                                        <span class="badge badge-danger">New</span>
-                                                    </div>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            @else
-                                <div class="text-center py-5">
-                                    <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
-                                    <p class="text-muted mb-0">No placement updates yet</p>
-                                    <small class="text-muted">
-                                        Updates will appear here when admins process your placement
-                                    </small>
-                                </div>
-                            @endif
-
-                            @if ($placementUpdates->count() > 0)
-                                <div class="card-footer text-center">
-                                    <a href="{{ route('student.notifications') }}"
-                                        class="btn btn-sm btn-outline-primary">
-                                        View All Updates
-                                    </a>
-                                </div>
-                            @endif
                         </div>
                     </div>
                 </div>

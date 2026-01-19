@@ -38,7 +38,7 @@ class StudentProfile extends Model
         'preferred_location',
     ];
 
-     /**
+    /**
      * The attributes that should be cast.
      *
      * @var array<string, string>
@@ -54,7 +54,7 @@ class StudentProfile extends Model
         'preferred_attachment_duration' => 'integer',
     ];
 
-     /**
+    /**
      * The attributes that should be hidden for serialization.
      *
      * @var array<int, string>
@@ -64,7 +64,7 @@ class StudentProfile extends Model
         'updated_at',
     ];
 
-     /**
+    /**
      * The accessors to append to the model's array form.
      *
      * @var array<int, string>
@@ -82,7 +82,7 @@ class StudentProfile extends Model
         'interest_list',
     ];
 
-     /**
+    /**
      * Get the user that owns the student profile.
      */
     public function user(): BelongsTo
@@ -91,17 +91,17 @@ class StudentProfile extends Model
     }
 
 
-     /**
+    /**
      * Get the full course name with level.
      */
     protected function fullCourseName(): Attribute
     {
         return Attribute::make(
-            get: fn () => "{$this->course_name} ({$this->course_level_label})",
+            get: fn() => "{$this->course_name} ({$this->course_level_label})",
         );
     }
 
-     /**
+    /**
      * Get the institution type label.
      */
     protected function institutionTypeLabel(): Attribute
@@ -119,7 +119,7 @@ class StudentProfile extends Model
         );
     }
 
-     /**
+    /**
      * Get the course level label.
      */
     protected function courseLevelLabel(): Attribute
@@ -157,7 +157,7 @@ class StudentProfile extends Model
         );
     }
 
-     /**
+    /**
      * Get the attachment duration in months.
      */
     protected function attachmentDuration(): Attribute
@@ -167,16 +167,16 @@ class StudentProfile extends Model
                 if (!$this->attachment_start_date || !$this->attachment_end_date) {
                     return null;
                 }
-                
+
                 $start = $this->attachment_start_date;
                 $end = $this->attachment_end_date;
-                
+
                 return $start->diffInMonths($end);
             },
         );
     }
 
-     /**
+    /**
      * Check if student is currently attached.
      */
     protected function isCurrentlyAttached(): Attribute
@@ -186,11 +186,11 @@ class StudentProfile extends Model
                 if ($this->attachment_status !== 'placed') {
                     return false;
                 }
-                
+
                 if (!$this->attachment_start_date || !$this->attachment_end_date) {
                     return false;
                 }
-                
+
                 $now = now();
                 return $now->between($this->attachment_start_date, $this->attachment_end_date);
             },
@@ -203,7 +203,7 @@ class StudentProfile extends Model
     protected function yearsToGraduation(): Attribute
     {
         return Attribute::make(
-            get: fn () => $this->expected_graduation_year - now()->year,
+            get: fn() => $this->expected_graduation_year - now()->year,
         );
     }
 
@@ -213,7 +213,7 @@ class StudentProfile extends Model
     protected function cgpaPercentage(): Attribute
     {
         return Attribute::make(
-            get: fn () => $this->cgpa ? round(($this->cgpa / 4.0) * 100, 2) : null,
+            get: fn() => $this->cgpa ? round(($this->cgpa / 4.0) * 100, 2) : null,
         );
     }
 
@@ -223,7 +223,7 @@ class StudentProfile extends Model
     protected function skillList(): Attribute
     {
         return Attribute::make(
-            get: fn () => is_array($this->skills) ? implode(', ', $this->skills) : null,
+            get: fn() => is_array($this->skills) ? implode(', ', $this->skills) : null,
         );
     }
 
@@ -233,7 +233,7 @@ class StudentProfile extends Model
     protected function interestList(): Attribute
     {
         return Attribute::make(
-            get: fn () => is_array($this->interests) ? implode(', ', $this->interests) : null,
+            get: fn() => is_array($this->interests) ? implode(', ', $this->interests) : null,
         );
     }
 
@@ -250,7 +250,7 @@ class StudentProfile extends Model
             5 => 'Fifth Year',
             6 => 'Sixth Year',
         ];
-        
+
         return $labels[$this->year_of_study] ?? "Year {$this->year_of_study}";
     }
 
@@ -259,7 +259,7 @@ class StudentProfile extends Model
      */
     public function getAcademicProgressAttribute(): float
     {
-        $totalYears = match($this->course_level) {
+        $totalYears = match ($this->course_level) {
             'certificate' => 1,
             'diploma' => 2,
             'bachelor' => 4,
@@ -267,7 +267,7 @@ class StudentProfile extends Model
             'phd' => 3,
             default => 4,
         };
-        
+
         return min(100, ($this->year_of_study / $totalYears) * 100);
     }
 
@@ -285,8 +285,8 @@ class StudentProfile extends Model
     public function scopeCurrentlyAttached($query)
     {
         return $query->where('attachment_status', 'placed')
-                    ->where('attachment_start_date', '<=', now())
-                    ->where('attachment_end_date', '>=', now());
+            ->where('attachment_start_date', '<=', now())
+            ->where('attachment_end_date', '>=', now());
     }
 
     /**
@@ -353,7 +353,7 @@ class StudentProfile extends Model
         if (empty($this->skills) || !is_array($this->skills)) {
             return false;
         }
-        
+
         return in_array(strtolower($skill), array_map('strtolower', $this->skills));
     }
 
@@ -363,7 +363,7 @@ class StudentProfile extends Model
     public function addSkill(string $skill): void
     {
         $skills = $this->skills ?? [];
-        
+
         if (!in_array($skill, $skills)) {
             $skills[] = $skill;
             $this->skills = $skills;
@@ -376,7 +376,7 @@ class StudentProfile extends Model
     public function removeSkill(string $skill): void
     {
         $skills = $this->skills ?? [];
-        
+
         if (($key = array_search($skill, $skills)) !== false) {
             unset($skills[$key]);
             $this->skills = array_values($skills);
@@ -391,7 +391,7 @@ class StudentProfile extends Model
         if (empty($this->interests) || !is_array($this->interests)) {
             return false;
         }
-        
+
         return in_array(strtolower($interest), array_map('strtolower', $this->interests));
     }
 
@@ -401,7 +401,7 @@ class StudentProfile extends Model
     public function addInterest(string $interest): void
     {
         $interests = $this->interests ?? [];
-        
+
         if (!in_array($interest, $interests)) {
             $interests[] = $interest;
             $this->interests = $interests;
@@ -414,7 +414,7 @@ class StudentProfile extends Model
     public function removeInterest(string $interest): void
     {
         $interests = $this->interests ?? [];
-        
+
         if (($key = array_search($interest, $interests)) !== false) {
             unset($interests[$key]);
             $this->interests = array_values($interests);
@@ -427,25 +427,25 @@ class StudentProfile extends Model
     public function updateAttachmentStatus(string $status, ?\DateTime $startDate = null, ?\DateTime $endDate = null): bool
     {
         $validStatuses = ['seeking', 'applied', 'interviewing', 'placed', 'completed'];
-        
+
         if (!in_array($status, $validStatuses)) {
             throw new \InvalidArgumentException("Invalid attachment status: {$status}");
         }
-        
+
         if ($status === 'placed' && (!$startDate || !$endDate)) {
             throw new \InvalidArgumentException('Start date and end date are required for placed status');
         }
-        
+
         $this->attachment_status = $status;
-        
+
         if ($startDate) {
             $this->attachment_start_date = $startDate;
         }
-        
+
         if ($endDate) {
             $this->attachment_end_date = $endDate;
         }
-        
+
         return $this->save();
     }
 
@@ -457,7 +457,7 @@ class StudentProfile extends Model
         if (!$this->is_currently_attached) {
             return null;
         }
-        
+
         return now()->diffInDays($this->attachment_end_date, false);
     }
 
@@ -469,16 +469,79 @@ class StudentProfile extends Model
         if ($this->is_currently_attached) {
             return 'On Attachment';
         }
-        
+
         if ($this->attachment_status === 'completed') {
             return 'Completed Attachment';
         }
-        
+
         if ($this->attachment_status === 'placed') {
             return 'Upcoming Attachment';
         }
-        
+
         return 'Academic Studies';
+    }
+
+    // /**
+    //  * Get the student's profile completeness percentage.
+    //  */
+    // public function getProfileCompletenessAttribute(): int
+    // {
+    //     $requiredFields = [
+    //         'student_reg_number',
+    //         'institution_name',
+    //         'institution_type',
+    //         'course_name',
+    //         'course_level',
+    //         'year_of_study',
+    //         'expected_graduation_year',
+    //         'skills',
+    //         'interests',
+    //         'cv_url',
+    //         'preferred_location',
+    //     ];
+
+    //     $filledCount = 0;
+    //     foreach ($requiredFields as $field) {
+    //         if (!empty($this->$field)) {
+    //             $filledCount++;
+    //         }
+    //     }
+
+    //     return (int) round(($filledCount / count($requiredFields)) * 100);
+    // }
+
+    /**
+     * Calculate profile completeness with weights for each field.
+     */
+    public function calculateProfileCompleteness(): int
+    {
+        $weights = [
+            'student_reg_number' => 10,    // 10%
+            'institution_name' => 10,      // 10%
+            'institution_type' => 5,       // 5%
+            'course_name' => 10,           // 10%
+            'course_level' => 5,           // 5%
+            'year_of_study' => 5,          // 5%
+            'expected_graduation_year' => 5, // 5%
+            'cgpa' => 5,                   // 5%
+            'skills' => 15,                // 15% - Important for matching
+            'interests' => 5,              // 5%
+            'cv_url' => 10,                // 10% - Document
+            'transcript_url' => 5,         // 5% - Document
+            'preferred_location' => 5,     // 5%
+            'preferred_attachment_duration' => 5, // 5%
+        ];
+
+        $totalWeight = array_sum($weights);
+        $achievedWeight = 0;
+
+        foreach ($weights as $field => $weight) {
+            if ($this->isFieldComplete($field)) {
+                $achievedWeight += $weight;
+            }
+        }
+
+        return min(100, (int) round(($achievedWeight / $totalWeight) * 100));
     }
 
     /**
@@ -486,27 +549,177 @@ class StudentProfile extends Model
      */
     public function getProfileCompletenessAttribute(): int
     {
+        // Use the weighted calculation for more accuracy
+        return $this->calculateProfileCompleteness();
+    }
+
+    /**
+     * Check if a specific field is complete.
+     */
+    public function isFieldComplete(string $field): bool
+    {
+        $value = $this->$field;
+
+        if (empty($value)) {
+            return false;
+        }
+
+        // Special checks for specific fields
+        switch ($field) {
+            case 'skills':
+            case 'interests':
+                return is_array($value) && count($value) > 0;
+
+            case 'cgpa':
+                return is_numeric($value) && $value > 0;
+
+            case 'year_of_study':
+                return is_numeric($value) && $value > 0;
+
+            case 'expected_graduation_year':
+                return is_numeric($value) && $value >= date('Y');
+
+            default:
+                return !empty(trim($value));
+        }
+    }
+
+    /**
+     * Get profile progress breakdown by category.
+     */
+    public function getProfileProgressBreakdown(): array
+    {
+        $categories = [
+            'personal' => [
+                'label' => 'Personal Information',
+                'fields' => ['student_reg_number'],
+                'weight' => 10,
+            ],
+            'academic' => [
+                'label' => 'Academic Details',
+                'fields' => [
+                    'institution_name',
+                    'institution_type',
+                    'course_name',
+                    'course_level',
+                    'year_of_study',
+                    'expected_graduation_year',
+                    'cgpa'
+                ],
+                'weight' => 45,
+            ],
+            'skills' => [
+                'label' => 'Skills & Interests',
+                'fields' => ['skills', 'interests'],
+                'weight' => 20,
+            ],
+            'documents' => [
+                'label' => 'Documents',
+                'fields' => ['cv_url', 'transcript_url'],
+                'weight' => 15,
+            ],
+            'preferences' => [
+                'label' => 'Placement Preferences',
+                'fields' => ['preferred_location', 'preferred_attachment_duration'],
+                'weight' => 10,
+            ],
+        ];
+
+        $breakdown = [];
+
+        foreach ($categories as $key => $category) {
+            $completed = 0;
+            $totalFields = count($category['fields']);
+
+            foreach ($category['fields'] as $field) {
+                if ($this->isFieldComplete($field)) {
+                    $completed++;
+                }
+            }
+
+            $percentage = $totalFields > 0 ? ($completed / $totalFields) * 100 : 0;
+
+            $breakdown[$key] = [
+                'label' => $category['label'],
+                'completed' => $completed,
+                'total' => $totalFields,
+                'percentage' => (int) round($percentage),
+                'weight' => $category['weight'],
+                'fields' => $this->getFieldStatuses($category['fields']),
+            ];
+        }
+
+        return $breakdown;
+    }
+
+    /**
+     * Get field statuses for a list of fields.
+     */
+    private function getFieldStatuses(array $fields): array
+    {
+        $statuses = [];
+
+        foreach ($fields as $field) {
+            $statuses[$field] = [
+                'label' => $this->getFieldLabel($field),
+                'completed' => $this->isFieldComplete($field),
+                'value' => $this->$field,
+            ];
+        }
+
+        return $statuses;
+    }
+
+    /**
+     * Get human-readable label for a field.
+     */
+    private function getFieldLabel(string $field): string
+    {
+        $labels = [
+            'student_reg_number' => 'Student Registration Number',
+            'institution_name' => 'Institution Name',
+            'institution_type' => 'Institution Type',
+            'course_name' => 'Course Name',
+            'course_level' => 'Course Level',
+            'year_of_study' => 'Year of Study',
+            'expected_graduation_year' => 'Expected Graduation Year',
+            'cgpa' => 'CGPA',
+            'skills' => 'Skills',
+            'interests' => 'Interests',
+            'cv_url' => 'CV/Resume',
+            'transcript_url' => 'Academic Transcript',
+            'preferred_location' => 'Preferred Location',
+            'preferred_attachment_duration' => 'Preferred Duration',
+        ];
+
+        return $labels[$field] ?? ucfirst(str_replace('_', ' ', $field));
+    }
+
+    /**
+     * Get the missing fields for profile completion.
+     */
+    public function getMissingFields(): array
+    {
+        $missing = [];
         $requiredFields = [
             'student_reg_number',
             'institution_name',
-            'institution_type',
             'course_name',
-            'course_level',
             'year_of_study',
-            'expected_graduation_year',
             'skills',
-            'interests',
             'cv_url',
-            'preferred_location',
         ];
-        
-        $filledCount = 0;
+
         foreach ($requiredFields as $field) {
-            if (!empty($this->$field)) {
-                $filledCount++;
+            if (!$this->isFieldComplete($field)) {
+                $missing[] = [
+                    'field' => $field,
+                    'label' => $this->getFieldLabel($field),
+                    'priority' => in_array($field, ['student_reg_number', 'institution_name', 'course_name']) ? 'high' : 'medium',
+                ];
             }
         }
-        
-        return (int) round(($filledCount / count($requiredFields)) * 100);
+
+        return $missing;
     }
 }

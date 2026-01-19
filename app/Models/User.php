@@ -102,7 +102,7 @@ class User extends Authenticatable
     }
 
     // Relationship with student profile
-    public function StudentProfile()
+    public function studentProfile()
     {
         return $this->hasOne(StudentProfile::class);
     }

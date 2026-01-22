@@ -74,7 +74,7 @@
 
                 <!-- Profile -->
                 <li class="nav-item">
-                    <a href="#"
+                    <a href="{{ route('student.profile.show') }}"
                        class="nav-link {{ request()->routeIs('student.profile*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-user"></i>
                         <p>My Profile</p>

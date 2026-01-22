@@ -28,7 +28,9 @@ Route::middleware([
 
     // Profile routes
     Route::prefix('profile')->name('profile.')->group(function(){
-        
+
+        Route::get('/', [ProfileController::class, 'show'])->name('show');
+
         Route::get('/create', [ProfileController::class, 'create'])->name('create');
 
         Route::post('/store', [ProfileController::class, 'store'])->name('store');
@@ -38,7 +40,7 @@ Route::middleware([
         Route::put('/update', [ProfileController::class, 'update'])->name('update');
 
     });
-    
+
 
     // Placement Routes
     Route::get('/placement/status', [PlacementController::class, 'status'])

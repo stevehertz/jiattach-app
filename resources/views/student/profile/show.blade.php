@@ -18,10 +18,14 @@
                     <div class="card card-success card-outline shadow-sm">
                         <div class="card-body box-profile">
                             <div class="text-center">
-                                <img class="profile-user-img img-fluid img-circle shadow-sm" src="{{ Auth::user()->profile_photo_url }}" alt="User Profile" style="width:100px; height:100px; object-fit:cover;">
+                                <img class="profile-user-img img-fluid img-circle shadow-sm" src="{{ asset('storage/' . Auth::user()->profile_photo_path) }}" alt="{{ Auth::user()->full_name }}" style="width:100px; height:100px; object-fit:cover;">
                             </div>
-                            <h3 class="profile-username text-center font-weight-bold">{{ Auth::user()->full_name }}</h3>
-                            <p class="text-muted text-center">{{ $profile->academic_stage }}</p>
+                            <h3 class="profile-username text-center font-weight-bold">
+                                {{ Auth::user()->full_name }}
+                            </h3>
+                            <p class="text-muted text-center">
+                                {{ $profile->academic_stage }}
+                            </p>
 
                             <div class="mb-3 mt-4">
                                 <div class="d-flex justify-content-between mb-1">

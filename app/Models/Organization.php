@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Organization extends Model
 {
     use HasFactory, SoftDeletes, LogsModelActivity;
-    
+
     protected $fillable = [
         'name',
         'type',

@@ -115,7 +115,7 @@
                 <div class="text-center mt-2">
                     <p class="text-sm text-gray-500 dark:text-gray-400">
                         Don't have an account?
-                        <a class="font-bold text-primary hover:underline" href="#">Sign up</a>
+                        <a class="font-bold text-primary hover:underline" href="{{ route('register') }}">Sign up</a>
                     </p>
                 </div>
             </div>

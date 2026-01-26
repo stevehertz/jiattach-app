@@ -15,12 +15,16 @@ class EditProfile extends Component
 
      // User Fields (Personal)
     public $first_name, $last_name, $phone, $bio, $gender, $county, $profile_photo;
-    
+
+    // Disability Fields
+    public $disability_status;
+    public $disability_details;
+
     // Student Profile Fields (Academic)
     public $student_reg_number, $institution_name, $institution_type, $course_name;
     public $course_level, $year_of_study, $expected_graduation_year, $cgpa;
     public $preferred_location, $preferred_attachment_duration;
-    
+
     // Arrays for Skills and Interests
     public $skills = [];
     public $interests = [];
@@ -29,6 +33,8 @@ class EditProfile extends Component
 
     // Documents
     public $cv, $transcript;
+
+    public $activeTab = 'academic';
 
     public function mount()
     {
@@ -39,6 +45,10 @@ class EditProfile extends Component
         $this->bio = $user->bio;
         $this->gender = $user->gender;
         $this->county = $user->county;
+
+        // Initialize Disability fields
+        $this->disability_status = $user->disability_status ?? 'none';
+        $this->disability_details = $user->disability_details;
 
         $profile = $user->studentProfile;
         if ($profile) {
@@ -88,17 +98,20 @@ class EditProfile extends Component
     public function save()
     {
         $user = User::findOrFail(Auth::user()->id);
-        
+
         $this->validate([
             'first_name' => 'required|string|max:50',
             'last_name' => 'required|string|max:50',
             'phone' => 'nullable|string|max:20',
-            'profile_photo' => 'nullable|image|max:1024', 
+            'profile_photo' => 'nullable|image|max:1024',
             'student_reg_number' => 'required|string',
             'institution_name' => 'required|string',
             'course_name' => 'required|string',
             'cv' => 'nullable|mimes:pdf|max:2048',
             'transcript' => 'nullable|mimes:pdf|max:2048',
+            // Disability Validation
+            'disability_status' => 'required|in:none,mobility,visual,hearing,cognitive,other,prefer_not_to_say',
+            'disability_details' => 'nullable|required_unless:disability_status,none,prefer_not_to_say|string|max:500',
         ]);
 
         // 1. Update User
@@ -109,6 +122,8 @@ class EditProfile extends Component
             'bio' => $this->bio,
             'gender' => $this->gender,
             'county' => $this->county,
+            'disability_status' => $this->disability_status,
+            'disability_details' => in_array($this->disability_status, ['none', 'prefer_not_to_say']) ? null : $this->disability_details,
         ]);
 
         if ($this->profile_photo) {
@@ -139,18 +154,18 @@ class EditProfile extends Component
         if ($this->cv) {
             $profile->cv_url = Storage::url($this->cv->store('docs/cvs', 'public'));
         }
-        
+
         if ($this->transcript) {
             $profile->transcript_url = Storage::url($this->transcript->store('docs/transcripts', 'public'));
         }
-        
+
         $profile->save();
 
         session()->flash('success', 'Profile updated successfully!');
+
         return redirect()->route('student.profile.show');
     }
 
-    
     public function render()
     {
         return view('livewire.student.profile.edit-profile');

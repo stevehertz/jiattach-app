@@ -89,7 +89,8 @@
     <!-- Form Steps -->
     <div wire:key="register-form-{{ $currentStep }}" class="flex flex-col gap-5" id="studentRegistrationForm">
         <!-- Step 1: Personal Information -->
-        <div id="step-1" class="{{ $this->currentStep == 1 ? '' : 'hidden' }}" wire:key="step-1-{{ $email }}">
+        <div id="step-1" class="{{ $this->currentStep == 1 ? '' : 'hidden' }}"
+            wire:key="step-1-{{ $email }}">
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div class="flex flex-col gap-2">
@@ -155,7 +156,7 @@
                 @enderror
             </div>
 
-              <!-- Date of Birth -->
+            <!-- Date of Birth -->
             <div class="flex flex-col gap-2">
                 <label class="text-[#0d141b] dark:text-gray-200 text-sm font-medium leading-normal"
                     for="date_of_birth">Date of Birth</label>
@@ -195,7 +196,7 @@
                 @enderror
             </div>
 
-             <!-- National ID -->
+            <!-- National ID -->
             <div class="flex flex-col gap-2">
                 <label class="text-[#0d141b] dark:text-gray-200 text-sm font-medium leading-normal"
                     for="national_id">National ID Number</label>
@@ -211,16 +212,61 @@
                 @enderror
             </div>
 
+            <!-- Disability Status -->
+            <div class="flex flex-col gap-2">
+                <label class="text-[#0d141b] dark:text-gray-200 text-sm font-medium leading-normal"
+                    for="disability_status">Do you have any disability?</label>
+                <div class="relative">
+                    <span
+                        class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 material-symbols-outlined text-[20px]">accessible</span>
+                    <select wire:model.live="disability_status" id="disability_status"
+                        class="w-full h-12 rounded-lg border border-[#cfdbe7] dark:border-gray-600 bg-white dark:bg-gray-900 text-[#0d141b] dark:text-white px-3 pl-10 text-sm placeholder:text-[#91a6be] dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all appearance-none"
+                        required>
+                        <option value="none">No</option>
+                        <option value="mobility">Mobility Impairment</option>
+                        <option value="visual">Visual Impairment</option>
+                        <option value="hearing">Hearing Impairment</option>
+                        <option value="cognitive">Cognitive Impairment</option>
+                        <option value="other">Other Disability</option>
+                        <option value="prefer_not_to_say">Prefer Not to Say</option>
+                    </select>
+                    <span
+                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 material-symbols-outlined text-[20px]">expand_more</span>
+                </div>
+                @error('disability_status')
+                    <span class="text-red-500 text-xs">{{ $message }}</span>
+                @enderror
+            </div>
+
+            <!-- Disability Details (Conditional) -->
+            @if (!in_array($disability_status, ['none', 'prefer_not_to_say', '']))
+                <div class="flex flex-col gap-2 transition-all duration-300 ease-in-out">
+                    <label class="text-[#0d141b] dark:text-gray-200 text-sm font-medium leading-normal"
+                        for="disability_details">Please describe any required accommodations</label>
+                    <div class="relative">
+                        <span
+                            class="absolute left-3 top-3 text-gray-400 material-symbols-outlined text-[20px]">info</span>
+                        <textarea wire:model="disability_details" id="disability_details" rows="2"
+                            class="w-full rounded-lg border border-[#cfdbe7] dark:border-gray-600 bg-white dark:bg-gray-900 text-[#0d141b] dark:text-white px-3 pl-10 pt-3 text-sm placeholder:text-[#91a6be] dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all resize-none"
+                            placeholder="E.g., Wheelchair access required, screen reader compatibility needed..."></textarea>
+                    </div>
+                    @error('disability_details')
+                        <span class="text-red-500 text-xs">{{ $message }}</span>
+                    @enderror
+                </div>
+            @endif
+
+
             <div class="flex justify-end mt-4">
                 <button type="button" wire:click="nextStep" wire:loading.attr="disabled"
-                    wire:loading.class="btn-loading" 
+                    wire:loading.class="btn-loading"
                     class="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-primary text-white text-base font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-all shadow-md hover:shadow-lg">
                     <span class="truncate">Next: Academic Details →</span>
                 </button>
             </div>
         </div>
 
-         <!-- Step 2: Academic Information -->
+        <!-- Step 2: Academic Information -->
         <div id="step-2" class="{{ $this->currentStep == 2 ? '' : 'hidden' }}">
             <!-- Student Registration Number -->
             <div class="flex flex-col gap-2">
@@ -398,7 +444,7 @@
             </div>
         </div>
 
-         <!-- Step 3: Skills & Preferences -->
+        <!-- Step 3: Skills & Preferences -->
         <div id="step-3" class="{{ $this->currentStep == 3 ? '' : 'hidden' }}">
             <!-- County -->
             <div class="flex flex-col gap-2">

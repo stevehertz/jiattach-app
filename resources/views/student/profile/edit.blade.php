@@ -23,7 +23,7 @@
     <!-- Main content -->
     <section class="content">
         <div class="container-fluid">
-            
+
             <!-- Alert for validation or success messages -->
             @if (session()->has('success'))
                 <div class="alert alert-success alert-dismissible fade show shadow-sm border-0" role="alert" style="border-radius: 10px;">

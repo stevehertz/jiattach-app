@@ -47,7 +47,22 @@
                                 <li class="list-group-item">
                                     <i class="fas fa-envelope mr-2 text-success"></i> <b>Email</b> <span class="float-right small">{{ Auth::user()->email }}</span>
                                 </li>
+                                <!-- Added Disability Status Here -->
+                                <li class="list-group-item">
+                                    <i class="fas fa-universal-access mr-2 text-success"></i> <b>Disability</b>
+                                    <span class="float-right small badge {{ Auth::user()->disability_status === 'none' ? 'badge-light' : 'badge-warning' }}">
+                                        {{ ucfirst(str_replace('_', ' ', Auth::user()->disability_status ?? 'None')) }}
+                                    </span>
+                                </li>
                             </ul>
+
+                            <!-- Show Details if Disability exists -->
+                            @if(Auth::user()->disability_status && !in_array(Auth::user()->disability_status, ['none', 'prefer_not_to_say']))
+                                <div class="alert alert-light border small">
+                                    <strong><i class="fas fa-info-circle text-info"></i> Accommodations:</strong><br>
+                                    {{ Auth::user()->disability_details }}
+                                </div>
+                            @endif
                         </div>
                     </div>
 
@@ -68,7 +83,7 @@
                 </div>
 
                 <div class="col-md-8">
-                    <!-- Detailed Breakdown -->
+                    <!-- Detailed Breakdown (No changes needed here based on request, kept context) -->
                     <div class="card shadow-sm border-0">
                         <div class="card-header bg-white"><h3 class="card-title font-weight-bold">Academic Details</h3></div>
                         <div class="card-body">
@@ -151,5 +166,4 @@
             </div>
         </div>
     </section>
-
 </x-layouts.student>

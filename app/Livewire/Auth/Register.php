@@ -15,7 +15,7 @@ class Register extends Component
 {
     public $currentStep = 1;
 
-     // Personal Information
+    // Personal Information
     public $first_name = '';
     public $last_name = '';
     public $email = '';
@@ -23,6 +23,10 @@ class Register extends Component
     public $date_of_birth = '';
     public $gender = '';
     public $national_id = '';
+
+    // New Disability Fields
+    public $disability_status = 'none'; // Default to none
+    public $disability_details = '';
 
     // Academic Information
     public $student_reg_number = '';
@@ -66,6 +70,8 @@ class Register extends Component
 
             // Set default gender
             $this->gender = 'male';
+
+            $this->disability_status = 'none';
 
             $this->hasInitialized = true;
         }
@@ -149,10 +155,14 @@ class Register extends Component
             'date_of_birth' => 'required|date|before:today',
             'gender' => 'required|string|in:male,female,other,prefer_not_to_say',
             'national_id' => 'required|string|max:20|unique:users',
+            'disability_status' => 'required|in:none,mobility,visual,hearing,cognitive,other,prefer_not_to_say',
+            // Require details unless status is none or prefer_not_to_say
+            'disability_details' => 'nullable|required_unless:disability_status,none,prefer_not_to_say|string|max:500',
         ], [
             'email.unique' => 'This email is already registered. Please use a different email or login.',
             'phone.unique' => 'This phone number is already registered.',
             'national_id.unique' => 'This national ID is already registered.',
+            'disability_details.required_unless' => 'Please provide details about your disability so we can find suitable matches.',
         ]);
     }
 
@@ -175,7 +185,7 @@ class Register extends Component
         ]);
     }
 
-     protected function validateStep3()
+    protected function validateStep3()
     {
         $this->validate([
             'county' => 'required|string|max:100',
@@ -220,6 +230,8 @@ class Register extends Component
                 'date_of_birth' => $this->date_of_birth,
                 'gender' => $this->gender,
                 'national_id' => $this->national_id,
+                'disability_status' => $this->disability_status,
+                'disability_details' => in_array($this->disability_status, ['none', 'prefer_not_to_say']) ? null : $this->disability_details,
                 'county' => $this->county,
                 'password' => Hash::make($this->password),
                 'is_active' => true,

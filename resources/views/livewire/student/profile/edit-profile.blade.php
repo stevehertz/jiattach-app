@@ -33,6 +33,31 @@
                                 <label>County</label>
                                 <input type="text" wire:model="county" class="form-control">
                             </div>
+
+                            <!-- Disability Section Start -->
+                            <div class="form-group">
+                                <label>Disability Status</label>
+                                <select wire:model.live="disability_status" class="form-control">
+                                    <option value="none">No Disability</option>
+                                    <option value="mobility">Mobility Impairment</option>
+                                    <option value="visual">Visual Impairment</option>
+                                    <option value="hearing">Hearing Impairment</option>
+                                    <option value="cognitive">Cognitive Impairment</option>
+                                    <option value="other">Other Disability</option>
+                                    <option value="prefer_not_to_say">Prefer Not to Say</option>
+                                </select>
+                            </div>
+
+                            @if(!in_array($disability_status, ['none', 'prefer_not_to_say', '']))
+                                <div class="form-group">
+                                    <label>Required Accommodations</label>
+                                    <textarea wire:model="disability_details" class="form-control" rows="2"
+                                        placeholder="E.g., Wheelchair access, screen reader..."></textarea>
+                                    @error('disability_details') <span class="text-danger small">{{ $message }}</span> @enderror
+                                </div>
+                            @endif
+                            <!-- Disability Section End -->
+
                             <div class="form-group">
                                 <label>Bio</label>
                                 <textarea wire:model="bio" class="form-control" rows="3" placeholder="Tell us about yourself..."></textarea>
@@ -63,16 +88,27 @@
                         <div class="card-header p-2">
                             <ul class="nav nav-pills">
                                 <li class="nav-item">
-                                    <a class="nav-link active" href="#academic"
-                                        data-toggle="tab">Academic Info</a></li>
-                                <li class="nav-item"><a class="nav-link" href="#professional" data-toggle="tab">Skills &
-                                        Preferences</a></li>
+                                    <a class="nav-link {{ $activeTab === 'academic' ? 'active' : '' }}"
+                                        href="#"
+                                        wire:click.prevent="$set('activeTab', 'academic')"
+                                        style="cursor: pointer;">
+                                        Academic Info
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link {{ $activeTab === 'professional' ? 'active' : '' }}"
+                                        href="#"
+                                        wire:click.prevent="$set('activeTab', 'professional')"
+                                        style="cursor: pointer;">
+                                        Skills & Preferences
+                                    </a>
+                                </li>
                             </ul>
                         </div>
                         <div class="card-body">
                             <div class="tab-content">
                                 <!-- Academic Tab -->
-                                <div class="active tab-pane" id="academic">
+                                <div class="{{ $activeTab === 'academic' ? 'active' : '' }} tab-pane" id="academic">
                                     <div class="row">
                                         <div class="form-group col-md-6">
                                             <label>Student Reg Number</label>
@@ -118,7 +154,7 @@
                                 </div>
 
                                 <!-- Professional Tab -->
-                                <div class="tab-pane" id="professional">
+                                <div class="tab-pane  {{ $activeTab === 'professional' ? 'active' : '' }}" id="professional">
                                     <div class="form-group">
                                         <label>Professional Skills</label>
                                         <div class="input-group">

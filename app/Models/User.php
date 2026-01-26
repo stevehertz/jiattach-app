@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Support\Str;
 use App\Traits\LogsModelActivity;
 use Laravel\Sanctum\HasApiTokens;
@@ -28,7 +27,7 @@ class User extends Authenticatable
      *
      * @var array<int, string>
      */
-     protected $fillable = [
+    protected $fillable = [
         'first_name',
         'last_name',
         'email',
@@ -42,6 +41,8 @@ class User extends Authenticatable
         'constituency',
         'ward',
         'bio',
+        'disability_status',
+        'disability_details',
         'is_active',
         'is_verified',
         'verification_token',
@@ -83,31 +84,71 @@ class User extends Authenticatable
         'full_name'
     ];
 
-
     /**
      * Get the user's initials
      */
     public function initials(): string
     {
-        return Str::of($this->name)
+        return Str::of($this->full_name)
             ->explode(' ')
             ->take(2)
             ->map(fn($word) => Str::substr($word, 0, 1))
             ->implode('');
     }
 
+    /**
+     * Get the user's full name.
+     */
     public function getFullNameAttribute()
     {
         return "{$this->first_name} {$this->last_name}";
     }
 
-    // Relationship with student profile
+    /**
+     * Check if user has disclosed disability status.
+     */
+    public function hasDisability(): bool
+    {
+        return $this->disability_status &&
+               $this->disability_status !== 'none' &&
+               $this->disability_status !== 'prefer_not_to_say';
+    }
+
+    /**
+     * Get disability status label.
+     */
+    public function getDisabilityStatusLabelAttribute()
+    {
+        $labels = [
+            'none' => 'No Disability',
+            'mobility' => 'Mobility Impairment',
+            'visual' => 'Visual Impairment',
+            'hearing' => 'Hearing Impairment',
+            'cognitive' => 'Cognitive Impairment',
+            'other' => 'Other Disability',
+            'prefer_not_to_say' => 'Prefer Not to Say',
+        ];
+
+        return $labels[$this->disability_status] ?? 'Not Specified';
+    }
+
+    /**
+     * Relationship with student profile.
+     */
     public function studentProfile()
     {
         return $this->hasOne(StudentProfile::class);
     }
 
-     /**
+    /**
+     * Relationship with organization (for company users).
+     */
+    public function organization()
+    {
+        return $this->hasOne(Organization::class);
+    }
+
+    /**
      * Get the placements for this user (as a student).
      */
     public function placements()
@@ -122,6 +163,24 @@ class User extends Authenticatable
     {
         return $this->hasMany(Placement::class, 'admin_id');
     }
+
+    /**
+     * Get the matches for this student.
+     */
+    // public function matches()
+    // {
+    //     return $this->hasMany(Match::class, 'student_id');
+    // }
+
+    /**
+     * Get pending matches that haven't been reviewed.
+     */
+    // public function pendingMatches()
+    // {
+    //     return $this->hasMany(Match::class, 'student_id')
+    //         ->where('status', 'pending')
+    //         ->with('opportunity.organization');
+    // }
 
     /**
      * Get the current active placement.
@@ -156,12 +215,38 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if user can receive new matches.
+     */
+    public function canReceiveMatches(): bool
+    {
+        // Can't receive matches if already placed or has pending accepted matches
+        if ($this->hasActivePlacement()) {
+            return false;
+        }
+
+        // Check if student profile is complete
+        if ($this->hasRole('student') && !$this->studentProfile?->profile_completed) {
+            return false;
+        }
+
+        // Check if there's a pending accepted match
+        $hasAcceptedMatch = $this->matches()
+            ->where('status', 'accepted')
+            ->whereHas('placement', function($query) {
+                $query->whereIn('status', ['pending', 'processing', 'placed']);
+            })
+            ->exists();
+
+        return !$hasAcceptedMatch;
+    }
+
+    /**
      * Get the placement status.
      */
     public function getPlacementStatusAttribute()
     {
         $placement = $this->latestPlacement;
-        return $placement ? $placement->status : 'pending';
+        return $placement ? $placement->status : 'seeking';
     }
 
     /**
@@ -170,7 +255,38 @@ class User extends Authenticatable
     public function getPlacementStatusLabelAttribute()
     {
         $placement = $this->latestPlacement;
-        return $placement ? $placement->status_label : 'Not Applied';
+        return $placement ? $placement->status_label : 'Seeking Placement';
     }
 
+    /**
+     * Scope to get only students.
+     */
+    public function scopeStudents($query)
+    {
+        return $query->role('student');
+    }
+
+    /**
+     * Scope to get only companies.
+     */
+    public function scopeCompanies($query)
+    {
+        return $query->role('company');
+    }
+
+    /**
+     * Scope to get verified users.
+     */
+    public function scopeVerified($query)
+    {
+        return $query->where('is_verified', true);
+    }
+
+    /**
+     * Scope to get active users.
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
 }

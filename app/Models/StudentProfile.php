@@ -31,6 +31,7 @@ class StudentProfile extends Model
         'interests',
         'cv_url',
         'transcript_url',
+        'school_letter_url',
         'attachment_status',
         'attachment_start_date',
         'attachment_end_date',

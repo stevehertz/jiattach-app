@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Student\ProfileController;
 use App\Http\Controllers\Student\DashboardController;
+use App\Http\Controllers\Student\DocumentsController;
 use App\Http\Controllers\Student\Dashboard\ActivityController;
 use App\Http\Controllers\Student\Dashboard\PlacementController;
 use App\Http\Controllers\Student\Dashboard\NotificationController;
@@ -27,7 +28,7 @@ Route::middleware([
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Profile routes
-    Route::prefix('profile')->name('profile.')->group(function(){
+    Route::prefix('profile')->name('profile.')->group(function () {
 
         Route::get('/', [ProfileController::class, 'show'])->name('show');
 
@@ -38,26 +39,27 @@ Route::middleware([
         Route::get('/edit', [ProfileController::class, 'edit'])->name('edit');
 
         Route::put('/update', [ProfileController::class, 'update'])->name('update');
+    });
+
+    Route::prefix('placement')->name('placement.')->group(function () {
+
+        // Placement Routes
+        Route::get('/status', [PlacementController::class, 'status'])->name('status');
+
+        Route::get('/timeline', [PlacementController::class, 'timeline'])->name('timeline');
+
+        Route::post('/request', [PlacementController::class, 'request'])->name('request');
 
     });
 
 
-    // Placement Routes
-    Route::get('/placement/status', [PlacementController::class, 'status'])
-        ->name('placement.status');
-
-    Route::get('/placement/timeline', [PlacementController::class, 'timeline'])
-        ->name('placement.timeline');
-
-    Route::post('/placement/request', [PlacementController::class, 'request'])
-        ->name('placement.request');
-
     // Activity & Notifications
-    Route::get('/notifications', [NotificationController::class, 'index'])
-        ->name('notifications');
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications');
 
-    Route::get('/activity', [ActivityController::class, 'index'])
-        ->name('activity');
+    Route::get('/activity', [ActivityController::class, 'index'])->name('activity');
+
+    // Documents
+    Route::get('/documents', [DocumentsController::class, 'index'])->name('documents.index');
 
     // Mentorship routes
     Route::prefix('mentorship')->name('mentorship.')->group(function () {

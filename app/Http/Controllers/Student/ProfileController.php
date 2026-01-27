@@ -100,10 +100,10 @@ class ProfileController extends Controller
         $profile->save();
 
         // Log activity
-        activity()
-            ->causedBy($user)
-            ->performedOn($profile)
-            ->log('uploaded ' . $request->document_type);
+        // activity()
+        //     ->causedBy($user)
+        //     ->performedOn($profile)
+        //     ->log('uploaded ' . $request->document_type);
 
         return redirect()->route('student.profile.edit')
             ->with('success', ucfirst($request->document_type) . ' uploaded successfully!');

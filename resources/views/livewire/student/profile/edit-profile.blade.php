@@ -70,13 +70,39 @@
                             <h3 class="card-title font-weight-bold">Documents</h3>
                         </div>
                         <div class="card-body">
+                            <!-- CV Upload -->
                             <div class="form-group">
                                 <label>CV / Resume (PDF)</label>
                                 <input type="file" wire:model="cv" class="form-control-file">
+                                @error('cv') <span class="text-danger small">{{ $message }}</span> @enderror
+                                @if(Auth::user()->studentProfile?->cv_url)
+                                    <small class="text-success"><i class="fas fa-check mr-1"></i> Current: Uploaded</small>
+                                @endif
                             </div>
+
+                            <!-- Transcript Upload -->
                             <div class="form-group">
                                 <label>Academic Transcript (PDF)</label>
                                 <input type="file" wire:model="transcript" class="form-control-file">
+                                @error('transcript') <span class="text-danger small">{{ $message }}</span> @enderror
+                                @if(Auth::user()->studentProfile?->transcript_url)
+                                    <small class="text-success"><i class="fas fa-check mr-1"></i> Current: Uploaded</small>
+                                @endif
+                            </div>
+
+                            <!-- NEW: School Letter Upload -->
+                            <div class="form-group">
+                                <label>School Attachment Letter (PDF)</label>
+                                <input type="file" wire:model="school_letter" class="form-control-file">
+                                @error('school_letter') <span class="text-danger small">{{ $message }}</span> @enderror
+                                @if(Auth::user()->studentProfile?->school_letter_url)
+                                    <small class="text-success"><i class="fas fa-check mr-1"></i> Current: Uploaded</small>
+                                @endif
+                            </div>
+                            
+                            <div class="alert alert-info small mt-3">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Uploading new documents will replace existing ones.
                             </div>
                         </div>
                     </div>

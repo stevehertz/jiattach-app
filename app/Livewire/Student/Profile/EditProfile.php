@@ -32,7 +32,7 @@ class EditProfile extends Component
     public $newInterest = '';
 
     // Documents
-    public $cv, $transcript;
+    public $cv, $transcript, $school_letter;
 
     public $activeTab = 'academic';
 
@@ -112,7 +112,13 @@ class EditProfile extends Component
             // Disability Validation
             'disability_status' => 'required|in:none,mobility,visual,hearing,cognitive,other,prefer_not_to_say',
             'disability_details' => 'nullable|required_unless:disability_status,none,prefer_not_to_say|string|max:500',
+            'cv' => 'nullable|mimes:pdf|max:2048',
+            'transcript' => 'nullable|mimes:pdf|max:2048',
+            // 2. Add validation for letter
+            'school_letter' => 'nullable|mimes:pdf|max:2048',
         ]);
+
+        
 
         // 1. Update User
         $user->update([
@@ -157,6 +163,11 @@ class EditProfile extends Component
 
         if ($this->transcript) {
             $profile->transcript_url = Storage::url($this->transcript->store('docs/transcripts', 'public'));
+        }
+
+        // Add School Letter Upload
+        if ($this->school_letter) {
+            $profile->school_letter_url = Storage::url($this->school_letter->store('docs/letters', 'public'));
         }
 
         $profile->save();

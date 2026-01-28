@@ -6,6 +6,7 @@ use App\Http\Controllers\Student\DashboardController;
 use App\Http\Controllers\Student\DocumentsController;
 use App\Http\Controllers\Student\PlacementController;
 use App\Http\Controllers\Student\CvTemplateController;
+use App\Http\Controllers\Student\MentorshipController;
 use App\Http\Controllers\Student\Dashboard\ActivityController;
 use App\Http\Controllers\Student\Dashboard\NotificationController;
 
@@ -70,22 +71,17 @@ Route::middleware([
         Route::get('/download/{id}', [CvTemplateController::class, 'download'])->name('download');
 
     });
-    
+
 
 
 
     // Mentorship routes
     Route::prefix('mentorship')->name('mentorship.')->group(function () {
-        Route::get('/', function () {
-            return view('students.mentorship.index');
-        })->name('index');
 
-        Route::get('/find', function () {
-            return view('student.mentorship.find');
-        })->name('find');
+        Route::get('/', [MentorshipController::class, 'index'])->name('index');
 
-        Route::get('/sessions', function () {
-            return view('students.mentorship.sessions');
-        })->name('sessions');
+        Route::get('/find', [MentorshipController::class, 'find'])->name('find');
+
+        Route::get('/sessions', [MentorshipController::class, 'sessions'])->name('sessions');
     });
 });

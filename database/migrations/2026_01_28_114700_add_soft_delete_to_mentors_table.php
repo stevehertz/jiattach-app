@@ -11,10 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('organizations', function (Blueprint $table) {
+        Schema::table('mentors', function (Blueprint $table) {
             //
-            $table->unsignedBigInteger('user_id')->nullable()->after('id');
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
+            $table->softDeletes(); // Adds the 'deleted_at' column
         });
     }
 
@@ -23,10 +22,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('organizations', function (Blueprint $table) {
+        Schema::table('mentors', function (Blueprint $table) {
             //
-            $table->dropForeign(['user_id']);
-            $table->dropColumn('user_id');
+            $table->dropSoftDeletes();
         });
     }
 };

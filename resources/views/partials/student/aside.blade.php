@@ -92,7 +92,7 @@
 
                 <li class="nav-item">
                     <a href="{{ route('student.placement.status') }}"
-                       class="nav-link {{ request()->routeIs('student.placement.*') ? 'active' : '' }}">
+                       class="nav-link {{ request()->routeIs('student.placement.status') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-briefcase"></i>
                         <p>My Placement</p>
                         @if($placement)
@@ -182,7 +182,7 @@
 
                 <li class="nav-item">
                     <a href="{{ route('student.cv.templates.index') }}"
-                       class="nav-link {{ request()->routeIs('student.cv.templates') ? 'active' : '' }}">
+                       class="nav-link {{ request()->routeIs('student.cv.templates*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-file-download"></i>
                         <p>CV Templates</p>
                     </a>

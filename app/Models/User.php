@@ -164,6 +164,22 @@ class User extends Authenticatable
         return $this->hasMany(Placement::class, 'admin_id');
     }
 
+     /**
+     * Get the applications (system matches) for this user.
+     */
+    public function applications()
+    {
+        return $this->hasMany(Application::class, 'user_id');
+    }
+
+    /**
+     * Get the latest active application/match.
+     */
+    public function latestApplication()
+    {
+        return $this->hasOne(Application::class, 'user_id')->latestOfMany();
+    }
+
     /**
      * Get the matches for this student.
      */

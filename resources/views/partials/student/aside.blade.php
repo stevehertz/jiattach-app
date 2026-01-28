@@ -163,7 +163,7 @@
                 <li class="nav-header">DOCUMENTS</li>
 
                 <li class="nav-item">
-                    <a href="#"
+                    <a href="{{ route('student.documents.index') }}"
                        class="nav-link {{ request()->routeIs('student.documents*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-folder"></i>
                         <p>My Documents</p>

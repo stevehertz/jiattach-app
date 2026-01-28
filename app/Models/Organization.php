@@ -12,6 +12,7 @@ class Organization extends Model
     use HasFactory, SoftDeletes, LogsModelActivity;
 
     protected $fillable = [
+        'user_id',
         'name',
         'type',
         'industry',
@@ -47,5 +48,15 @@ class Organization extends Model
     public function placements()
     {
         return $this->hasMany(Placement::class);
+    }
+
+    public function owner()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function opportunities()
+    {
+        return $this->hasMany(AttachmentOpportunity::class);
     }
 }

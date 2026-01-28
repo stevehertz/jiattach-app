@@ -5,6 +5,7 @@ use App\Http\Controllers\Student\ProfileController;
 use App\Http\Controllers\Student\DashboardController;
 use App\Http\Controllers\Student\DocumentsController;
 use App\Http\Controllers\Student\PlacementController;
+use App\Http\Controllers\Student\CvTemplateController;
 use App\Http\Controllers\Student\Dashboard\ActivityController;
 use App\Http\Controllers\Student\Dashboard\NotificationController;
 
@@ -60,6 +61,18 @@ Route::middleware([
 
     // Documents
     Route::get('/documents', [DocumentsController::class, 'index'])->name('documents.index');
+
+    // CV Templates
+    Route::prefix('/cv/templates')->name('cv.templates.')->group(function () {
+
+        Route::get('/', [CvTemplateController::class, 'index'])->name('index');
+
+        Route::get('/download/{id}', [CvTemplateController::class, 'download'])->name('download');
+
+    });
+    
+
+
 
     // Mentorship routes
     Route::prefix('mentorship')->name('mentorship.')->group(function () {

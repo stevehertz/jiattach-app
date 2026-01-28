@@ -181,8 +181,8 @@
                 </li>
 
                 <li class="nav-item">
-                    <a href="#"
-                       class="nav-link {{ request()->routeIs('student.documents.templates') ? 'active' : '' }}">
+                    <a href="{{ route('student.cv.templates.index') }}"
+                       class="nav-link {{ request()->routeIs('student.cv.templates') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-file-download"></i>
                         <p>CV Templates</p>
                     </a>

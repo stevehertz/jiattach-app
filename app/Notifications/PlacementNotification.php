@@ -15,7 +15,7 @@ class PlacementNotification extends Notification
      * The placement instance.
      */
     protected $placement;
-    
+
     /**
      * The notification type.
      */

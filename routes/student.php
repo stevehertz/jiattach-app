@@ -2,13 +2,13 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Student\ProfileController;
+use App\Http\Controllers\Student\ActivityController;
 use App\Http\Controllers\Student\DashboardController;
 use App\Http\Controllers\Student\DocumentsController;
 use App\Http\Controllers\Student\PlacementController;
 use App\Http\Controllers\Student\CvTemplateController;
 use App\Http\Controllers\Student\MentorshipController;
-use App\Http\Controllers\Student\Dashboard\ActivityController;
-use App\Http\Controllers\Student\Dashboard\NotificationController;
+use App\Http\Controllers\Student\NotificationController;
 
 /*
 |--------------------------------------------------------------------------

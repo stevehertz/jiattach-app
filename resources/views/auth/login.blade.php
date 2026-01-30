@@ -1,8 +1,7 @@
 <x-layouts.guests>
 
     <div class="layout-container flex grow flex-col items-center justify-center p-4 py-12">
-        <div
-            class="w-full max-w-[480px] bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-[#cfdbe7] dark:border-gray-800 overflow-hidden">
+        <div class="w-full max-w-[480px] bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-[#cfdbe7] dark:border-gray-800 overflow-hidden">
             <div class="p-8 md:p-10 flex flex-col gap-6">
                 <div class="flex flex-col items-center text-center gap-2">
                     <div
@@ -115,7 +114,7 @@
                 <div class="text-center mt-2">
                     <p class="text-sm text-gray-500 dark:text-gray-400">
                         Don't have an account?
-                        <a class="font-bold text-primary hover:underline" href="{{ route('register') }}">Sign up</a>
+                        <a class="font-bold text-primary hover:underline" href="{{ route('register') }}" wire:navigate>Sign up</a>
                     </p>
                 </div>
             </div>

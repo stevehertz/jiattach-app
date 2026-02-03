@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -19,8 +20,6 @@ Route::middleware([
     config('jetstream.auth_session'),
     'verified',
     'redirect.by.role',
-])->group(function () {
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
+])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/dashboard', [DashboardController::class,  'index'])->name('dashboard');
 });

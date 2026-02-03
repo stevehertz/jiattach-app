@@ -1,7 +1,8 @@
 <x-layouts.guests>
 
     <div class="layout-container flex grow flex-col items-center justify-center p-4 py-12">
-        <div class="w-full max-w-[480px] bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-[#cfdbe7] dark:border-gray-800 overflow-hidden">
+        <div
+            class="w-full max-w-[480px] bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-[#cfdbe7] dark:border-gray-800 overflow-hidden">
             <div class="p-8 md:p-10 flex flex-col gap-6">
                 <div class="flex flex-col items-center text-center gap-2">
                     <div
@@ -82,7 +83,8 @@
                     <div class="h-px bg-[#e7edf3] dark:bg-gray-700 flex-1"></div>
                 </div>
                 <div class="flex gap-4">
-                    <button
+                    <!-- Google Button -->
+                    <a href="{{ route('social.redirect', 'google') }}"
                         class="flex-1 flex items-center justify-center gap-2 h-10 rounded-lg border border-[#cfdbe7] dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path
@@ -99,8 +101,10 @@
                                 fill="#EA4335"></path>
                         </svg>
                         <span class="text-[#0d141b] dark:text-white text-sm font-medium">Google</span>
-                    </button>
-                    <button
+                    </a>
+
+                    <!-- LinkedIn Button -->
+                    <a href="{{ route('social.redirect', 'linkedin') }}"
                         class="flex-1 flex items-center justify-center gap-2 h-10 rounded-lg border border-[#cfdbe7] dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                         <svg class="w-5 h-5 text-[#0077b5]" fill="currentColor" viewBox="0 0 24 24"
                             xmlns="http://www.w3.org/2000/svg">
@@ -109,12 +113,13 @@
                             </path>
                         </svg>
                         <span class="text-[#0d141b] dark:text-white text-sm font-medium">LinkedIn</span>
-                    </button>
+                    </a>
                 </div>
                 <div class="text-center mt-2">
                     <p class="text-sm text-gray-500 dark:text-gray-400">
                         Don't have an account?
-                        <a class="font-bold text-primary hover:underline" href="{{ route('register') }}" wire:navigate>Sign up</a>
+                        <a class="font-bold text-primary hover:underline" href="{{ route('register') }}"
+                            wire:navigate>Sign up</a>
                     </p>
                 </div>
             </div>

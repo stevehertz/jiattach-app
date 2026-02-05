@@ -28,7 +28,7 @@
                 </div>
                 <div class="info">
                     <a href="{{ route('admin.profile') }}" class="d-block">
-                        {{ $user->full_name }}
+                        {{ $user->full_name }}  
                     </a>
                     <small class="text-muted">
                         @if ($user->hasRole('super-admin'))

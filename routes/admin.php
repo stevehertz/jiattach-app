@@ -1,6 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\UsersController;
+use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\DashboardController;
 
 /*
@@ -21,8 +23,16 @@ Route::middleware([
     'verified',
     'redirect.by.role',
 ])->prefix('admin')->name('admin.')->group(function () {
+
     Route::get('/dashboard', [DashboardController::class,  'index'])->name('dashboard');
-    Route::get('/profile', function () {
-        return view('admin.profile');
-    })->name('profile');
+
+    Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
+
+    Route::prefix('users')->name('users.')->group(function () {
+
+        Route::get('/', [UsersController::class, 'index'])->name('index');
+
+        Route::get('/{user}/users', [UsersController::class, 'show'])->name('show');
+
+    });
 });

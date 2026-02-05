@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Route;
 
 class SidebarService
 {
-     /**
+    /**
      * Get all admin routes grouped by section
      */
     public function getAdminRoutes(): array
@@ -59,7 +59,16 @@ class SidebarService
                     'completed',
                     'virtual',
                     'in-person',
-                    'hybrid', 'analytics', 'reports', 'general', 'email', 'payment', 'notifications', 'security', 'backup'])) {
+                    'hybrid',
+                    'analytics',
+                    'reports',
+                    'general',
+                    'email',
+                    'payment',
+                    'notifications',
+                    'security',
+                    'backup'
+                ])) {
                     continue;
                 }
 
@@ -115,12 +124,12 @@ class SidebarService
         });
     }
 
-     /**
+    /**
      * Get section for resource
      */
     private function getSectionForResource(string $resource): string
     {
-        return match($resource) {
+        return match ($resource) {
             'dashboard' => 'dashboard',
             'users', 'students', 'employers', 'mentors', 'administrators', 'roles' => 'user_management',
             'opportunities', 'applications', 'exchange-programs' => 'opportunities_programs',
@@ -265,7 +274,7 @@ class SidebarService
 
         if (count($parts) >= 2) {
             $action = array_pop($parts);
-            $resource = implode(' ', $parts);
+            $resource = implode('.', $parts); // Use dot notation
 
             $actionMap = [
                 'index' => 'view',
@@ -278,7 +287,7 @@ class SidebarService
             ];
 
             $permissionAction = $actionMap[$action] ?? $action;
-            return "{$permissionAction} {$resource}";
+            return "{$resource}.{$permissionAction}";
         }
 
         return implode(' ', $parts);
@@ -292,6 +301,9 @@ class SidebarService
         $routes = $this->getAdminRoutes();
         $menu = [];
 
+        // Super admin bypass - has all permissions
+        $isSuperAdmin = $user->hasRole('super-admin');
+
         foreach ($routes as $sectionKey => $sectionData) {
             $sectionItems = [];
 
@@ -300,8 +312,8 @@ class SidebarService
                 $children = [];
 
                 foreach ($resourceRoutes as $route) {
-                    // Check if user has permission for this route
-                    if (!$user->can($route['permission'])) {
+                    // Check permission OR bypass for super-admin
+                    if (!$isSuperAdmin && !$user->can($route['permission'])) {
                         continue;
                     }
 
@@ -312,25 +324,21 @@ class SidebarService
                     }
                 }
 
-                // If there's a parent with children, create parent item
+                // Rest of your logic remains the same...
                 if ($parentRoute && !empty($children)) {
                     $sectionItems[] = [
                         'type' => 'parent',
                         'route' => $parentRoute,
                         'children' => $children,
                     ];
-                }
-                // If only children without parent (shouldn't happen)
-                elseif (!empty($children) && empty($parentRoute)) {
+                } elseif (!empty($children) && empty($parentRoute)) {
                     foreach ($children as $child) {
                         $sectionItems[] = [
                             'type' => 'single',
                             'route' => $child,
                         ];
                     }
-                }
-                // If only parent without children (like dashboard)
-                elseif ($parentRoute && empty($children)) {
+                } elseif ($parentRoute && empty($children)) {
                     $sectionItems[] = [
                         'type' => 'single',
                         'route' => $parentRoute,

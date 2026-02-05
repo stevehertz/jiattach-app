@@ -22,4 +22,7 @@ Route::middleware([
     'redirect.by.role',
 ])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class,  'index'])->name('dashboard');
+    Route::get('/profile', function () {
+        return view('admin.profile');
+    })->name('profile');
 });

@@ -608,140 +608,181 @@
         <div class="modal-backdrop fade show"></div>
     @endif
 
-
     @push('scripts')
-        <script>
-            document.addEventListener('livewire:initialized', () => {
-                // Initialize Role Distribution Chart
-                function initRoleChart() {
-                    const ctx = document.getElementById('roleChart').getContext('2d');
-                    window.roleChart = new Chart(ctx, {
-                        type: 'doughnut',
-                        data: {
-                            labels: ['Students', 'Employers', 'Mentors', 'Admins'],
-                            datasets: [{
-                                data: [
-                                    @this.roleDistribution.students,
-                                    @this.roleDistribution.employers,
-                                    @this.roleDistribution.mentors,
-                                    @this.roleDistribution.admins
-                                ],
-                                backgroundColor: [
-                                    '#28a745',
-                                    '#007bff',
-                                    '#ffc107',
-                                    '#dc3545'
-                                ],
-                                borderWidth: 1
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: {
-                                    display: false
-                                }
+    <script>
+        // Global chart instances
+        let roleChartInstance = null;
+        let registrationChartInstance = null;
+
+        function destroyCharts() {
+            if (roleChartInstance) {
+                roleChartInstance.destroy();
+                roleChartInstance = null;
+            }
+            if (registrationChartInstance) {
+                registrationChartInstance.destroy();
+                registrationChartInstance = null;
+            }
+        }
+
+        function initRoleChart() {
+            const ctx = document.getElementById('roleChart');
+            if (!ctx) return; // Guard clause if canvas doesn't exist
+            
+            // Destroy existing if any
+            if (roleChartInstance) {
+                roleChartInstance.destroy();
+            }
+
+            roleChartInstance = new Chart(ctx.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Students', 'Employers', 'Mentors', 'Admins'],
+                    datasets: [{
+                        data: [
+                            @this.roleDistribution.students,
+                            @this.roleDistribution.employers,
+                            @this.roleDistribution.mentors,
+                            @this.roleDistribution.admins
+                        ],
+                        backgroundColor: [
+                            '#28a745',
+                            '#007bff',
+                            '#ffc107',
+                            '#dc3545'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        function initRegistrationChart() {
+            const ctx = document.getElementById('registrationChart');
+            if (!ctx) return; // Guard clause if canvas doesn't exist
+            
+            // Destroy existing if any
+            if (registrationChartInstance) {
+                registrationChartInstance.destroy();
+            }
+
+            registrationChartInstance = new Chart(ctx.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: @json($monthlyRegistrations['months']),
+                    datasets: [{
+                        label: 'New Users',
+                        data: @json($monthlyRegistrations['counts']),
+                        borderColor: '#007bff',
+                        backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
                             }
                         }
-                    });
-                }
-
-                // Initialize Monthly Registration Chart
-                function initRegistrationChart() {
-                    const ctx = document.getElementById('registrationChart').getContext('2d');
-                    window.registrationChart = new Chart(ctx, {
-                        type: 'line',
-                        data: {
-                            labels: @json($monthlyRegistrations['months']),
-                            datasets: [{
-                                label: 'New Users',
-                                data: @json($monthlyRegistrations['counts']),
-                                borderColor: '#007bff',
-                                backgroundColor: 'rgba(0, 123, 255, 0.1)',
-                                fill: true,
-                                tension: 0.4,
-                                borderWidth: 2
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    ticks: {
-                                        precision: 0
-                                    }
-                                }
-                            },
-                            plugins: {
-                                legend: {
-                                    display: false
-                                }
-                            }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
                         }
-                    });
+                    }
                 }
+            });
+        }
 
-                // Initialize charts when component is loaded
+        // Initialize when Livewire loads
+        document.addEventListener('livewire:initialized', () => {
+            // Small delay to ensure DOM is ready
+            setTimeout(() => {
                 initRoleChart();
                 initRegistrationChart();
+            }, 100);
+        });
 
-                // Reinitialize charts when component updates
-                Livewire.on('refreshUsers', () => {
-                    // Destroy old charts
-                    if (window.roleChart) window.roleChart.destroy();
-                    if (window.registrationChart) window.registrationChart.destroy();
+        // Handle Livewire updates
+        Livewire.on('refreshUsers', () => {
+            setTimeout(() => {
+                initRoleChart();
+                initRegistrationChart();
+            }, 100);
+        });
 
-                    // Reinitialize with updated data
-                    initRoleChart();
-                    initRegistrationChart();
+        // Cleanup when navigating away (IMPORTANT!)
+        document.addEventListener('livewire:navigating', () => {
+            destroyCharts();
+        });
+
+        // Reinitialize when navigating back
+        document.addEventListener('livewire:navigated', () => {
+            setTimeout(() => {
+                initRoleChart();
+                initRegistrationChart();
+            }, 100);
+        });
+
+        // Toast notification handler
+        Livewire.on('show-toast', (event) => {
+            if (typeof toastr !== 'undefined') {
+                toastr[event.type](event.message, '', {
+                    closeButton: true,
+                    progressBar: true,
+                    positionClass: 'toast-top-right',
+                    timeOut: 5000
                 });
+            }
+        });
 
-                // Toast notification handler
-                Livewire.on('show-toast', (event) => {
-                    toastr[event.type](event.message, '', {
-                        closeButton: true,
-                        progressBar: true,
-                        positionClass: 'toast-top-right',
-                        timeOut: 5000
-                    });
-                });
+        // Initialize toastr
+        if (typeof toastr !== 'undefined') {
+            toastr.options = {
+                "closeButton": true,
+                "debug": false,
+                "newestOnTop": true,
+                "progressBar": true,
+                "positionClass": "toast-top-right",
+                "preventDuplicates": false,
+                "onclick": null,
+                "showDuration": "300",
+                "hideDuration": "1000",
+                "timeOut": "5000",
+                "extendedTimeOut": "1000",
+                "showEasing": "swing",
+                "hideEasing": "linear",
+                "showMethod": "fadeIn",
+                "hideMethod": "fadeOut"
+            };
+        }
 
-                // Initialize toastr
-                if (typeof toastr !== 'undefined') {
-                    toastr.options = {
-                        "closeButton": true,
-                        "debug": false,
-                        "newestOnTop": true,
-                        "progressBar": true,
-                        "positionClass": "toast-top-right",
-                        "preventDuplicates": false,
-                        "onclick": null,
-                        "showDuration": "300",
-                        "hideDuration": "1000",
-                        "timeOut": "5000",
-                        "extendedTimeOut": "1000",
-                        "showEasing": "swing",
-                        "hideEasing": "linear",
-                        "showMethod": "fadeIn",
-                        "hideMethod": "fadeOut"
-                    };
+        // Focus on confirmation input when modal opens
+        Livewire.on('showDeleteModal', () => {
+            setTimeout(() => {
+                const input = document.getElementById('deleteConfirmation');
+                if (input) {
+                    input.focus();
                 }
-
-                // Focus on confirmation input when modal opens
-                Livewire.on('showDeleteModal', () => {
-                    setTimeout(() => {
-                        const input = document.getElementById('deleteConfirmation');
-                        if (input) {
-                            input.focus();
-                        }
-                    }, 100);
-                });
-            });
-        </script>
-    @endpush
+            }, 100);
+        });
+    </script>
+@endpush
 
     @push('styles')
         <style>

@@ -178,9 +178,9 @@ class Show extends Component
         }
         
         // Check as mentee
-        // if ($user->mentorshipsAsMentee()->count() > 0) {
-        //     return true;
-        // }
+        if ($user->mentorshipsAsMentee()->count() > 0) {
+            return true;
+        }
         
         // Check exchange program applications
         // if ($user->exchangeProgramApplications()->count() > 0) {

@@ -180,6 +180,14 @@ class User extends Authenticatable
         return $this->hasOne(Application::class, 'user_id')->latestOfMany();
     }
 
+     /**
+     * Get mentorships where user is a mentee.
+     */
+    public function mentorshipsAsMentee()
+    {
+        return $this->hasMany(Mentorship::class, 'mentee_id');
+    }
+
     /**
      * Get the matches for this student.
      */

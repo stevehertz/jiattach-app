@@ -14,7 +14,8 @@
         <!-- /.navbar -->
 
         <!-- Main Sidebar Container -->
-         <livewire:admin.layouts.sidebar />
+        @include('partials.admin.sidebar')
+         {{-- <livewire:admin.layouts.sidebar /> --}}
 
         <!-- Content Wrapper. Contains page content -->
         <div class="content-wrapper">

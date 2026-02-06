@@ -11,6 +11,9 @@ class SidebarService
     /**
      * Get all admin routes grouped by section
      */
+    /**
+     * Get all admin routes grouped by section
+     */
     public function getAdminRoutes(): array
     {
         return Cache::remember('admin.sidebar.routes', 3600, function () {
@@ -30,7 +33,7 @@ class SidebarService
                     continue;
                 }
 
-                // Parse route parts
+                // Parse route parts - handle multi-level routes like administrators.super.admins
                 $parts = explode('.', $name);
                 array_shift($parts); // Remove 'admin' prefix
 
@@ -39,14 +42,40 @@ class SidebarService
                     continue;
                 }
 
-                // Get the main resource (first part)
-                $resource = $parts[0];
-                $action = count($parts) > 1 ? end($parts) : 'index';
+                // Handle nested routes like administrators.super.admins
+                // Last part is action, rest is resource
+                $action = end($parts);
+                $resourceParts = array_slice($parts, 0, -1);
 
-                // Skip non-standard actions
-                if (!in_array($action, [
+                // If only one part, it's both resource and action (like dashboard.index)
+                if (empty($resourceParts)) {
+                    $resource = $parts[0];
+                    $action = $parts[0]; // or keep as 'index' if that's your convention
+                } else {
+                    $resource = implode('-', $resourceParts); // administrators-super for super-admins
+                }
+
+                // Map common actions - handle dash variations
+                $actionMap = [
+                    'index' => 'index',
+                    'create' => 'create',
+                    'store' => 'create',
+                    'show' => 'view',
+                    'edit' => 'edit',
+                    'update' => 'edit',
+                    'destroy' => 'delete',
+                    'admins' => 'super-admins', // Handle super.admins route
+                ];
+
+                $normalizedAction = $actionMap[$action] ?? $action;
+
+                // Skip non-standard actions (customize this list as needed)
+                $standardActions = [
                     'index',
                     'create',
+                    'view',
+                    'edit',
+                    'delete',
                     'active',
                     'pending',
                     'verified',
@@ -67,8 +96,11 @@ class SidebarService
                     'payment',
                     'notifications',
                     'security',
-                    'backup'
-                ])) {
+                    'backup',
+                    'super-admins'
+                ];
+
+                if (!in_array($normalizedAction, $standardActions)) {
                     continue;
                 }
 
@@ -76,30 +108,30 @@ class SidebarService
                 $section = $this->getSectionForResource($resource);
 
                 // Determine display name
-                $displayName = $this->getDisplayName($resource, $action);
+                $displayName = $this->getDisplayName($resource, $normalizedAction);
 
                 // Determine icon
-                $icon = $this->getIconForResource($resource, $action);
+                $icon = $this->getIconForResource($resource, $normalizedAction);
 
                 // Determine if it's a parent or child
-                $isParent = $this->isParentRoute($resource, $action);
+                $isParent = $this->isParentRoute($resource, $normalizedAction);
 
-                // Get permission name
-                $permissionName = $this->routeToPermission($name);
+                // Get permission name - use original resource format
+                $permissionName = $this->routeToPermission($name, $resource, $normalizedAction);
 
                 $adminRoutes[$section][$resource][] = [
                     'name' => $name,
                     'display_name' => $displayName,
                     'icon' => $icon,
                     'is_parent' => $isParent,
-                    'action' => $action,
+                    'action' => $normalizedAction,
                     'resource' => $resource,
                     'permission' => $permissionName,
                     'uri' => $route->uri(),
                 ];
             }
 
-            // Sort sections
+            // Sort sections (keep your existing code)
             $sections = [
                 'dashboard' => 'Dashboard',
                 'user_management' => 'USER MANAGEMENT',
@@ -129,7 +161,10 @@ class SidebarService
      */
     private function getSectionForResource(string $resource): string
     {
-        return match ($resource) {
+        // Handle compound resources like administrators-super
+        $baseResource = explode('-', $resource)[0];
+
+        return match ($baseResource) {
             'dashboard' => 'dashboard',
             'users', 'students', 'employers', 'mentors', 'administrators', 'roles' => 'user_management',
             'opportunities', 'applications', 'exchange-programs' => 'opportunities_programs',
@@ -245,10 +280,11 @@ class SidebarService
 
         // These resources have sub-menus
         $parentResources = [
+            'users',
             'students',
             'employers',
             'mentors',
-            'administrators',
+            'administrators', // This should match your resource name
             'roles',
             'opportunities',
             'applications',
@@ -264,33 +300,26 @@ class SidebarService
     /**
      * Convert route name to permission name (matches your middleware)
      */
-    private function routeToPermission(string $routeName): string
+    /**
+     * Convert route name to permission name
+     */
+    private function routeToPermission(string $routeName, string $resource, string $action): string
     {
-        $parts = explode('.', $routeName);
+        $actionMap = [
+            'index' => 'view',
+            'view' => 'view',
+            'create' => 'create',
+            'edit' => 'edit',
+            'delete' => 'delete',
+            'super-admins' => 'view', // or whatever permission you use
+        ];
 
-        if ($parts[0] === 'admin') {
-            array_shift($parts);
-        }
+        $permissionAction = $actionMap[$action] ?? $action;
 
-        if (count($parts) >= 2) {
-            $action = array_pop($parts);
-            $resource = implode('.', $parts); // Use dot notation
+        // Convert resource back to space format for permission
+        $resourceForPermission = str_replace('-', ' ', $resource);
 
-            $actionMap = [
-                'index' => 'view',
-                'show' => 'view',
-                'create' => 'create',
-                'store' => 'create',
-                'edit' => 'edit',
-                'update' => 'edit',
-                'destroy' => 'delete',
-            ];
-
-            $permissionAction = $actionMap[$action] ?? $action;
-            return "{$resource}.{$permissionAction}";
-        }
-
-        return implode(' ', $parts);
+        return "{$permissionAction} {$resourceForPermission}";
     }
 
     /**

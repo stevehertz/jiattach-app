@@ -1,4 +1,15 @@
-@props(['user'])
+@props(['user' => null])
+
+@php
+    // Helper function to check if a route is active
+    $isRouteActive = function($routes) {
+        if (is_string($routes)) {
+            $routes = [$routes];
+        }
+        return request()->routeIs(...$routes);
+    };
+@endphp
+
 <!-- Main Sidebar Container -->
 <aside class="main-sidebar sidebar-light-success elevation-4">
     <!-- Brand Logo -->
@@ -16,6 +27,7 @@
         <div class="user-panel mt-3 pb-3 mb-3 d-flex">
             <div class="image">
                  @php
+                    $user = $user ?? auth()->user();
                     $initials = getInitials($user->full_name);
                     $colors = ['primary', 'success', 'info', 'warning', 'danger', 'secondary'];
                     $color = $colors[crc32($user->email) % count($colors)];
@@ -26,7 +38,7 @@
                 </div>
             </div>
             <div class="info">
-                <a href="#" class="d-block">Alexander Pierce</a>
+                <a href="#" class="d-block">{{ $user->full_name ?? 'User' }}</a>
             </div>
         </div>
 
@@ -49,78 +61,41 @@
                 <!-- Add icons to the links using the .nav-icon class
                with font-awesome or any other icon font library -->
                 <li class="nav-item">
-                    <a href="{{ route('admin.dashboard') }}" class="nav-link active">
+                    <a href="{{ route('admin.dashboard') }}" class="nav-link @if($isRouteActive('admin.dashboard')) active @endif">
                         <i class="nav-icon fas fa-tachometer-alt"></i>
                         <p>
                             Dashboard
                         </p>
                     </a>
                 </li>
+                <li class="nav-header">USER MANAGEMENT</li>
                 <li class="nav-item">
-                    <a href="pages/widgets.html" class="nav-link">
-                        <i class="nav-icon fas fa-th"></i>
+                    <a href="{{ route('admin.users.index') }}" class="nav-link @if($isRouteActive('admin.users.*')) active @endif">
+                        <i class="nav-icon fas fa-users"></i>
                         <p>
-                            Widgets
-                            <span class="right badge badge-danger">New</span>
+                            Users
                         </p>
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a href="#" class="nav-link">
+                <li class="nav-item @if($isRouteActive('admin.administrators.*')) menu-open @endif">
+                    <a href="#" class="nav-link @if($isRouteActive('admin.administrators.*')) active @endif">
                         <i class="nav-icon fas fa-copy"></i>
                         <p>
-                            Layout Options
+                            Administrators
                             <i class="fas fa-angle-left right"></i>
-                            <span class="badge badge-info right">6</span>
                         </p>
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
-                            <a href="pages/layout/top-nav.html" class="nav-link">
+                            <a href="{{ route('admin.administrators.index') }}" class="nav-link @if($isRouteActive('admin.administrators.index')) active @endif">
                                 <i class="far fa-circle nav-icon"></i>
-                                <p>Top Navigation</p>
+                                <p>Administrators</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="pages/layout/top-nav-sidebar.html" class="nav-link">
+                            <a href="{{ route('admin.administrators.create') }}" class="nav-link @if($isRouteActive('admin.administrators.create')) active @endif">
                                 <i class="far fa-circle nav-icon"></i>
-                                <p>Top Navigation + Sidebar</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="pages/layout/boxed.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Boxed</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="pages/layout/fixed-sidebar.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Fixed Sidebar</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="pages/layout/fixed-sidebar-custom.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Fixed Sidebar <small>+ Custom Area</small></p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="pages/layout/fixed-topnav.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Fixed Navbar</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="pages/layout/fixed-footer.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Fixed Footer</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="pages/layout/collapsed-sidebar.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Collapsed Sidebar</p>
+                                <p>New Administrator</p>
                             </a>
                         </li>
                     </ul>

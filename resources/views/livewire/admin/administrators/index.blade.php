@@ -462,8 +462,7 @@
                         <button type="button" class="btn btn-secondary" wire:click="closeDeleteModal">
                             <i class="fas fa-times"></i> Cancel
                         </button>
-                        <button type="button" id="confirmDeleteBtnIndex" class="btn btn-danger"
-                                onclick="if(document.getElementById('confirmEmailIndex').value === '{{ optional($userToDelete)->email }}') { Livewire.emit('confirmDelete') } else { alert('Please type the email address correctly to confirm deletion.'); }">
+                        <button type="button" id="confirmDeleteBtnIndex" class="btn btn-danger" disabled>
                             <i class="fas fa-trash"></i> Delete Administrator
                         </button>
                     </div>
@@ -474,16 +473,55 @@
 
     @push('scripts')
         <script>
-            document.addEventListener('livewire:load', function () {
+            function setupDeleteConfirmIndex() {
                 const input = document.getElementById('confirmEmailIndex');
                 const btn = document.getElementById('confirmDeleteBtnIndex');
-                if (input && btn) {
-                    btn.disabled = true;
-                    input.addEventListener('input', function () {
-                        btn.disabled = input.value !== input.getAttribute('placeholder').replace('Type: ', '').trim();
-                    });
+                if (!input || !btn) return;
+
+                // Extract expected email from placeholder - more robust
+                let placeholder = input.getAttribute('placeholder') || '';
+                let expected = placeholder.replace('Type: ', '').trim();
+                
+                console.log('Expected email:', expected);
+                console.log('Input value:', input.value);
+                
+                // Update button state - normalize comparison
+                const updateButtonState = () => {
+                    const isMatch = input.value.trim().toLowerCase() === expected.toLowerCase();
+                    console.log('Is match:', isMatch);
+                    btn.disabled = !isMatch;
+                };
+                
+                updateButtonState();
+                
+                // Add direct input listener (no cloning issues)
+                input.addEventListener('input', updateButtonState);
+                
+                // Add click listener to delete button
+                btn.onclick = function(e) {
+                    e.preventDefault();
+                    const isMatch = input.value.trim().toLowerCase() === expected.toLowerCase();
+                    if (isMatch) {
+                        @this.call('confirmDelete', input.value);
+                    } else {
+                        alert('Please type the email address correctly to confirm deletion.');
+                    }
+                };
+            }
+
+            document.addEventListener('livewire:load', function () {
+                setTimeout(() => setupDeleteConfirmIndex(), 100);
+            });
+            
+            // Also run on modal open - watch for when modal appears
+            const observer = new MutationObserver(() => {
+                const modal = document.querySelector('.modal');
+                if (modal && modal.style.display === 'block') {
+                    setupDeleteConfirmIndex();
                 }
             });
+            
+            observer.observe(document.body, { attributes: true, subtree: true });
         </script>
     @endpush
 

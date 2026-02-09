@@ -398,8 +398,14 @@ class Show extends Component
         $this->showDeleteModal = false;
     }
 
-    public function deleteAdministrator()
+    public function deleteAdministrator($confirmedEmail = '')
     {
+        // Server-side confirmation: verify the email matches
+        if ($confirmedEmail !== $this->administrator->email) {
+            $this->dispatch('notify', ['type' => 'error', 'message' => 'Email does not match. Deletion cancelled.']);
+            return;
+        }
+
         // Prevent deleting the last admin
         $adminCount = User::role(['super-admin', 'admin'])->count();
         if ($adminCount <= 1) {

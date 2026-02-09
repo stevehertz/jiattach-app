@@ -100,37 +100,37 @@
                         </li>
                     </ul>
                 </li>
-                <li class="nav-item">
-                    <a href="#" class="nav-link">
-                        <i class="nav-icon fas fa-chart-pie"></i>
+                <li class="nav-item @if($isRouteActive('admin.students.*')) menu-open @endif">
+                    <a href="#" class="nav-link @if($isRouteActive('admin.students.*')) active @endif">
+                        <i class="nav-icon fas fa-user-friends"></i>
                         <p>
-                            Charts
+                            Students
                             <i class="right fas fa-angle-left"></i>
                         </p>
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
-                            <a href="pages/charts/chartjs.html" class="nav-link">
+                            <a href="{{ route('admin.students.index') }}" class="nav-link @if($isRouteActive('admin.students.index')) active @endif">
                                 <i class="far fa-circle nav-icon"></i>
-                                <p>ChartJS</p>
+                                <p>Students</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="pages/charts/flot.html" class="nav-link">
+                            <a href="{{ route('admin.students.active') }}" class="nav-link @if($isRouteActive('admin.students.active')) active @endif">
                                 <i class="far fa-circle nav-icon"></i>
-                                <p>Flot</p>
+                                <p>Active Students</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="pages/charts/inline.html" class="nav-link">
+                            <a href="{{ route('admin.students.seeking') }}" class="nav-link @if($isRouteActive('admin.students.seeking')) active @endif">
                                 <i class="far fa-circle nav-icon"></i>
-                                <p>Inline</p>
+                                <p>Seeking Attachment</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="pages/charts/uplot.html" class="nav-link">
+                            <a href="{{ route('admin.students.on-attachment') }}" class="nav-link @if($isRouteActive('admin.students.on-attachment')) active @endif">
                                 <i class="far fa-circle nav-icon"></i>
-                                <p>uPlot</p>
+                                <p>On Attachment</p>
                             </a>
                         </li>
                     </ul>

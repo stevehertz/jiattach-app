@@ -1,10 +1,11 @@
 <?php
 
-use App\Http\Controllers\Admin\AdministratorsController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\UsersController;
 use App\Http\Controllers\Admin\ProfileController;
+use App\Http\Controllers\Admin\StudentsController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\AdministratorsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -62,7 +63,7 @@ Route::middleware([
         Route::get('/on-attachment', [StudentsController::class, 'on_attachment'])->name('on-attachment');
 
         // Individual student view
-        Route::get('/{student}', [StudentsController::class, 'show'])->name('show');
+        Route::get('/{id}', [StudentsController::class, 'show'])->name('show');
     });
 
     // Opportunities Management Routes
@@ -117,7 +118,7 @@ Route::middleware([
     // Reports & Analytics Routes
     Route::prefix('reports')->name('reports.')->group(function () {
         // Analytics Dashboard
-        Route::view('/analytics-dashboard', 'admin.reports.analytics-dashboard')->name('analytics-dashboard');  
+        Route::view('/analytics-dashboard', 'admin.reports.analytics-dashboard')->name('analytics-dashboard');
 
         // Placement Reports
         Route::view('/placement-reports', 'admin.reports.placement-reports')->name('placement-reports');

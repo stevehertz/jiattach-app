@@ -126,10 +126,16 @@ class Index extends Component
         $this->userToDelete = null;
     }
 
-    public function confirmDelete()
+    public function confirmDelete($confirmedEmail = '')
     {
         if (! $this->userToDeleteId) {
             $this->dispatch('notify', ['type' => 'error', 'message' => 'No administrator selected.']);
+            return;
+        }
+
+        // Server-side confirmation: verify the email matches
+        if ($confirmedEmail !== $this->userToDelete->email) {
+            $this->dispatch('notify', ['type' => 'error', 'message' => 'Email does not match. Deletion cancelled.']);
             return;
         }
 

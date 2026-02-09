@@ -1,10 +1,14 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Livewire\Admin\Students\Active;
+use App\Livewire\Admin\Students\Seeking;
+use App\Livewire\Admin\Students\OnAttachment;
 use App\Http\Controllers\Admin\UsersController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\StudentsController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\OpportunityController;
 use App\Http\Controllers\Admin\AdministratorsController;
 
 /*
@@ -56,14 +60,14 @@ Route::middleware([
 
         Route::get('/', [StudentsController::class, 'index'])->name('index');
 
-        Route::get('/active', [StudentsController::class, 'active'])->name('active');
+        Route::get('/active', Active::class)->name('active');
 
-        Route::get('/seeking', [StudentsController::class, 'seeking'])->name('seeking');
+        Route::get('/seeking', Seeking::class)->name('seeking');
 
-        Route::get('/on-attachment', [StudentsController::class, 'on_attachment'])->name('on-attachment');
+        Route::get('/on-attachment', OnAttachment::class)->name('on-attachment');
 
         // Individual student view
-        Route::get('/{id}', [StudentsController::class, 'show'])->name('show');
+        Route::get('/{student}', [StudentsController::class, 'show'])->name('show');
     });
 
     // Opportunities Management Routes

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Models\User;
 use App\Http\Controllers\Controller;
 
 class StudentsController extends Controller
@@ -22,15 +23,15 @@ class StudentsController extends Controller
         return view('admin.students.seeking');
     }
 
-     public function on_attachment()
+    public function on_attachment()
     {
         return view('admin.students.on-attachment');
     }
 
-     public function show($id)
+    public function show(User $student)
     {
-        return view('admin.students.show');
+        return view('admin.students.show', [
+            'student' => $student
+        ]);
     }
-
-
 }

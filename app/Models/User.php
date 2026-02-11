@@ -110,8 +110,8 @@ class User extends Authenticatable
     public function hasDisability(): bool
     {
         return $this->disability_status &&
-               $this->disability_status !== 'none' &&
-               $this->disability_status !== 'prefer_not_to_say';
+            $this->disability_status !== 'none' &&
+            $this->disability_status !== 'prefer_not_to_say';
     }
 
     /**
@@ -164,7 +164,7 @@ class User extends Authenticatable
         return $this->hasMany(Placement::class, 'admin_id');
     }
 
-     /**
+    /**
      * Get the applications (system matches) for this user.
      */
     public function applications()
@@ -180,7 +180,7 @@ class User extends Authenticatable
         return $this->hasOne(Application::class, 'user_id')->latestOfMany();
     }
 
-     /**
+    /**
      * Get mentorships where user is a mentee.
      */
     public function mentorshipsAsMentee()
@@ -256,7 +256,7 @@ class User extends Authenticatable
         // Check if there's a pending accepted match
         $hasAcceptedMatch = $this->matches()
             ->where('status', 'accepted')
-            ->whereHas('placement', function($query) {
+            ->whereHas('placement', function ($query) {
                 $query->whereIn('status', ['pending', 'processing', 'placed']);
             })
             ->exists();
@@ -312,5 +312,27 @@ class User extends Authenticatable
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
+    }
+
+    /**
+     * Determine the landing page based on role.
+     */
+    public function getDashboardRoute(): string
+    {
+        return match (true) {
+            $this->hasRole('student') => 'student.dashboard',
+            default => 'admin.dashboard',
+        };
+    }
+
+    /**
+     * Check if the user's specific profile (Student or Org) is complete.
+     */
+    public function isProfileComplete(): bool
+    {
+        if ($this->hasRole('student')) {
+            return $this->studentProfile?->profile_completeness === 100;
+        }
+        return true;
     }
 }

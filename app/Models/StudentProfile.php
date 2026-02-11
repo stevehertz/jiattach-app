@@ -723,4 +723,25 @@ class StudentProfile extends Model
 
         return $missing;
     }
+
+    /**
+     * Resets attachment status if a placement is cancelled.
+     */
+    public function resetStatus(): void
+    {
+        $this->update([
+            'attachment_status' => 'seeking',
+            'attachment_start_date' => null,
+            'attachment_end_date' => null,
+        ]);
+    }
+
+    /**
+     * Helper to get the actual file path for documents.
+     */
+    public function getDocumentUrl(string $type): ?string
+    {
+        $field = $type . '_url';
+        return $this->$field ? asset('storage/' . $this->$field) : null;
+    }
 }

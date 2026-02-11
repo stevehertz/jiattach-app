@@ -8,8 +8,11 @@ use App\Http\Controllers\Admin\UsersController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\StudentsController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\MentorshipController;
 use App\Http\Controllers\Admin\OpportunityController;
 use App\Http\Controllers\Admin\AdministratorsController;
+use App\Livewire\Admin\Opportunities\Active as OpportunitiesActive;
+use App\Livewire\Admin\Opportunities\Pending;
 
 /*
 |--------------------------------------------------------------------------
@@ -77,10 +80,10 @@ Route::middleware([
         Route::get('/', [OpportunityController::class, 'index'])->name('index');
 
         // Active Opportunities
-        Route::get('/active', [OpportunityController::class, 'active'])->name('active');
+        Route::get('/active', OpportunitiesActive::class)->name('active');
 
         // Pending Approval Opportunities
-        Route::get('/pending', [OpportunityController::class, 'pending'])->name('pending');
+        Route::get('/pending', Pending::class)->name('pending');
 
         // Create New Opportunity
         Route::get('/create', [OpportunityController::class, 'create'])->name('create');

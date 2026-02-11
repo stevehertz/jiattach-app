@@ -135,61 +135,38 @@
                         </li>
                     </ul>
                 </li>
-                <li class="nav-item">
-                    <a href="#" class="nav-link">
+                <li class="nav-header">OPPORTUNITIES MANAGEMENT</li>
+                <li class="nav-item @if($isRouteActive('admin.opportunities.*')) menu-open @endif">
+                    <a href="#" class="nav-link @if($isRouteActive('admin.opportunities.*')) active @endif">
                         <i class="nav-icon fas fa-tree"></i>
                         <p>
-                            UI Elements
+                            Opportunities
                             <i class="fas fa-angle-left right"></i>
                         </p>
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
-                            <a href="pages/UI/general.html" class="nav-link">
+                            <a href="{{ route('admin.opportunities.index') }}" class="nav-link @if($isRouteActive('admin.opportunities.index')) active @endif">
                                 <i class="far fa-circle nav-icon"></i>
-                                <p>General</p>
+                                <p>Opportunities List</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="pages/UI/icons.html" class="nav-link">
+                            <a href="{{ route('admin.opportunities.active') }}" class="nav-link @if($isRouteActive('admin.opportunities.active')) active @endif">
                                 <i class="far fa-circle nav-icon"></i>
-                                <p>Icons</p>
+                                <p>Active Opportunities</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="pages/UI/buttons.html" class="nav-link">
+                            <a href="{{ route('admin.opportunities.pending') }}" class="nav-link @if($isRouteActive('admin.opportunities.pending')) active @endif">
                                 <i class="far fa-circle nav-icon"></i>
-                                <p>Buttons</p>
+                                <p>Pending Opportunities</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="pages/UI/sliders.html" class="nav-link">
+                            <a href="{{ route('admin.opportunities.create') }}" class="nav-link @if($isRouteActive('admin.opportunities.create')) active @endif">
                                 <i class="far fa-circle nav-icon"></i>
-                                <p>Sliders</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="pages/UI/modals.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Modals & Alerts</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="pages/UI/navbar.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Navbar & Tabs</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="pages/UI/timeline.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Timeline</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="pages/UI/ribbons.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Ribbons</p>
+                                <p>Create Opportunity</p>
                             </a>
                         </li>
                     </ul>

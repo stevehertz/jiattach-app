@@ -20,6 +20,7 @@ class Placement extends Model
         'student_id',
         'admin_id',
         'organization_id',
+        'attachment_opportunity_id',
         'status',
         'notes',
         'start_date',
@@ -87,6 +88,14 @@ class Placement extends Model
         return $this->hasOne(Organization::class, 'id', 'organization_id');
     }
 
+    /**
+     * Get the attachment opportunity for this placement.
+     */
+    public function opportunity()
+    {
+        return $this->belongsTo(AttachmentOpportunity::class, 'attachment_opportunity_id');
+    }
+
     // Also add these accessor methods to Placement model:
     public function getStatusLabelAttribute()
     {
@@ -118,5 +127,49 @@ class Placement extends Model
         }
 
         return $this->start_date->diffInMonths($this->end_date);
+    }
+
+    /**
+     * Calculate the percentage of completion for the placement.
+     */
+    public function getProgressPercentageAttribute(): int
+    {
+        if (!$this->start_date || !$this->end_date || $this->status !== 'placed') {
+            return 0;
+        }
+
+        $totalDays = $this->start_date->diffInDays($this->end_date);
+        $daysElapsed = $this->start_date->diffInDays(now());
+
+        if (now() < $this->start_date) return 0;
+        if (now() > $this->end_date) return 100;
+
+        return (int) round(($daysElapsed / max(1, $totalDays)) * 100);
+    }
+
+    /**
+     * Calculate remaining days until the end of the attachment.
+     */
+    public function getRemainingDaysAttribute(): int
+    {
+        if (!$this->end_date || now() > $this->end_date) {
+            return 0;
+        }
+        return (int) now()->diffInDays($this->end_date);
+    }
+
+    /**
+     * Transition the placement to a new status with logging.
+     */
+    public function transitionTo(string $newStatus, ?string $note = null): bool
+    {
+        $this->status = $newStatus;
+        if ($note) $this->notes = $note;
+
+        if ($newStatus === 'placed') {
+            $this->placement_confirmed_at = now();
+        }
+
+        return $this->save();
     }
 }

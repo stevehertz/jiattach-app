@@ -6,6 +6,7 @@ use App\Traits\LogsModelActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Organization extends Model
 {
@@ -42,6 +43,12 @@ class Organization extends Model
         'verified_at' => 'datetime',
     ];
 
+    public function user() : BelongsTo
+    {
+        return $this->belongsTo(User::class);
+        
+    }
+
     /**
      * Get the placements for this organization.
      */
@@ -58,5 +65,25 @@ class Organization extends Model
     public function opportunities()
     {
         return $this->hasMany(AttachmentOpportunity::class);
+    }
+
+    /**
+     * Calculate remaining slots for the current intake.
+     */
+    public function getAvailableSlotsAttribute(): int
+    {
+        $activePlacementsCount = $this->placements()
+            ->where('status', 'placed')
+            ->count();
+
+        return max(0, $this->max_students_per_intake - $activePlacementsCount);
+    }
+
+    /**
+     * Check if the organization can host more students.
+     */
+    public function hasCapacity(): bool
+    {
+        return $this->available_slots > 0;
     }
 }

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Notification extends Model
 {
     use HasFactory;
-    
+
     /**
      * The "type" of the primary key ID.
      *
@@ -179,4 +179,5 @@ class Notification extends Model
 
         return $types[$this->type] ?? class_basename($this->type);
     }
+
 }

@@ -1,618 +1,149 @@
 @props(['user' => null])
 
 @php
-    // Helper function to check if a route is active
-    $isRouteActive = function($routes) {
-        if (is_string($routes)) {
-            $routes = [$routes];
-        }
-        return request()->routeIs(...$routes);
-    };
+    // Optimized helper for active routes
+    $isRouteActive = fn($routes) => request()->routeIs(is_array($routes) ? $routes : [$routes]);
+    
+    $user = $user ?? auth()->user();
+    $initials = getInitials($user->full_name ?? 'User');
+    $colors = ['primary', 'success', 'info', 'warning', 'danger', 'secondary'];
+    $color = $colors[crc32($user->email ?? 'guest') % count($colors)];
 @endphp
 
-<!-- Main Sidebar Container -->
 <aside class="main-sidebar sidebar-light-success elevation-4">
-    <!-- Brand Logo -->
     <a href="{{ route('admin.dashboard') }}" class="brand-link bg-success">
-        <img src="{{ asset('img/logo-icon.png') }}" alt="{{ config('app.name') }}" class="brand-image img-circle elevation-3"
-            style="opacity: .8">
-        <span class="brand-text font-weight-light">
-            {{ config('app.name') }}
-        </span>
+        <img src="{{ asset('img/logo-icon.png') }}" alt="{{ config('app.name') }}" class="brand-image img-circle elevation-3" style="opacity: .8">
+        <span class="brand-text font-weight-light">{{ config('app.name') }}</span>
     </a>
 
-    <!-- Sidebar -->
     <div class="sidebar">
-        <!-- Sidebar user panel (optional) -->
         <div class="user-panel mt-3 pb-3 mb-3 d-flex">
             <div class="image">
-                 @php
-                    $user = $user ?? auth()->user();
-                    $initials = getInitials($user->full_name);
-                    $colors = ['primary', 'success', 'info', 'warning', 'danger', 'secondary'];
-                    $color = $colors[crc32($user->email) % count($colors)];
-                @endphp
                 <div class="avatar-initials bg-{{ $color }} img-circle elevation-2"
                     style="width: 45px; height: 45px; line-height: 45px; text-align: center; color: white; font-weight: bold; font-size: 16px;">
                     {{ $initials }}
                 </div>
             </div>
             <div class="info">
-                <a href="#" class="d-block">{{ $user->full_name ?? 'User' }}</a>
+                <a href="#" class="d-block">{{ $user->full_name ?? 'Administrator' }}</a>
             </div>
         </div>
 
-        <!-- SidebarSearch Form -->
         <div class="form-inline">
             <div class="input-group" data-widget="sidebar-search">
-                <input class="form-control form-control-sidebar" type="search" placeholder="Search"
-                    aria-label="Search">
-                <div class="input-group-appen   d">
-                    <button class="btn btn-sidebar">
-                        <i class="fas fa-search fa-fw"></i>
-                    </button>
+                <input class="form-control form-control-sidebar" type="search" placeholder="Search menu...">
+                <div class="input-group-append">
+                    <button class="btn btn-sidebar"><i class="fas fa-search fa-fw"></i></button>
                 </div>
             </div>
         </div>
 
-        <!-- Sidebar Menu -->
         <nav class="mt-2">
-            <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
-                <!-- Add icons to the links using the .nav-icon class
-               with font-awesome or any other icon font library -->
+            <ul class="nav nav-pills nav-sidebar flex-column nav-child-indent" data-widget="treeview" role="menu" data-accordion="false">
+                
                 <li class="nav-item">
-                    <a href="{{ route('admin.dashboard') }}" class="nav-link @if($isRouteActive('admin.dashboard')) active @endif">
+                    <a href="{{ route('admin.dashboard') }}" class="nav-link {{ $isRouteActive('admin.dashboard') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-tachometer-alt"></i>
-                        <p>
-                            Dashboard
-                        </p>
+                        <p>Dashboard</p>
                     </a>
                 </li>
+
                 <li class="nav-header">USER MANAGEMENT</li>
+                
                 <li class="nav-item">
-                    <a href="{{ route('admin.users.index') }}" class="nav-link @if($isRouteActive('admin.users.*')) active @endif">
-                        <i class="nav-icon fas fa-users"></i>
-                        <p>
-                            Users
-                        </p>
+                    <a href="{{ route('admin.users.index') }}" class="nav-link {{ $isRouteActive('admin.users.*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-users-cog"></i>
+                        <p>All System Users</p>
                     </a>
                 </li>
-                <li class="nav-item @if($isRouteActive('admin.administrators.*')) menu-open @endif">
-                    <a href="#" class="nav-link @if($isRouteActive('admin.administrators.*')) active @endif">
-                        <i class="nav-icon fas fa-copy"></i>
-                        <p>
-                            Administrators
-                            <i class="fas fa-angle-left right"></i>
-                        </p>
+
+                <li class="nav-item {{ $isRouteActive('admin.administrators.*') ? 'menu-open' : '' }}">
+                    <a href="#" class="nav-link {{ $isRouteActive('admin.administrators.*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-user-shield"></i>
+                        <p>Administrators <i class="fas fa-angle-left right"></i></p>
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
-                            <a href="{{ route('admin.administrators.index') }}" class="nav-link @if($isRouteActive('admin.administrators.index')) active @endif">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Administrators</p>
+                            <a href="{{ route('admin.administrators.index') }}" class="nav-link {{ $isRouteActive('admin.administrators.index') ? 'active' : '' }}">
+                                <i class="far {{ $isRouteActive('admin.administrators.index') ? 'fa-dot-circle' : 'fa-circle' }} nav-icon"></i>
+                                <p>Manage Staff</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="{{ route('admin.administrators.create') }}" class="nav-link @if($isRouteActive('admin.administrators.create')) active @endif">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>New Administrator</p>
+                            <a href="{{ route('admin.administrators.create') }}" class="nav-link {{ $isRouteActive('admin.administrators.create') ? 'active' : '' }}">
+                                <i class="far {{ $isRouteActive('admin.administrators.create') ? 'fa-dot-circle' : 'fa-circle' }} nav-icon"></i>
+                                <p>Add New Staff</p>
                             </a>
                         </li>
                     </ul>
                 </li>
-                <li class="nav-item @if($isRouteActive('admin.students.*')) menu-open @endif">
-                    <a href="#" class="nav-link @if($isRouteActive('admin.students.*')) active @endif">
-                        <i class="nav-icon fas fa-user-friends"></i>
-                        <p>
-                            Students
-                            <i class="right fas fa-angle-left"></i>
-                        </p>
+
+                <li class="nav-item {{ $isRouteActive('admin.students.*') ? 'menu-open' : '' }}">
+                    <a href="#" class="nav-link {{ $isRouteActive('admin.students.*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-user-graduate"></i>
+                        <p>Student Tracker <i class="right fas fa-angle-left"></i></p>
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
-                            <a href="{{ route('admin.students.index') }}" class="nav-link @if($isRouteActive('admin.students.index')) active @endif">
+                            <a href="{{ route('admin.students.index') }}" class="nav-link {{ $isRouteActive('admin.students.index') ? 'active' : '' }}">
                                 <i class="far fa-circle nav-icon"></i>
-                                <p>Students</p>
+                                <p>All Students</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="{{ route('admin.students.active') }}" class="nav-link @if($isRouteActive('admin.students.active')) active @endif">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Active Students</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('admin.students.seeking') }}" class="nav-link @if($isRouteActive('admin.students.seeking')) active @endif">
-                                <i class="far fa-circle nav-icon"></i>
+                            <a href="{{ route('admin.students.seeking') }}" class="nav-link {{ $isRouteActive('admin.students.seeking') ? 'active' : '' }}">
+                                <i class="far fa-circle nav-icon text-warning"></i>
                                 <p>Seeking Attachment</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="{{ route('admin.students.on-attachment') }}" class="nav-link @if($isRouteActive('admin.students.on-attachment')) active @endif">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>On Attachment</p>
+                            <a href="{{ route('admin.students.on-attachment') }}" class="nav-link {{ $isRouteActive('admin.students.on-attachment') ? 'active' : '' }}">
+                                <i class="far fa-circle nav-icon text-success"></i>
+                                <p>Placed Students</p>
                             </a>
                         </li>
                     </ul>
                 </li>
-                <li class="nav-header">OPPORTUNITIES MANAGEMENT</li>
-                <li class="nav-item @if($isRouteActive('admin.opportunities.*')) menu-open @endif">
-                    <a href="#" class="nav-link @if($isRouteActive('admin.opportunities.*')) active @endif">
-                        <i class="nav-icon fas fa-tree"></i>
-                        <p>
-                            Opportunities
-                            <i class="fas fa-angle-left right"></i>
-                        </p>
+
+                <li class="nav-header">OPPORTUNITIES</li>
+                <li class="nav-item {{ $isRouteActive('admin.opportunities.*') ? 'menu-open' : '' }}">
+                    <a href="#" class="nav-link {{ $isRouteActive('admin.opportunities.*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-briefcase"></i>
+                        <p>Opportunities <i class="fas fa-angle-left right"></i></p>
                     </a>
                     <ul class="nav nav-treeview">
                         <li class="nav-item">
-                            <a href="{{ route('admin.opportunities.index') }}" class="nav-link @if($isRouteActive('admin.opportunities.index')) active @endif">
+                            <a href="{{ route('admin.opportunities.index') }}" class="nav-link {{ $isRouteActive('admin.opportunities.index') ? 'active' : '' }}">
                                 <i class="far fa-circle nav-icon"></i>
-                                <p>Opportunities List</p>
+                                <p>View All</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="{{ route('admin.opportunities.active') }}" class="nav-link @if($isRouteActive('admin.opportunities.active')) active @endif">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Active Opportunities</p>
+                            <a href="{{ route('admin.opportunities.pending') }}" class="nav-link {{ $isRouteActive('admin.opportunities.pending') ? 'active' : '' }}">
+                                <i class="far fa-circle nav-icon text-danger"></i>
+                                <p>Pending Review</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="{{ route('admin.opportunities.pending') }}" class="nav-link @if($isRouteActive('admin.opportunities.pending')) active @endif">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Pending Opportunities</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('admin.opportunities.create') }}" class="nav-link @if($isRouteActive('admin.opportunities.create')) active @endif">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Create Opportunity</p>
+                            <a href="{{ route('admin.opportunities.create') }}" class="nav-link {{ $isRouteActive('admin.opportunities.create') ? 'active' : '' }}">
+                                <i class="far fa-plus-square nav-icon"></i>
+                                <p>Post New</p>
                             </a>
                         </li>
                     </ul>
                 </li>
+
+                <li class="nav-header">SYSTEM</li>
                 <li class="nav-item">
-                    <a href="#" class="nav-link">
-                        <i class="nav-icon fas fa-edit"></i>
-                        <p>
-                            Forms
-                            <i class="fas fa-angle-left right"></i>
-                        </p>
-                    </a>
-                    <ul class="nav nav-treeview">
-                        <li class="nav-item">
-                            <a href="pages/forms/general.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>General Elements</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="pages/forms/advanced.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Advanced Elements</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="pages/forms/editors.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Editors</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="pages/forms/validation.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Validation</p>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-                <li class="nav-item">
-                    <a href="#" class="nav-link">
-                        <i class="nav-icon fas fa-table"></i>
-                        <p>
-                            Tables
-                            <i class="fas fa-angle-left right"></i>
-                        </p>
-                    </a>
-                    <ul class="nav nav-treeview">
-                        <li class="nav-item">
-                            <a href="pages/tables/simple.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Simple Tables</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="pages/tables/data.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>DataTables</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="pages/tables/jsgrid.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>jsGrid</p>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-                <li class="nav-header">EXAMPLES</li>
-                <li class="nav-item">
-                    <a href="pages/calendar.html" class="nav-link">
-                        <i class="nav-icon far fa-calendar-alt"></i>
-                        <p>
-                            Calendar
-                            <span class="badge badge-info right">2</span>
-                        </p>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="pages/gallery.html" class="nav-link">
-                        <i class="nav-icon far fa-image"></i>
-                        <p>
-                            Gallery
-                        </p>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="pages/kanban.html" class="nav-link">
-                        <i class="nav-icon fas fa-columns"></i>
-                        <p>
-                            Kanban Board
-                        </p>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="#" class="nav-link">
-                        <i class="nav-icon far fa-envelope"></i>
-                        <p>
-                            Mailbox
-                            <i class="fas fa-angle-left right"></i>
-                        </p>
-                    </a>
-                    <ul class="nav nav-treeview">
-                        <li class="nav-item">
-                            <a href="pages/mailbox/mailbox.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Inbox</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="pages/mailbox/compose.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Compose</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="pages/mailbox/read-mail.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Read</p>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-                <li class="nav-item">
-                    <a href="#" class="nav-link">
-                        <i class="nav-icon fas fa-book"></i>
-                        <p>
-                            Pages
-                            <i class="fas fa-angle-left right"></i>
-                        </p>
-                    </a>
-                    <ul class="nav nav-treeview">
-                        <li class="nav-item">
-                            <a href="pages/examples/invoice.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Invoice</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="pages/examples/profile.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Profile</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="pages/examples/e-commerce.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>E-commerce</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="pages/examples/projects.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Projects</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="pages/examples/project-add.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Project Add</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="pages/examples/project-edit.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Project Edit</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="pages/examples/project-detail.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Project Detail</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="pages/examples/contacts.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Contacts</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="pages/examples/faq.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>FAQ</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="pages/examples/contact-us.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Contact us</p>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-                <li class="nav-item">
-                    <a href="#" class="nav-link">
-                        <i class="nav-icon far fa-plus-square"></i>
-                        <p>
-                            Extras
-                            <i class="fas fa-angle-left right"></i>
-                        </p>
-                    </a>
-                    <ul class="nav nav-treeview">
-                        <li class="nav-item">
-                            <a href="#" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>
-                                    Login & Register v1
-                                    <i class="fas fa-angle-left right"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="pages/examples/login.html" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Login v1</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="pages/examples/register.html" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Register v1</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="pages/examples/forgot-password.html" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Forgot Password v1</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="pages/examples/recover-password.html" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Recover Password v1</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                        <li class="nav-item">
-                            <a href="#" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>
-                                    Login & Register v2
-                                    <i class="fas fa-angle-left right"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="pages/examples/login-v2.html" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Login v2</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="pages/examples/register-v2.html" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Register v2</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="pages/examples/forgot-password-v2.html" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Forgot Password v2</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="pages/examples/recover-password-v2.html" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Recover Password v2</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                        <li class="nav-item">
-                            <a href="pages/examples/lockscreen.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Lockscreen</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="pages/examples/legacy-user-menu.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Legacy User Menu</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="pages/examples/language-menu.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Language Menu</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="pages/examples/404.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Error 404</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="pages/examples/500.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Error 500</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="pages/examples/pace.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Pace</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="pages/examples/blank.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Blank Page</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="starter.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Starter Page</p>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-                <li class="nav-item">
-                    <a href="#" class="nav-link">
-                        <i class="nav-icon fas fa-search"></i>
-                        <p>
-                            Search
-                            <i class="fas fa-angle-left right"></i>
-                        </p>
-                    </a>
-                    <ul class="nav nav-treeview">
-                        <li class="nav-item">
-                            <a href="pages/search/simple.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Simple Search</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="pages/search/enhanced.html" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Enhanced</p>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-                <li class="nav-header">MISCELLANEOUS</li>
-                <li class="nav-item">
-                    <a href="iframe.html" class="nav-link">
-                        <i class="nav-icon fas fa-ellipsis-h"></i>
-                        <p>Tabbed IFrame Plugin</p>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="https://adminlte.io/docs/3.1/" class="nav-link">
-                        <i class="nav-icon fas fa-file"></i>
-                        <p>Documentation</p>
-                    </a>
-                </li>
-                <li class="nav-header">MULTI LEVEL EXAMPLE</li>
-                <li class="nav-item">
-                    <a href="#" class="nav-link">
-                        <i class="fas fa-circle nav-icon"></i>
-                        <p>Level 1</p>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="#" class="nav-link">
-                        <i class="nav-icon fas fa-circle"></i>
-                        <p>
-                            Level 1
-                            <i class="right fas fa-angle-left"></i>
-                        </p>
-                    </a>
-                    <ul class="nav nav-treeview">
-                        <li class="nav-item">
-                            <a href="#" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Level 2</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="#" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>
-                                    Level 2
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="#" class="nav-link">
-                                        <i class="far fa-dot-circle nav-icon"></i>
-                                        <p>Level 3</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="#" class="nav-link">
-                                        <i class="far fa-dot-circle nav-icon"></i>
-                                        <p>Level 3</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="#" class="nav-link">
-                                        <i class="far fa-dot-circle nav-icon"></i>
-                                        <p>Level 3</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                        <li class="nav-item">
-                            <a href="#" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>Level 2</p>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-                <li class="nav-item">
-                    <a href="#" class="nav-link">
-                        <i class="fas fa-circle nav-icon"></i>
-                        <p>Level 1</p>
-                    </a>
-                </li>
-                <li class="nav-header">LABELS</li>
-                <li class="nav-item">
-                    <a href="#" class="nav-link">
-                        <i class="nav-icon far fa-circle text-danger"></i>
-                        <p class="text">Important</p>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="#" class="nav-link">
-                        <i class="nav-icon far fa-circle text-warning"></i>
-                        <p>Warning</p>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="#" class="nav-link">
-                        <i class="nav-icon far fa-circle text-info"></i>
-                        <p>Informational</p>
-                    </a>
+                    <form method="POST" action="{{ route('logout') }}" id="logout-form">
+                        @csrf
+                        <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="nav-link">
+                            <i class="nav-icon fas fa-sign-out-alt text-danger"></i>
+                            <p>Logout</p>
+                        </a>
+                    </form>
                 </li>
             </ul>
         </nav>
-        <!-- /.sidebar-menu -->
     </div>
-    <!-- /.sidebar -->
 </aside>

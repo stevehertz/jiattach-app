@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\MentorshipController;
 use App\Http\Controllers\Admin\OpportunityController;
 use App\Http\Controllers\Admin\AdministratorsController;
+use App\Http\Controllers\Admin\OrganizationsController;
 use App\Livewire\Admin\Opportunities\Active as OpportunitiesActive;
 use App\Livewire\Admin\Opportunities\Pending;
 
@@ -71,6 +72,17 @@ Route::middleware([
 
         // Individual student view
         Route::get('/{student}', [StudentsController::class, 'show'])->name('show');
+    });
+
+    // Organizations Management
+    Route::prefix('organizations')->name('organizations.')->group(function () {
+        Route::get('/', [OrganizationsController::class, 'index'])->name('index');
+
+        Route::get('/create', [OrganizationsController::class, 'create'])->name('create');
+
+        Route::get('/{organization}', [OrganizationsController::class, 'show'])->name('show');
+
+        Route::get('/{organization}/edit', [OrganizationsController::class, 'edit'])->name('edit');
     });
 
     // Opportunities Management Routes

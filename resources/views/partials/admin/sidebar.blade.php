@@ -177,6 +177,57 @@
                         </ul>
                     </li>
 
+                    <li class="nav-header">REPORTS</li>
+
+                    <li class="nav-item">
+                        <a href="{{ route('admin.reports.analytics-dashboard') }}"
+                            class="nav-link {{ $isRouteActive('admin.reports.analytics-dashboard') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-chart-line"></i>
+                            <p>Analytics Report</p>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="{{ route('admin.reports.placement-reports') }}"
+                            class="nav-link {{ $isRouteActive('admin.reports.placement-reports') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-chart-bar"></i>
+                            <p>Placements Report</p>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="{{ route('admin.reports.user-statistics') }}"
+                            class="nav-link {{ $isRouteActive('admin.reports.user-statistics') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-user-graduate"></i>
+                            <p>User Statics</p>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="{{ route('admin.reports.opportunity-analytics') }}"
+                            class="nav-link {{ $isRouteActive('admin.reports.opportunity-analytics') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-chart-pie"></i>
+                            <p>Opportunity Analytics</p>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="{{ route('admin.reports.application-reports') }}"
+                            class="nav-link {{ $isRouteActive('admin.reports.application-reports') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-clipboard-list"></i>
+                            <p>Application Reports</p>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a href="{{ route('admin.reports.financial-reports') }}"
+                            class="nav-link {{ $isRouteActive('admin.reports.financial-reports') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-file-invoice-dollar"></i>
+                            <p>Financial Report</p>
+                        </a>
+                    </li>
+
+
                     <li class="nav-header">SETTINGS</li>
 
                     <li class="nav-item">
@@ -226,7 +277,7 @@
                             <p>Backup</p>
                         </a>
                     </li>
-                    
+
                     <li class="nav-header">SYSTEM</li>
                     <li class="nav-item">
                         <form method="POST" action="{{ route('logout') }}" id="logout-form">

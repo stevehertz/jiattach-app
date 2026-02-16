@@ -16,6 +16,7 @@ class AttachmentOpportunity extends Model
         'title',
         'slug',
         'description',
+        'published_at',
         'responsibilities',
         'type',
         'work_type',

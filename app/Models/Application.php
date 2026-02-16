@@ -12,9 +12,11 @@ class Application extends Model
 
      protected $fillable = [
         'user_id',
+        'student_id',
         'attachment_opportunity_id',
         'match_score',
         'cover_letter',
+        'submitted_at',
         'status', // pending, reviewing, shortlisted, offered, accepted, rejected
         'employer_notes',
         'reviewed_at',
@@ -40,7 +42,7 @@ class Application extends Model
     {
         return $this->hasOne(Placement::class);
     }
-    
+
     // Status Helper
     public function getStatusBadgeAttribute()
     {

@@ -278,6 +278,52 @@
                         </a>
                     </li>
 
+                    <li class="nav-header">SYSTEM UTILITY</li>
+
+                    <li class="nav-item">
+                        <a href="{{ route('admin.activity-logs') }}"
+                            class="nav-link {{ $isRouteActive('admin.activity-logs') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-history"></i>
+                            <p>Activity Logs</p>
+                        </a>
+                    </li>
+
+                     <li class="nav-item">
+                        <a href="{{ route('admin.system-health') }}"
+                            class="nav-link {{ $isRouteActive('admin.system-health') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-heartbeat"></i>
+                            <p>System Health</p>
+                        </a>
+                    </li>
+
+                     <li class="nav-item">
+                        <a href="{{ route('admin.database') }}"
+                            class="nav-link {{ $isRouteActive('admin.database') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-database"></i>
+                            <p>Database</p>
+                        </a>
+                    </li>
+
+                     <li class="nav-item">
+                        <a href="{{ route('admin.help') }}"
+                            class="nav-link {{ $isRouteActive('admin.help') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-question-circle"></i>
+                            <p>Help</p>
+                        </a>
+                    </li>
+
+                     <li class="nav-item">
+                        <a href="{{ route('admin.documentation') }}"
+                            class="nav-link {{ $isRouteActive('admin.documentation') ? 'active' : '' }}">
+                            <i class="nav-icon fas fa-book"></i>
+                            <p>Documentation</p>
+                        </a>
+                    </li>
+
+                    
+
+                    
+
                     <li class="nav-header">SYSTEM</li>
                     <li class="nav-item">
                         <form method="POST" action="{{ route('logout') }}" id="logout-form">

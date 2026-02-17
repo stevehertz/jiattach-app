@@ -335,4 +335,36 @@ class User extends Authenticatable
         }
         return true;
     }
+
+    /**
+     * Get the login attempts for the user.
+     */
+    public function loginAttempts()
+    {
+        return $this->hasMany(LoginAttempt::class, 'email', 'email');
+    }
+
+    /**
+     * Get the activity logs for the user.
+     */
+    public function activityLogs()
+    {
+        return $this->hasMany(ActivityLog::class, 'causer_id');
+    }
+
+    /**
+     * Check if user has two-factor authentication enabled.
+     */
+    public function hasTwoFactorEnabled()
+    {
+        return $this->twoFactorSetting && $this->twoFactorSetting->is_enabled;
+    }
+
+    /**
+     * Get the two-factor authentication setting for the user.
+     */
+    public function twoFactorSetting()
+    {
+        return $this->hasOne(UserTwoFactorSetting::class);
+    }
 }

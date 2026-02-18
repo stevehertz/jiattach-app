@@ -1,24 +1,20 @@
 <x-layouts.app>
+
     <div class="content-header">
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1 class="m-0">
-                        <i class="fas fa-database mr-2"></i>
-                        Backup & Restore
-                    </h1>
+                    <h1 class="m-0">Database Management</h1>
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-                        <li class="breadcrumb-item"><a href="{{ route('admin.settings.general') }}">Settings</a></li>
-                        <li class="breadcrumb-item active"> Backup & Restore</li>
+                        <li class="breadcrumb-item active">Database</li>
                     </ol>
                 </div>
             </div>
         </div>
     </div>
-
-    <livewire:admin.settings.backup-settings />
-
+    <livewire:admin.database.index />
+    
 </x-layouts.app>

@@ -4,12 +4,17 @@
         <div class="container-fluid">
             <div class="row mb-2">
                 <div class="col-sm-6">
-                    <h1 class="m-0">Dashboard</h1>
+                    <h1 class="m-0">
+                        <i class="fas fa-tachometer-alt mr-2"></i>
+                        Dashboard
+                    </h1>
                 </div><!-- /.col -->
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item">
-                            <a href="{{ route('admin.dashboard') }}">Home</a>
+                            <a href="{{ route('admin.dashboard') }}">
+                                <i class="fas fa-home mr-1"></i>Home
+                            </a>
                         </li>
                         <li class="breadcrumb-item active">Dashboard</li>
                     </ol>
@@ -20,608 +25,1085 @@
     <!-- /.content-header -->
 
     <!-- Main content -->
-    <section class="content">
+    <div class="content">
         <div class="container-fluid">
-            <!-- Small boxes (Stat box) -->
+            @php
+                // Cache expensive queries for 5 minutes
+                $totalUsers = Cache::remember('dashboard.total_users', 300, fn() => App\Models\User::count());
+                $totalStudents = Cache::remember(
+                    'dashboard.total_students',
+                    300,
+                    fn() => App\Models\StudentProfile::count(),
+                );
+                $totalEmployers = Cache::remember(
+                    'dashboard.total_employers',
+                    300,
+                    fn() => App\Models\Organization::count(),
+                );
+                $totalMentors = Cache::remember('dashboard.total_mentors', 300, fn() => App\Models\Mentor::count());
+
+                $activeOpportunities = Cache::remember(
+                    'dashboard.active_opportunities',
+                    300,
+                    fn() => App\Models\AttachmentOpportunity::where('status', 'published')
+                        ->where('deadline', '>', now())
+                        ->count(),
+                );
+
+                $pendingApplications = Cache::remember(
+                    'dashboard.pending_applications',
+                    300,
+                    fn() => App\Models\Application::whereIn('status', ['submitted', 'under_review'])->count(),
+                );
+
+                $successfulPlacements = Cache::remember(
+                    'dashboard.successful_placements',
+                    300,
+                    fn() => App\Models\Application::where('status', 'hired')->count(),
+                );
+
+                $activeMentorships = Cache::remember(
+                    'dashboard.active_mentorships',
+                    300,
+                    fn() => App\Models\Mentorship::where('status', 'active')->count(),
+                );
+
+                // Recent activities
+                $recentApplications = Cache::remember(
+                    'dashboard.recent_applications',
+                    300,
+                    fn() => App\Models\Application::with(['student.user', 'opportunity.organization'])
+                        ->latest()
+                        ->take(5)
+                        ->get(),
+                );
+
+                $recentMentorships = Cache::remember(
+                    'dashboard.recent_mentorships',
+                    300,
+                    fn() => App\Models\Mentorship::with(['mentor.user', 'student.user'])
+                        ->latest()
+                        ->take(5)
+                        ->get(),
+                );
+
+                $upcomingDeadlines = Cache::remember(
+                    'dashboard.upcoming_deadlines',
+                    300,
+                    fn() => App\Models\AttachmentOpportunity::where('status', 'published')
+                        ->where('deadline', '>', now())
+                        ->where('deadline', '<', now()->addDays(7))
+                        ->with('organization')
+                        ->orderBy('deadline')
+                        ->take(5)
+                        ->get(),
+                );
+
+                // Chart data for last 6 months
+                $months = collect(range(5, 0))->map(fn($i) => now()->subMonths($i)->format('M Y'));
+                $studentGrowth = $months->map(
+                    fn($month, $index) => App\Models\User::whereHas('roles', fn($q) => $q->where('name', 'student'))
+                        ->where(
+                            'created_at',
+                            '<=',
+                            now()
+                                ->subMonths(5 - $index)
+                                ->endOfMonth(),
+                        )
+                        ->count(),
+                );
+                $employerGrowth = $months->map(
+                    fn($month, $index) => App\Models\Organization::where(
+                        'created_at',
+                        '<=',
+                        now()
+                            ->subMonths(5 - $index)
+                            ->endOfMonth(),
+                    )->count(),
+                );
+                $applicationTrend = $months->map(
+                    fn($month, $index) => App\Models\Application::whereMonth(
+                        'created_at',
+                        now()->subMonths(5 - $index)->month,
+                    )
+                        ->whereYear('created_at', now()->subMonths(5 - $index)->year)
+                        ->count(),
+                );
+                $placementTrend = $months->map(
+                    fn($month, $index) => App\Models\Application::where('status', 'hired')
+                        ->whereMonth('updated_at', now()->subMonths(5 - $index)->month)
+                        ->whereYear('updated_at', now()->subMonths(5 - $index)->year)
+                        ->count(),
+                );
+
+                // System health
+                $dbSize = Cache::remember('dashboard.db_size', 3600, function () {
+                    $tables = DB::select('SHOW TABLE STATUS');
+                    return collect($tables)->sum('Data_length');
+                });
+                $dbSizeMB = round($dbSize / 1024 / 1024, 2);
+
+                $activeToday = Cache::remember(
+                    'dashboard.active_today',
+                    300,
+                    fn() => App\Models\ActivityLog::whereDate('created_at', today())
+                        ->distinct('causer_id')
+                        ->count('causer_id'),
+                );
+
+                $serverLoad = function_exists('sys_getloadavg') ? sys_getloadavg()[0] : 0;
+            @endphp
+
+            <!-- Welcome Row -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="fas fa-calendar-check mr-2"></i>
+                        <strong>Welcome back, {{ auth()->user()->name }}!</strong>
+                        @if ($upcomingDeadlines->count() > 0)
+                            There are <strong>{{ $upcomingDeadlines->count() }}</strong> opportunities with deadlines
+                            this week.
+                        @else
+                            No upcoming deadlines this week.
+                        @endif
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Small boxes (Stat boxes) - First Row -->
             <div class="row">
-               <div class="col-lg-3 col-6">
-                    <!-- small box -->
+                <div class="col-lg-3 col-6">
                     <div class="small-box bg-info">
                         <div class="inner">
-                            <h3>{{ \App\Models\User::count() }}</h3>
+                            <h3>{{ number_format($totalUsers) }}</h3>
                             <p>Total Users</p>
                         </div>
                         <div class="icon">
                             <i class="fas fa-users"></i>
                         </div>
-                        <a href="#" class="small-box-footer">
-                            More info <i class="fas fa-arrow-circle-right"></i>
+                        <a href="{{ route('admin.users.index') }}" class="small-box-footer">
+                            View All Users <i class="fas fa-arrow-circle-right"></i>
                         </a>
                     </div>
                 </div>
-                <!-- ./col -->
+
                 <div class="col-lg-3 col-6">
-                    <!-- small box -->
                     <div class="small-box bg-success">
                         <div class="inner">
-                            <h3>{{ \App\Models\AttachmentOpportunity::where('status', 'published')->count() }}</h3>
+                            <h3>{{ number_format($totalStudents) }}</h3>
+                            <p>Total Students</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-user-graduate"></i>
+                        </div>
+                        <a href="{{ route('admin.students.index') }}" class="small-box-footer">
+                            Manage Students <i class="fas fa-arrow-circle-right"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-warning">
+                        <div class="inner">
+                            <h3>{{ number_format($totalEmployers) }}</h3>
+                            <p>Organizations</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        <a href="{{ route('admin.organizations.index') }}" class="small-box-footer">
+                            View Organizations <i class="fas fa-arrow-circle-right"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-primary">
+                        <div class="inner">
+                            <h3>{{ number_format($totalMentors) }}</h3>
+                            <p>Mentors</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                        </div>
+                        <a href="{{ route('admin.mentorships.index') }}" class="small-box-footer">
+                            View Mentors <i class="fas fa-arrow-circle-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Small boxes (Stat boxes) - Second Row -->
+            <div class="row">
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-teal">
+                        <div class="inner">
+                            <h3>{{ number_format($activeOpportunities) }}</h3>
                             <p>Active Opportunities</p>
                         </div>
                         <div class="icon">
                             <i class="fas fa-briefcase"></i>
                         </div>
-                        <a href="#" class="small-box-footer">
-                            More info <i class="fas fa-arrow-circle-right"></i>
+                        <a href="{{ route('admin.opportunities.index') }}" class="small-box-footer">
+                            View Opportunities <i class="fas fa-arrow-circle-right"></i>
                         </a>
                     </div>
                 </div>
-                <!-- ./col -->
-                <div class="col-lg-3 col-6">
-                    <!-- small box -->
-                    <div class="small-box bg-warning">
-                        <div class="inner">
-                            <h3>44</h3>
 
-                            <p>User Registrations</p>
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-purple">
+                        <div class="inner">
+                            <h3>{{ number_format($pendingApplications) }}</h3>
+                            <p>Pending Applications</p>
                         </div>
                         <div class="icon">
-                            <i class="ion ion-person-add"></i>
+                            <i class="fas fa-file-alt"></i>
                         </div>
-                        <a href="#" class="small-box-footer">More info <i
-                                class="fas fa-arrow-circle-right"></i></a>
+                        <a href="{{ route('admin.applications.pending') }}" class="small-box-footer">
+                            Review Applications <i class="fas fa-arrow-circle-right"></i>
+                        </a>
                     </div>
                 </div>
-                <!-- ./col -->
+
                 <div class="col-lg-3 col-6">
-                    <!-- small box -->
                     <div class="small-box bg-danger">
                         <div class="inner">
-                            <h3>65</h3>
-
-                            <p>Unique Visitors</p>
+                            <h3>{{ number_format($successfulPlacements) }}</h3>
+                            <p>Successful Placements</p>
                         </div>
                         <div class="icon">
-                            <i class="ion ion-pie-graph"></i>
+                            <i class="fas fa-user-check"></i>
                         </div>
-                        <a href="#" class="small-box-footer">More info <i
-                                class="fas fa-arrow-circle-right"></i></a>
+                        <a href="{{ route('admin.placements.index') }}" class="small-box-footer">
+                            View Placements <i class="fas fa-arrow-circle-right"></i>
+                        </a>
                     </div>
                 </div>
-                <!-- ./col -->
+
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-secondary">
+                        <div class="inner">
+                            <h3>{{ number_format($activeMentorships) }}</h3>
+                            <p>Active Mentorships</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-handshake"></i>
+                        </div>
+                        <a href="{{ route('admin.mentorships.active') }}" class="small-box-footer">
+                            View Mentorships <i class="fas fa-arrow-circle-right"></i>
+                        </a>
+                    </div>
+                </div>
             </div>
-            <!-- /.row -->
+
             <!-- Main row -->
             <div class="row">
-                <!-- Left col -->
-                <section class="col-lg-7 connectedSortable">
+                <!-- Left col (Charts and Tables) -->
+                <div class="col-lg-8">
                     <!-- Custom tabs (Charts with tabs)-->
-                    <div class="card">
+                    <div class="card card-success card-outline">
                         <div class="card-header">
                             <h3 class="card-title">
-                                <i class="fas fa-chart-pie mr-1"></i>
-                                Sales
+                                <i class="fas fa-chart-line mr-1"></i>
+                                Platform Analytics
                             </h3>
                             <div class="card-tools">
-                                <ul class="nav nav-pills ml-auto">
+                                <ul class="nav nav-pills ml-auto" id="chartTabs">
                                     <li class="nav-item">
-                                        <a class="nav-link active" href="#revenue-chart" data-toggle="tab">Area</a>
+                                        <a class="nav-link active" href="#growth-chart" data-toggle="tab">
+                                            <i class="fas fa-users mr-1"></i> Growth
+                                        </a>
                                     </li>
                                     <li class="nav-item">
-                                        <a class="nav-link" href="#sales-chart" data-toggle="tab">Donut</a>
+                                        <a class="nav-link" href="#applications-chart" data-toggle="tab">
+                                            <i class="fas fa-file-alt mr-1"></i> Applications
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                            <i class="fas fa-minus"></i>
+                                        </button>
                                     </li>
                                 </ul>
                             </div>
-                        </div><!-- /.card-header -->
+                        </div>
+
                         <div class="card-body">
-                            <div class="tab-content p-0">
-                                <!-- Morris chart - Sales -->
-                                <div class="chart tab-pane active" id="revenue-chart"
-                                    style="position: relative; height: 300px;">
-                                    <canvas id="revenue-chart-canvas" height="300" style="height: 300px;"></canvas>
+                            <div class="tab-content">
+                                <!-- Growth Chart -->
+                                <div class="tab-pane active" id="growth-chart">
+                                    <div class="chart" style="height: 300px;">
+                                        <canvas id="growthChartCanvas"></canvas>
+                                    </div>
                                 </div>
-                                <div class="chart tab-pane" id="sales-chart" style="position: relative; height: 300px;">
-                                    <canvas id="sales-chart-canvas" height="300" style="height: 300px;"></canvas>
+
+                                <!-- Applications Chart -->
+                                <div class="tab-pane" id="applications-chart">
+                                    <div class="chart" style="height: 300px;">
+                                        <canvas id="applicationsChartCanvas"></canvas>
+                                    </div>
                                 </div>
                             </div>
-                        </div><!-- /.card-body -->
+                        </div>
                     </div>
-                    <!-- /.card -->
 
-                    <!-- DIRECT CHAT -->
-                    <div class="card direct-chat direct-chat-primary">
-                        <div class="card-header">
-                            <h3 class="card-title">Direct Chat</h3>
-
+                    <!-- Recent Applications Table -->
+                    <div class="card card-success card-outline">
+                        <div class="card-header border-0">
+                            <h3 class="card-title">
+                                <i class="fas fa-file-alt mr-1"></i>
+                                Recent Applications
+                            </h3>
                             <div class="card-tools">
-                                <span title="3 New Messages" class="badge badge-primary">3</span>
+                                <a href="{{ route('admin.applications.index') }}" class="btn btn-success btn-sm">
+                                    <i class="fas fa-eye mr-1"></i> View All
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="card-body table-responsive p-0">
+                            <table class="table table-hover table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Student</th>
+                                        <th>Opportunity</th>
+                                        <th>Organization</th>
+                                        <th>Applied</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($recentApplications as $application)
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-initials bg-{{ ['primary', 'success', 'info', 'warning', 'danger'][rand(0, 4)] }} mr-2"
+                                                        style="width: 30px; height: 30px; line-height: 30px; text-align: center; color: white; font-weight: bold; font-size: 12px;">
+                                                        {{ getInitials($application->student?->user?->name ?? 'Unknown') }}
+                                                    </div>
+                                                    <div>
+                                                        {{ $application->student?->user?->name ?? 'N/A' }}
+                                                        <br>
+                                                        <small
+                                                            class="text-muted">{{ $application->student?->course ?? '' }}</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <strong>{{ Str::limit($application->opportunity?->title ?? 'N/A', 30) }}</strong>
+                                            </td>
+                                            <td>{{ $application->opportunity?->organization?->name ?? 'N/A' }}</td>
+                                            <td>
+                                                <span data-toggle="tooltip"
+                                                    title="{{ $application->created_at->format('M d, Y H:i') }}">
+                                                    {{ $application->created_at->diffForHumans() }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                @php
+                                                    $statusColors = [
+                                                        'submitted' => 'info',
+                                                        'under_review' => 'primary',
+                                                        'shortlisted' => 'warning',
+                                                        'interview_scheduled' => 'purple',
+                                                        'hired' => 'success',
+                                                        'rejected' => 'danger',
+                                                        'withdrawn' => 'secondary',
+                                                    ];
+                                                    $color = $statusColors[$application->status] ?? 'secondary';
+                                                @endphp
+                                                <span class="badge badge-{{ $color }}">
+                                                    {{ str_replace('_', ' ', ucfirst($application->status)) }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <a href="{{ route('admin.applications.show', $application) }}"
+                                                    class="btn btn-sm btn-outline-info" data-toggle="tooltip"
+                                                    title="View Application">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="6" class="text-center py-4">
+                                                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                                <p class="text-muted">No applications yet</p>
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Recent Mentorships Table -->
+                    <div class="card card-success card-outline">
+                        <div class="card-header border-0">
+                            <h3 class="card-title">
+                                <i class="fas fa-handshake mr-1"></i>
+                                Recent Mentorships
+                            </h3>
+                            <div class="card-tools">
+                                <a href="{{ route('admin.mentorships.index') }}" class="btn btn-success btn-sm">
+                                    <i class="fas fa-eye mr-1"></i> View All
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="card-body table-responsive p-0">
+                            <table class="table table-hover table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Mentor</th>
+                                        <th>Student</th>
+                                        <th>Started</th>
+                                        <th>Status</th>
+                                        <th>Sessions</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($recentMentorships as $mentorship)
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-initials bg-primary mr-2"
+                                                        style="width: 30px; height: 30px; line-height: 30px; text-align: center; color: white; font-weight: bold; font-size: 12px;">
+                                                        {{ getInitials($mentorship->mentor?->user?->name ?? 'Unknown') }}
+                                                    </div>
+                                                    {{ $mentorship->mentor?->user?->name ?? 'N/A' }}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-initials bg-info mr-2"
+                                                        style="width: 30px; height: 30px; line-height: 30px; text-align: center; color: white; font-weight: bold; font-size: 12px;">
+                                                        {{ getInitials($mentorship->student?->user?->name ?? 'Unknown') }}
+                                                    </div>
+                                                    {{ $mentorship->student?->user?->name ?? 'N/A' }}
+                                                </div>
+                                            </td>
+                                            <td>{{ $mentorship->created_at->format('M d, Y') }}</td>
+                                            <td>
+                                                @php
+                                                    $statusColors = [
+                                                        'active' => 'success',
+                                                        'pending' => 'warning',
+                                                        'completed' => 'info',
+                                                        'cancelled' => 'danger',
+                                                    ];
+                                                    $color = $statusColors[$mentorship->status] ?? 'secondary';
+                                                @endphp
+                                                <span class="badge badge-{{ $color }}">
+                                                    {{ ucfirst($mentorship->status) }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-info">
+                                                    {{ $mentorship->sessions_count ?? 0 }} sessions
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <a href="{{ route('admin.mentorships.show', $mentorship) }}"
+                                                    class="btn btn-sm btn-outline-info">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="6" class="text-center py-4">
+                                                <i class="fas fa-handshake fa-3x text-muted mb-3"></i>
+                                                <p class="text-muted">No mentorships yet</p>
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right col (Widgets) -->
+                <div class="col-lg-4">
+                    <!-- Upcoming Deadlines -->
+                    <div class="card card-success card-outline">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-calendar-alt mr-1"></i>
+                                Upcoming Deadlines
+                            </h3>
+                            <div class="card-tools">
+                                <span class="badge badge-warning">{{ $upcomingDeadlines->count() }}</span>
                                 <button type="button" class="btn btn-tool" data-card-widget="collapse">
                                     <i class="fas fa-minus"></i>
                                 </button>
-                                <button type="button" class="btn btn-tool" title="Contacts"
-                                    data-widget="chat-pane-toggle">
-                                    <i class="fas fa-comments"></i>
-                                </button>
-                                <button type="button" class="btn btn-tool" data-card-widget="remove">
-                                    <i class="fas fa-times"></i>
-                                </button>
                             </div>
                         </div>
-                        <!-- /.card-header -->
-                        <div class="card-body">
-                            <!-- Conversations are loaded here -->
-                            <div class="direct-chat-messages">
-                                <!-- Message. Default to the left -->
-                                <div class="direct-chat-msg">
-                                    <div class="direct-chat-infos clearfix">
-                                        <span class="direct-chat-name float-left">Alexander Pierce</span>
-                                        <span class="direct-chat-timestamp float-right">23 Jan 2:00 pm</span>
-                                    </div>
-                                    <!-- /.direct-chat-infos -->
-                                    <img class="direct-chat-img" src="dist/img/user1-128x128.jpg"
-                                        alt="message user image">
-                                    <!-- /.direct-chat-img -->
-                                    <div class="direct-chat-text">
-                                        Is this template really for free? That's unbelievable!
-                                    </div>
-                                    <!-- /.direct-chat-text -->
-                                </div>
-                                <!-- /.direct-chat-msg -->
 
-                                <!-- Message to the right -->
-                                <div class="direct-chat-msg right">
-                                    <div class="direct-chat-infos clearfix">
-                                        <span class="direct-chat-name float-right">Sarah Bullock</span>
-                                        <span class="direct-chat-timestamp float-left">23 Jan 2:05 pm</span>
-                                    </div>
-                                    <!-- /.direct-chat-infos -->
-                                    <img class="direct-chat-img" src="dist/img/user3-128x128.jpg"
-                                        alt="message user image">
-                                    <!-- /.direct-chat-img -->
-                                    <div class="direct-chat-text">
-                                        You better believe it!
-                                    </div>
-                                    <!-- /.direct-chat-text -->
-                                </div>
-                                <!-- /.direct-chat-msg -->
-
-                                <!-- Message. Default to the left -->
-                                <div class="direct-chat-msg">
-                                    <div class="direct-chat-infos clearfix">
-                                        <span class="direct-chat-name float-left">Alexander Pierce</span>
-                                        <span class="direct-chat-timestamp float-right">23 Jan 5:37 pm</span>
-                                    </div>
-                                    <!-- /.direct-chat-infos -->
-                                    <img class="direct-chat-img" src="dist/img/user1-128x128.jpg"
-                                        alt="message user image">
-                                    <!-- /.direct-chat-img -->
-                                    <div class="direct-chat-text">
-                                        Working with AdminLTE on a great new app! Wanna join?
-                                    </div>
-                                    <!-- /.direct-chat-text -->
-                                </div>
-                                <!-- /.direct-chat-msg -->
-
-                                <!-- Message to the right -->
-                                <div class="direct-chat-msg right">
-                                    <div class="direct-chat-infos clearfix">
-                                        <span class="direct-chat-name float-right">Sarah Bullock</span>
-                                        <span class="direct-chat-timestamp float-left">23 Jan 6:10 pm</span>
-                                    </div>
-                                    <!-- /.direct-chat-infos -->
-                                    <img class="direct-chat-img" src="dist/img/user3-128x128.jpg"
-                                        alt="message user image">
-                                    <!-- /.direct-chat-img -->
-                                    <div class="direct-chat-text">
-                                        I would love to.
-                                    </div>
-                                    <!-- /.direct-chat-text -->
-                                </div>
-                                <!-- /.direct-chat-msg -->
-
-                            </div>
-                            <!--/.direct-chat-messages-->
-
-                            <!-- Contacts are loaded here -->
-                            <div class="direct-chat-contacts">
-                                <ul class="contacts-list">
-                                    <li>
-                                        <a href="#">
-                                            <img class="contacts-list-img" src="dist/img/user1-128x128.jpg"
-                                                alt="User Avatar">
-
-                                            <div class="contacts-list-info">
-                                                <span class="contacts-list-name">
-                                                    Count Dracula
-                                                    <small class="contacts-list-date float-right">2/28/2015</small>
-                                                </span>
-                                                <span class="contacts-list-msg">How have you been? I was...</span>
-                                            </div>
-                                            <!-- /.contacts-list-info -->
-                                        </a>
+                        <div class="card-body p-0">
+                            <ul class="products-list product-list-in-card pl-2 pr-2">
+                                @forelse($upcomingDeadlines as $opportunity)
+                                    <li class="item">
+                                        <div class="product-img">
+                                            <span
+                                                class="badge badge-{{ $opportunity->days_until_deadline <= 2 ? 'danger' : 'warning' }}"
+                                                style="font-size: 14px; padding: 8px;">
+                                                {{ $opportunity->days_until_deadline }}d
+                                            </span>
+                                        </div>
+                                        <div class="product-info">
+                                            <a href="{{ route('admin.opportunities.show', $opportunity) }}"
+                                                class="product-title">
+                                                {{ Str::limit($opportunity->title, 25) }}
+                                            </a>
+                                            <span class="product-description">
+                                                <i class="fas fa-building mr-1"></i>
+                                                {{ $opportunity->organization?->name ?? 'N/A' }}
+                                                <br>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-clock mr-1"></i>
+                                                    {{ $opportunity->application_deadline->format('M d, Y') }}
+                                                </small>
+                                            </span>
+                                        </div>
                                     </li>
-                                    <!-- End Contact Item -->
-                                    <li>
-                                        <a href="#">
-                                            <img class="contacts-list-img" src="dist/img/user7-128x128.jpg"
-                                                alt="User Avatar">
-
-                                            <div class="contacts-list-info">
-                                                <span class="contacts-list-name">
-                                                    Sarah Doe
-                                                    <small class="contacts-list-date float-right">2/23/2015</small>
-                                                </span>
-                                                <span class="contacts-list-msg">I will be waiting for...</span>
-                                            </div>
-                                            <!-- /.contacts-list-info -->
-                                        </a>
+                                @empty
+                                    <li class="item">
+                                        <div class="product-info text-center py-3">
+                                            <i class="fas fa-calendar-check fa-2x text-muted mb-2"></i>
+                                            <p class="text-muted">No upcoming deadlines</p>
+                                        </div>
                                     </li>
-                                    <!-- End Contact Item -->
-                                    <li>
-                                        <a href="#">
-                                            <img class="contacts-list-img" src="dist/img/user3-128x128.jpg"
-                                                alt="User Avatar">
-
-                                            <div class="contacts-list-info">
-                                                <span class="contacts-list-name">
-                                                    Nadia Jolie
-                                                    <small class="contacts-list-date float-right">2/20/2015</small>
-                                                </span>
-                                                <span class="contacts-list-msg">I'll call you back at...</span>
-                                            </div>
-                                            <!-- /.contacts-list-info -->
-                                        </a>
-                                    </li>
-                                    <!-- End Contact Item -->
-                                    <li>
-                                        <a href="#">
-                                            <img class="contacts-list-img" src="dist/img/user5-128x128.jpg"
-                                                alt="User Avatar">
-
-                                            <div class="contacts-list-info">
-                                                <span class="contacts-list-name">
-                                                    Nora S. Vans
-                                                    <small class="contacts-list-date float-right">2/10/2015</small>
-                                                </span>
-                                                <span class="contacts-list-msg">Where is your new...</span>
-                                            </div>
-                                            <!-- /.contacts-list-info -->
-                                        </a>
-                                    </li>
-                                    <!-- End Contact Item -->
-                                    <li>
-                                        <a href="#">
-                                            <img class="contacts-list-img" src="dist/img/user6-128x128.jpg"
-                                                alt="User Avatar">
-
-                                            <div class="contacts-list-info">
-                                                <span class="contacts-list-name">
-                                                    John K.
-                                                    <small class="contacts-list-date float-right">1/27/2015</small>
-                                                </span>
-                                                <span class="contacts-list-msg">Can I take a look at...</span>
-                                            </div>
-                                            <!-- /.contacts-list-info -->
-                                        </a>
-                                    </li>
-                                    <!-- End Contact Item -->
-                                    <li>
-                                        <a href="#">
-                                            <img class="contacts-list-img" src="dist/img/user8-128x128.jpg"
-                                                alt="User Avatar">
-
-                                            <div class="contacts-list-info">
-                                                <span class="contacts-list-name">
-                                                    Kenneth M.
-                                                    <small class="contacts-list-date float-right">1/4/2015</small>
-                                                </span>
-                                                <span class="contacts-list-msg">Never mind I found...</span>
-                                            </div>
-                                            <!-- /.contacts-list-info -->
-                                        </a>
-                                    </li>
-                                    <!-- End Contact Item -->
-                                </ul>
-                                <!-- /.contacts-list -->
-                            </div>
-                            <!-- /.direct-chat-pane -->
-                        </div>
-                        <!-- /.card-body -->
-                        <div class="card-footer">
-                            <form action="#" method="post">
-                                <div class="input-group">
-                                    <input type="text" name="message" placeholder="Type Message ..."
-                                        class="form-control">
-                                    <span class="input-group-append">
-                                        <button type="button" class="btn btn-primary">Send</button>
-                                    </span>
-                                </div>
-                            </form>
-                        </div>
-                        <!-- /.card-footer-->
-                    </div>
-                    <!--/.direct-chat -->
-
-                    <!-- TO DO List -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">
-                                <i class="ion ion-clipboard mr-1"></i>
-                                To Do List
-                            </h3>
-
-                            <div class="card-tools">
-                                <ul class="pagination pagination-sm">
-                                    <li class="page-item"><a href="#" class="page-link">&laquo;</a></li>
-                                    <li class="page-item"><a href="#" class="page-link">1</a></li>
-                                    <li class="page-item"><a href="#" class="page-link">2</a></li>
-                                    <li class="page-item"><a href="#" class="page-link">3</a></li>
-                                    <li class="page-item"><a href="#" class="page-link">&raquo;</a></li>
-                                </ul>
-                            </div>
-                        </div>
-                        <!-- /.card-header -->
-                        <div class="card-body">
-                            <ul class="todo-list" data-widget="todo-list">
-                                <li>
-                                    <!-- drag handle -->
-                                    <span class="handle">
-                                        <i class="fas fa-ellipsis-v"></i>
-                                        <i class="fas fa-ellipsis-v"></i>
-                                    </span>
-                                    <!-- checkbox -->
-                                    <div class="icheck-primary d-inline ml-2">
-                                        <input type="checkbox" value="" name="todo1" id="todoCheck1">
-                                        <label for="todoCheck1"></label>
-                                    </div>
-                                    <!-- todo text -->
-                                    <span class="text">Design a nice theme</span>
-                                    <!-- Emphasis label -->
-                                    <small class="badge badge-danger"><i class="far fa-clock"></i> 2 mins</small>
-                                    <!-- General tools such as edit or delete-->
-                                    <div class="tools">
-                                        <i class="fas fa-edit"></i>
-                                        <i class="fas fa-trash-o"></i>
-                                    </div>
-                                </li>
-                                <li>
-                                    <span class="handle">
-                                        <i class="fas fa-ellipsis-v"></i>
-                                        <i class="fas fa-ellipsis-v"></i>
-                                    </span>
-                                    <div class="icheck-primary d-inline ml-2">
-                                        <input type="checkbox" value="" name="todo2" id="todoCheck2"
-                                            checked>
-                                        <label for="todoCheck2"></label>
-                                    </div>
-                                    <span class="text">Make the theme responsive</span>
-                                    <small class="badge badge-info"><i class="far fa-clock"></i> 4 hours</small>
-                                    <div class="tools">
-                                        <i class="fas fa-edit"></i>
-                                        <i class="fas fa-trash-o"></i>
-                                    </div>
-                                </li>
-                                <li>
-                                    <span class="handle">
-                                        <i class="fas fa-ellipsis-v"></i>
-                                        <i class="fas fa-ellipsis-v"></i>
-                                    </span>
-                                    <div class="icheck-primary d-inline ml-2">
-                                        <input type="checkbox" value="" name="todo3" id="todoCheck3">
-                                        <label for="todoCheck3"></label>
-                                    </div>
-                                    <span class="text">Let theme shine like a star</span>
-                                    <small class="badge badge-warning"><i class="far fa-clock"></i> 1 day</small>
-                                    <div class="tools">
-                                        <i class="fas fa-edit"></i>
-                                        <i class="fas fa-trash-o"></i>
-                                    </div>
-                                </li>
-                                <li>
-                                    <span class="handle">
-                                        <i class="fas fa-ellipsis-v"></i>
-                                        <i class="fas fa-ellipsis-v"></i>
-                                    </span>
-                                    <div class="icheck-primary d-inline ml-2">
-                                        <input type="checkbox" value="" name="todo4" id="todoCheck4">
-                                        <label for="todoCheck4"></label>
-                                    </div>
-                                    <span class="text">Let theme shine like a star</span>
-                                    <small class="badge badge-success"><i class="far fa-clock"></i> 3 days</small>
-                                    <div class="tools">
-                                        <i class="fas fa-edit"></i>
-                                        <i class="fas fa-trash-o"></i>
-                                    </div>
-                                </li>
-                                <li>
-                                    <span class="handle">
-                                        <i class="fas fa-ellipsis-v"></i>
-                                        <i class="fas fa-ellipsis-v"></i>
-                                    </span>
-                                    <div class="icheck-primary d-inline ml-2">
-                                        <input type="checkbox" value="" name="todo5" id="todoCheck5">
-                                        <label for="todoCheck5"></label>
-                                    </div>
-                                    <span class="text">Check your messages and notifications</span>
-                                    <small class="badge badge-primary"><i class="far fa-clock"></i> 1 week</small>
-                                    <div class="tools">
-                                        <i class="fas fa-edit"></i>
-                                        <i class="fas fa-trash-o"></i>
-                                    </div>
-                                </li>
-                                <li>
-                                    <span class="handle">
-                                        <i class="fas fa-ellipsis-v"></i>
-                                        <i class="fas fa-ellipsis-v"></i>
-                                    </span>
-                                    <div class="icheck-primary d-inline ml-2">
-                                        <input type="checkbox" value="" name="todo6" id="todoCheck6">
-                                        <label for="todoCheck6"></label>
-                                    </div>
-                                    <span class="text">Let theme shine like a star</span>
-                                    <small class="badge badge-secondary"><i class="far fa-clock"></i> 1 month</small>
-                                    <div class="tools">
-                                        <i class="fas fa-edit"></i>
-                                        <i class="fas fa-trash-o"></i>
-                                    </div>
-                                </li>
+                                @endforelse
                             </ul>
                         </div>
-                        <!-- /.card-body -->
-                        <div class="card-footer clearfix">
-                            <button type="button" class="btn btn-primary float-right"><i class="fas fa-plus"></i>
-                                Add item</button>
+
+                        @if ($upcomingDeadlines->count() > 0)
+                            <div class="card-footer text-center">
+                                <a href="{{ route('admin.opportunities.index') }}" class="text-success">
+                                    View All Opportunities <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </div>
+                        @endif
+                    </div>
+
+                    <!-- Quick Stats Cards -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-box bg-gradient-info">
+                                <span class="info-box-icon"><i class="fas fa-users"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Active Today</span>
+                                    <span class="info-box-number">{{ number_format($activeToday) }}</span>
+                                    <span class="progress-description">
+                                        {{ round(($activeToday / max($totalUsers, 1)) * 100, 1) }}% of total users
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="info-box bg-gradient-success">
+                                <span class="info-box-icon"><i class="fas fa-check-circle"></i></span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">Placement Rate</span>
+                                    @php
+                                        $totalApplications = App\Models\Application::count();
+                                        $placementRate =
+                                            $totalApplications > 0
+                                                ? round(($successfulPlacements / $totalApplications) * 100, 1)
+                                                : 0;
+                                    @endphp
+                                    <span class="info-box-number">{{ $placementRate }}%</span>
+                                    <span class="progress-description">
+                                        {{ number_format($successfulPlacements) }} placements
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <!-- /.card -->
-                </section>
-                <!-- /.Left col -->
-                <!-- right col (We are only adding the ID to make the widgets sortable)-->
-                <section class="col-lg-5 connectedSortable">
 
-                    <!-- Map card -->
-                    <div class="card bg-gradient-primary">
-                        <div class="card-header border-0">
+                    <!-- System Health -->
+                    <div class="card card-success card-outline">
+                        <div class="card-header">
                             <h3 class="card-title">
-                                <i class="fas fa-map-marker-alt mr-1"></i>
-                                Visitors
+                                <i class="fas fa-server mr-1"></i>
+                                System Health
                             </h3>
-                            <!-- card tools -->
                             <div class="card-tools">
-                                <button type="button" class="btn btn-primary btn-sm daterange" title="Date range">
-                                    <i class="far fa-calendar-alt"></i>
-                                </button>
-                                <button type="button" class="btn btn-primary btn-sm" data-card-widget="collapse"
-                                    title="Collapse">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
                                     <i class="fas fa-minus"></i>
                                 </button>
                             </div>
-                            <!-- /.card-tools -->
                         </div>
+
                         <div class="card-body">
-                            <div id="world-map" style="height: 250px; width: 100%;"></div>
-                        </div>
-                        <!-- /.card-body-->
-                        <div class="card-footer bg-transparent">
-                            <div class="row">
-                                <div class="col-4 text-center">
-                                    <div id="sparkline-1"></div>
-                                    <div class="text-white">Visitors</div>
+                            <div class="progress-group mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>Database Storage</span>
+                                    <span>{{ $dbSizeMB }} MB / {{ config('database.limit', 1024) }} MB</span>
                                 </div>
-                                <!-- ./col -->
-                                <div class="col-4 text-center">
-                                    <div id="sparkline-2"></div>
-                                    <div class="text-white">Online</div>
+                                <div class="progress progress-sm">
+                                    @php
+                                        $storagePercent = min(
+                                            100,
+                                            round(($dbSizeMB / max(config('database.limit', 1024), 1)) * 100, 1),
+                                        );
+                                    @endphp
+                                    <div class="progress-bar bg-{{ $storagePercent > 80 ? 'danger' : ($storagePercent > 60 ? 'warning' : 'success') }}"
+                                        style="width: {{ $storagePercent }}%"></div>
                                 </div>
-                                <!-- ./col -->
-                                <div class="col-4 text-center">
-                                    <div id="sparkline-3"></div>
-                                    <div class="text-white">Sales</div>
-                                </div>
-                                <!-- ./col -->
                             </div>
-                            <!-- /.row -->
+
+                            <div class="progress-group mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>Server Load</span>
+                                    <span>{{ number_format($serverLoad, 2) }} / 8</span>
+                                </div>
+                                <div class="progress progress-sm">
+                                    @php
+                                        $loadPercent = min(100, round(($serverLoad / 8) * 100, 1));
+                                    @endphp
+                                    <div class="progress-bar bg-{{ $loadPercent > 80 ? 'danger' : ($loadPercent > 60 ? 'warning' : 'success') }}"
+                                        style="width: {{ $loadPercent }}%"></div>
+                                </div>
+                            </div>
+
+                            <div class="progress-group mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>Cache Hit Rate</span>
+                                    <span>94%</span>
+                                </div>
+                                <div class="progress progress-sm">
+                                    <div class="progress-bar bg-success" style="width: 94%"></div>
+                                </div>
+                            </div>
+
+                            <hr>
+
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <h5 class="text-success">
+                                        {{ number_format(App\Models\ActivityLog::whereDate('created_at', today())->count()) }}
+                                    </h5>
+                                    <small class="text-muted">Events Today</small>
+                                </div>
+                                <div class="col-4">
+                                    <h5 class="text-info">
+                                        {{ number_format(App\Models\Notification::whereNull('read_at')->count()) }}
+                                    </h5>
+                                    <small class="text-muted">Unread Notifications</small>
+                                </div>
+                                <div class="col-4">
+                                    <h5 class="text-warning">
+                                        {{ number_format(App\Models\LoginAttempt::where('success', false)->whereDate('created_at', today())->count()) }}
+                                    </h5>
+                                    <small class="text-muted">Failed Logins</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-footer text-center">
+                            <a href="{{ route('admin.system-health') }}" class="text-success">
+                                View Full System Status <i class="fas fa-arrow-right"></i>
+                            </a>
                         </div>
                     </div>
-                    <!-- /.card -->
 
-                    <!-- solid sales graph -->
-                    <div class="card bg-gradient-info">
-                        <div class="card-header border-0">
+                    <!-- Recent Activity Feed -->
+                    <!-- Recent Activity Feed -->
+                    <div class="card card-success card-outline">
+                        <div class="card-header">
                             <h3 class="card-title">
-                                <i class="fas fa-th mr-1"></i>
-                                Sales Graph
+                                <i class="fas fa-history mr-1"></i>
+                                Recent Activity
                             </h3>
-
                             <div class="card-tools">
-                                <button type="button" class="btn bg-info btn-sm" data-card-widget="collapse">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
                                     <i class="fas fa-minus"></i>
                                 </button>
-                                <button type="button" class="btn bg-info btn-sm" data-card-widget="remove">
-                                    <i class="fas fa-times"></i>
-                                </button>
                             </div>
                         </div>
-                        <div class="card-body">
-                            <canvas class="chart" id="line-chart"
-                                style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%;"></canvas>
-                        </div>
-                        <!-- /.card-body -->
-                        <div class="card-footer bg-transparent">
-                            <div class="row">
-                                <div class="col-4 text-center">
-                                    <input type="text" class="knob" data-readonly="true" value="20"
-                                        data-width="60" data-height="60" data-fgColor="#39CCCC">
 
-                                    <div class="text-white">Mail-Orders</div>
-                                </div>
-                                <!-- ./col -->
-                                <div class="col-4 text-center">
-                                    <input type="text" class="knob" data-readonly="true" value="50"
-                                        data-width="60" data-height="60" data-fgColor="#39CCCC">
+                        <div class="card-body p-0">
+                            <div class="timeline" style="margin: 15px;">
+                                @php
+                                    $activities = Cache::remember(
+                                        'dashboard.recent_activities',
+                                        300,
+                                        fn() => App\Models\ActivityLog::with('causer')->latest()->take(10)->get(),
+                                    );
+                                @endphp
 
-                                    <div class="text-white">Online</div>
-                                </div>
-                                <!-- ./col -->
-                                <div class="col-4 text-center">
-                                    <input type="text" class="knob" data-readonly="true" value="30"
-                                        data-width="60" data-height="60" data-fgColor="#39CCCC">
-
-                                    <div class="text-white">In-Store</div>
-                                </div>
-                                <!-- ./col -->
-                            </div>
-                            <!-- /.row -->
-                        </div>
-                        <!-- /.card-footer -->
-                    </div>
-                    <!-- /.card -->
-
-                    <!-- Calendar -->
-                    <div class="card bg-gradient-success">
-                        <div class="card-header border-0">
-
-                            <h3 class="card-title">
-                                <i class="far fa-calendar-alt"></i>
-                                Calendar
-                            </h3>
-                            <!-- tools card -->
-                            <div class="card-tools">
-                                <!-- button with a dropdown -->
-                                <div class="btn-group">
-                                    <button type="button" class="btn btn-success btn-sm dropdown-toggle"
-                                        data-toggle="dropdown" data-offset="-52">
-                                        <i class="fas fa-bars"></i>
-                                    </button>
-                                    <div class="dropdown-menu" role="menu">
-                                        <a href="#" class="dropdown-item">Add new event</a>
-                                        <a href="#" class="dropdown-item">Clear events</a>
-                                        <div class="dropdown-divider"></div>
-                                        <a href="#" class="dropdown-item">View calendar</a>
+                                @foreach ($activities->groupBy(fn($item) => $item->created_at->format('Y-m-d')) as $date => $dayActivities)
+                                    <div class="time-label">
+                                        <span class="bg-success">
+                                            @php
+                                                $carbonDate = \Carbon\Carbon::parse($date);
+                                                if ($carbonDate->isToday()) {
+                                                    echo 'Today';
+                                                } elseif ($carbonDate->isYesterday()) {
+                                                    echo 'Yesterday';
+                                                } else {
+                                                    echo $carbonDate->format('M d, Y');
+                                                }
+                                            @endphp
+                                        </span>
                                     </div>
-                                </div>
-                                <button type="button" class="btn btn-success btn-sm" data-card-widget="collapse">
-                                    <i class="fas fa-minus"></i>
-                                </button>
-                                <button type="button" class="btn btn-success btn-sm" data-card-widget="remove">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                            <!-- /. tools -->
-                        </div>
-                        <!-- /.card-header -->
-                        <div class="card-body pt-0">
-                            <!--The calendar -->
-                            <div id="calendar" style="width: 100%"></div>
-                        </div>
-                        <!-- /.card-body -->
-                    </div>
-                    <!-- /.card -->
-                </section>
-                <!-- right col -->
-            </div>
-            <!-- /.row (main row) -->
-        </div><!-- /.container-fluid -->
-    </section>
-    <!-- /.content -->
 
+                                    @foreach ($dayActivities as $activity)
+                                        @php
+                                            // Determine icon and color based on event or description
+                                            $icon = 'fa-circle';
+                                            $color = 'info';
+                                            $description = $activity->description;
+                                            $properties = $activity->properties ?? [];
+
+                                            // Parse description and properties for better display
+                                            if (str_contains($activity->description, 'login')) {
+                                                $icon = 'fa-sign-in-alt';
+                                                $color = 'success';
+                                            } elseif (str_contains($activity->description, 'logout')) {
+                                                $icon = 'fa-sign-out-alt';
+                                                $color = 'warning';
+                                            } elseif (str_contains($activity->description, 'created')) {
+                                                $icon = 'fa-plus-circle';
+                                                $color = 'success';
+                                            } elseif (str_contains($activity->description, 'updated')) {
+                                                $icon = 'fa-edit';
+                                                $color = 'info';
+                                            } elseif (str_contains($activity->description, 'deleted')) {
+                                                $icon = 'fa-trash';
+                                                $color = 'danger';
+                                            } elseif (str_contains($activity->description, 'upload')) {
+                                                $icon = 'fa-upload';
+                                                $color = 'primary';
+                                            } elseif (str_contains($activity->description, 'download')) {
+                                                $icon = 'fa-download';
+                                                $color = 'secondary';
+                                            } elseif (str_contains($activity->description, 'placement')) {
+                                                $icon = 'fa-briefcase';
+                                                $color = 'purple';
+                                            } elseif (str_contains($activity->description, 'mentor')) {
+                                                $icon = 'fa-handshake';
+                                                $color = 'teal';
+                                            }
+                                        @endphp
+
+                                        <div>
+                                            <i class="fas {{ $icon }} bg-{{ $color }}"></i>
+                                            <div class="timeline-item">
+                                                <span class="time">
+                                                    <i class="fas fa-clock"></i>
+                                                    {{ $activity->created_at->format('h:i A') }}
+                                                </span>
+                                                <h3 class="timeline-header">
+                                                    @if ($activity->causer)
+                                                        <a href="{{ route('admin.users.show', $activity->causer_id) }}"
+                                                            class="text-{{ $color }}">
+                                                            <strong>{{ $activity->causer->name }}</strong>
+                                                        </a>
+                                                    @else
+                                                        <span class="text-muted">System</span>
+                                                    @endif
+
+                                                    {{-- Format the description --}}
+                                                    @if (str_contains($activity->description, 'login'))
+                                                        logged in to the system
+                                                    @elseif(str_contains($activity->description, 'logout'))
+                                                        logged out of the system
+                                                    @elseif(str_contains($activity->description, 'created user'))
+                                                        created a new user account
+                                                    @elseif(str_contains($activity->description, 'updated user'))
+                                                        updated user information
+                                                    @elseif(str_contains($activity->description, 'deleted user'))
+                                                        deleted a user account
+                                                    @elseif(str_contains($activity->description, 'created opportunity'))
+                                                        posted a new opportunity
+                                                    @elseif(str_contains($activity->description, 'updated opportunity'))
+                                                        updated an opportunity
+                                                    @elseif(str_contains($activity->description, 'deleted opportunity'))
+                                                        deleted an opportunity
+                                                    @elseif(str_contains($activity->description, 'uploaded document'))
+                                                        uploaded a document
+                                                    @elseif(str_contains($activity->description, 'downloaded document'))
+                                                        downloaded a document
+                                                    @elseif(str_contains($activity->description, 'placement'))
+                                                        updated a placement record
+                                                    @elseif(str_contains($activity->description, 'mentorship'))
+                                                        updated a mentorship relationship
+                                                    @elseif(str_contains($activity->description, 'settings'))
+                                                        updated system settings
+                                                    @else
+                                                        {{ $activity->description }}
+                                                    @endif
+                                                </h3>
+
+                                                {{-- Format properties in a human-readable way --}}
+                                                @if (!empty($properties))
+                                                    <div class="timeline-body">
+                                                        @if (isset($properties['email']))
+                                                            <span class="badge badge-info mr-1">
+                                                                <i class="fas fa-envelope mr-1"></i>
+                                                                {{ $properties['email'] }}
+                                                            </span>
+                                                        @endif
+
+                                                        @if (isset($properties['role']))
+                                                            <span class="badge badge-primary mr-1">
+                                                                <i class="fas fa-user-tag mr-1"></i>
+                                                                {{ $properties['role'] }}
+                                                            </span>
+                                                        @endif
+
+                                                        @if (isset($properties['status']))
+                                                            <span
+                                                                class="badge badge-{{ $properties['status'] === 'active' ? 'success' : 'secondary' }} mr-1">
+                                                                <i class="fas fa-circle mr-1"></i>
+                                                                {{ ucfirst($properties['status']) }}
+                                                            </span>
+                                                        @endif
+
+                                                        @if (isset($properties['changes']))
+                                                            <div class="mt-2">
+                                                                <small class="text-muted">
+                                                                    <i class="fas fa-pencil-alt mr-1"></i>
+                                                                    Changes:
+                                                                    @foreach ($properties['changes'] as $field => $change)
+                                                                        @if (is_array($change))
+                                                                            {{ $field }}
+                                                                            ({{ $change['old'] ?? 'none' }} →
+                                                                            {{ $change['new'] ?? 'none' }})
+                                                                        @else
+                                                                            {{ $field }} updated
+                                                                        @endif
+                                                                        @if (!$loop->last)
+                                                                            ,
+                                                                        @endif
+                                                                    @endforeach
+                                                                </small>
+                                                            </div>
+                                                        @endif
+
+                                                        @if (isset($properties['ip_address']))
+                                                            <div class="mt-1">
+                                                                <small class="text-muted">
+                                                                    <i class="fas fa-network-wired mr-1"></i>
+                                                                    IP: {{ $properties['ip_address'] }}
+                                                                </small>
+                                                            </div>
+                                                        @endif
+
+                                                        @if (isset($properties['user_agent']))
+                                                            <div class="mt-1">
+                                                                <small class="text-muted">
+                                                                    <i class="fas fa-desktop mr-1"></i>
+                                                                    {{ \Illuminate\Support\Str::limit($properties['user_agent'], 50) }}
+                                                                </small>
+                                                            </div>
+                                                        @endif
+
+                                                        {{-- For placement activities --}}
+                                                        @if (isset($properties['student_name']))
+                                                            <span class="badge badge-info mr-1">
+                                                                <i class="fas fa-user-graduate mr-1"></i>
+                                                                {{ $properties['student_name'] }}
+                                                            </span>
+                                                        @endif
+
+                                                        @if (isset($properties['organization_name']))
+                                                            <span class="badge badge-warning mr-1">
+                                                                <i class="fas fa-building mr-1"></i>
+                                                                {{ $properties['organization_name'] }}
+                                                            </span>
+                                                        @endif
+
+                                                        @if (isset($properties['match_score']))
+                                                            <span class="badge badge-success mr-1">
+                                                                <i class="fas fa-percent mr-1"></i> Match:
+                                                                {{ $properties['match_score'] }}%
+                                                            </span>
+                                                        @endif
+
+                                                        {{-- For document activities --}}
+                                                        @if (isset($properties['document_name']))
+                                                            <span class="badge badge-secondary mr-1">
+                                                                <i class="fas fa-file mr-1"></i>
+                                                                {{ $properties['document_name'] }}
+                                                            </span>
+                                                        @endif
+
+                                                        {{-- For any additional data, show as key-value pairs --}}
+                                                        @if (count($properties) > 0 &&
+                                                                !isset($properties['changes']) &&
+                                                                !isset($properties['email']) &&
+                                                                !isset($properties['role']))
+                                                            <div class="mt-2">
+                                                                <small class="text-muted">
+                                                                    @foreach ($properties as $key => $value)
+                                                                        @if (!is_array($value) && !in_array($key, ['ip_address', 'user_agent', 'url', 'method']))
+                                                                            <span class="mr-2">
+                                                                                <strong>{{ str_replace('_', ' ', ucfirst($key)) }}:</strong>
+                                                                                {{ is_bool($value) ? ($value ? 'Yes' : 'No') : $value }}
+                                                                            </span>
+                                                                        @endif
+                                                                    @endforeach
+                                                                </small>
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                @endforeach
+
+                                <div>
+                                    <i class="fas fa-clock bg-gray"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-footer text-center">
+                            <a href="{{ route('admin.activity-logs') }}" class="text-success">
+                                View All Activity <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </x-layouts.app>
+
+@push('scripts')
+    <script>
+        $(function() {
+            'use strict'
+
+            // Growth Chart
+            const growthCtx = document.getElementById('growthChartCanvas').getContext('2d')
+            new Chart(growthCtx, {
+                type: 'line',
+                data: {
+                    labels: @json($months),
+                    datasets: [{
+                            label: 'Students',
+                            backgroundColor: 'rgba(60,141,188,0.1)',
+                            borderColor: 'rgba(60,141,188,1)',
+                            pointBackgroundColor: '#3b8bba',
+                            pointBorderColor: 'rgba(60,141,188,1)',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgba(60,141,188,1)',
+                            data: @json($studentGrowth),
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Employers',
+                            backgroundColor: 'rgba(0,166,90,0.1)',
+                            borderColor: 'rgba(0,166,90,1)',
+                            pointBackgroundColor: '#00a65a',
+                            pointBorderColor: 'rgba(0,166,90,1)',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgba(0,166,90,1)',
+                            data: @json($employerGrowth),
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                drawBorder: false,
+                                color: 'rgba(0,0,0,0.1)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            })
+
+            // Applications Chart
+            const applicationsCtx = document.getElementById('applicationsChartCanvas').getContext('2d')
+            new Chart(applicationsCtx, {
+                type: 'bar',
+                data: {
+                    labels: @json($months),
+                    datasets: [{
+                            label: 'Applications',
+                            backgroundColor: 'rgba(60,141,188,0.8)',
+                            borderColor: 'rgba(60,141,188,1)',
+                            data: @json($applicationTrend),
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'Placements',
+                            backgroundColor: 'rgba(0,166,90,0.8)',
+                            borderColor: 'rgba(0,166,90,1)',
+                            data: @json($placementTrend),
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                drawBorder: false,
+                                color: 'rgba(0,0,0,0.1)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            })
+
+            // Initialize tooltips
+            $('[data-toggle="tooltip"]').tooltip()
+
+            // Auto-refresh data every 5 minutes
+            setInterval(function() {
+                Livewire.dispatch('refreshDashboard')
+            }, 300000)
+        })
+    </script>
+@endpush

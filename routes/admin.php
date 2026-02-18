@@ -107,6 +107,12 @@ Route::middleware([
         Route::get('/{opportunity}/edit', [OpportunityController::class, 'edit'])->name('edit');
     });
 
+    // Mentors Management Routes
+    Route::prefix('placements')->name('placements.')->group(function () {
+        // All Mentors
+        Route::view('', 'admin.placements.index')->name('index');
+    });
+
     // Mentorship Management Routes
     Route::prefix('mentorships')->name('mentorships.')->group(function () {
         // All Mentorships
@@ -132,6 +138,67 @@ Route::middleware([
 
         // Add New Mentorship
         Route::get('/create', [MentorshipController::class, 'create'])->name('create');
+    });
+
+
+    // Mentors Management Routes
+    Route::prefix('mentors')->name('mentors.')->group(function () {
+        // All Mentors
+        Route::view('', 'admin.mentors.index')->name('index');
+
+        // Verified Mentors
+        Route::view('verified', 'admin.mentors.verified')->name('verified');
+
+        // Featured Mentors
+        Route::view('featured', 'admin.mentors.featured')->name('featured');
+
+        // Available for Mentorship
+        Route::view('available', 'admin.mentors.available')->name('available');
+
+        // Add New Mentor
+        Route::view('create', 'admin.mentors.create')->name('create');
+
+        // View Single Mentor
+        Route::get('/{mentor}/show', [MentorController::class, 'show'])->name('show');
+
+        // Edit Mentor
+        Route::view('/{mentor}/edit', 'admin.mentors.edit')->name('edit');
+    });
+
+    // Add this to your admin routes group, after opportunities routes
+    Route::prefix('applications')->name('applications.')->group(function () {
+        // All Applications
+        Route::view('', 'admin.applications.index')->name('index');
+
+        // Pending Review
+        Route::view('pending', 'admin.applications.pending')->name('pending');
+
+        // Interview Stage
+        Route::view('interviewing', 'admin.applications.interviewing')->name('interviewing');
+
+        // Offer Stage
+        Route::view('offers', 'admin.applications.offers')->name('offers');
+
+        // Hired/Placed
+        Route::view('hired', 'admin.applications.hired')->name('hired');
+
+        // Rejected
+        Route::view('rejected', 'admin.applications.rejected')->name('rejected');
+
+        // View Single Application
+        Route::get('/{application}/show', [ApplicationController::class, 'show'])->name('show');
+
+        // Edit Application
+        Route::view('/{application}/edit', 'admin.applications.edit')->name('edit');
+
+        // Add these to your applications route group
+        Route::view('analytics', 'admin.applications.analytics')->name('analytics');
+
+        Route::view('bulk-interview', 'admin.applications.bulk-interview')->name('bulk-interview');
+
+        Route::view('bulk-offer', 'admin.applications.bulk-offer')->name('bulk-offer');
+
+        Route::view('reports', 'admin.applications.reports')->name('reports');
     });
 
     // Reports & Analytics Routes
@@ -174,13 +241,13 @@ Route::middleware([
         Route::view('/backup', 'admin.settings.backup')->name('backup');
     });
 
-    Route::view('activity-logs', 'admin.activity-logs')->name('activity-logs');
+    Route::view('activity-logs', 'admin.utilities.activity-logs')->name('activity-logs');
 
-    Route::view('system-health', 'admin.system-health')->name('system-health');
+    Route::view('system-health', 'admin.utilities.system-health')->name('system-health');
 
-    Route::view('database', 'admin.database.index')->name('database');
+    Route::view('database', 'admin.utilities.database')->name('database');
 
-    Route::view('help', 'admin.help')->name('help');
+    Route::view('help', 'admin.utilities.help')->name('help');
 
-    Route::view('documentation', 'admin.documentation')->name('documentation');
+    Route::view('documentation', 'admin.utilities.documentation')->name('documentation');
 });

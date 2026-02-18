@@ -48,35 +48,57 @@ class Create extends Component
     public $preferred_courses = [];
     public $target_institutions = [];
 
-    // Status
+    // Status & UI State
     public $status = 'draft';
+    public $isProcessing = false;
+    public $activeTab = 'basic';
 
-    // Skill input
+    // Skill inputs
     public $newSkill = '';
     public $newPreferredSkill = '';
     public $newPreferredCourse = '';
+    public $newBenefitInput = '';
 
-    protected $listeners = ['refreshEmployers' => '$refresh'];
+    protected $listeners = ['add-other-benefit' => 'handleAddBenefit'];
 
-    // Or make it a regular property that's set in mount
-    // public $employersList = [];
+    protected $rules = [
+        'title' => 'required|string|max:255',
+        'organization_id' => 'required|exists:organizations,id',
+        'opportunity_type' => 'required|string',
+        'employment_type' => 'required|string',
+        'description' => 'required|string|min:100',
+        'responsibilities' => 'nullable|string',
+        'requirements' => 'nullable|string',
+        'benefits' => 'nullable|string',
+        'duration_months' => 'required|integer|min:1',
+        'start_date' => 'required|date|after_or_equal:today',
+        'end_date' => 'required|date|after:start_date',
+        'is_remote' => 'boolean',
+        'is_hybrid' => 'boolean',
+        'location' => 'nullable|string',
+        'county' => 'nullable|string',
+        'town' => 'nullable|string',
+        'application_deadline' => 'required|date|after_or_equal:today',
+        'slots_available' => 'required|integer|min:1',
+        'requires_portfolio' => 'boolean',
+        'requires_cover_letter' => 'boolean',
+        'stipend' => 'nullable|numeric|min:0',
+        'stipend_frequency' => 'nullable|string',
+        'min_cgpa' => 'nullable|numeric|between:0,4',
+        'min_year_of_study' => 'nullable|integer|min:1|max:6',
+    ];
 
     public function mount()
     {
         $this->start_date = now()->addWeek()->format('Y-m-d');
         $this->end_date = now()->addMonths(3)->format('Y-m-d');
         $this->application_deadline = now()->addDays(14)->format('Y-m-d');
-
-        // Load employers in mount
     }
 
-    /**
-     * Computed property to get Organizations for the dropdown
-     */
     public function getOrganizationsProperty()
     {
         return Organization::with('user')
-            ->orderBy('name') // Assuming 'name' is the field in Organizations
+            ->orderBy('name')
             ->get()
             ->mapWithKeys(function ($org) {
                 return [$org->id => $org->name . ' (' . ($org->user->email ?? 'N/A') . ')'];
@@ -103,10 +125,77 @@ class Create extends Component
         return getCommonSkills();
     }
 
-    public function addRequiredSkill()
+    // Tab Navigation
+    public function setTab($tab)
     {
-        if (!empty($this->newSkill) && !in_array($this->newSkill, $this->required_skills)) {
-            $this->required_skills[] = trim($this->newSkill);
+        $this->activeTab = $tab;
+    }
+
+    public function nextTab()
+    {
+        $tabs = ['basic', 'details', 'requirements', 'review'];
+        $currentIndex = array_search($this->activeTab, $tabs);
+        if ($currentIndex < count($tabs) - 1) {
+            $this->activeTab = $tabs[$currentIndex + 1];
+        }
+    }
+
+    // Add this method to check if a tab is complete
+    public function isTabComplete(string $tab): bool
+    {
+        return match ($tab) {
+            'basic' => !empty($this->title)
+                && !empty($this->organization_id)
+                && strlen($this->description) >= 100,
+
+            'details' => !empty($this->duration_months)
+                && !empty($this->start_date)
+                && !empty($this->end_date)
+                && !empty($this->application_deadline),
+
+            'requirements' => true, // Optional tab - always considered complete
+
+            'review' => $this->isTabComplete('basic')
+                && $this->isTabComplete('details'),
+
+            default => false
+        };
+    }
+
+    // Add this method for the completion percentage (used in review tab)
+    public function getCompletionPercentage(): int
+    {
+        $totalFields = 8;
+        $filledFields = 0;
+
+        if (!empty($this->title)) $filledFields++;
+        if (!empty($this->organization_id)) $filledFields++;
+        if (strlen($this->description) >= 100) $filledFields++;
+        if (!empty($this->duration_months)) $filledFields++;
+        if (!empty($this->start_date)) $filledFields++;
+        if (!empty($this->end_date)) $filledFields++;
+        if (!empty($this->application_deadline)) $filledFields++;
+        if (!empty($this->slots_available)) $filledFields++;
+
+        return (int) round(($filledFields / $totalFields) * 100);
+    }
+
+    public function previousTab()
+    {
+        $tabs = ['basic', 'details', 'requirements', 'review'];
+        $currentIndex = array_search($this->activeTab, $tabs);
+        if ($currentIndex > 0) {
+            $this->activeTab = $tabs[$currentIndex - 1];
+        }
+    }
+
+    // Skills Management
+    public function addRequiredSkill($skill = null)
+    {
+        $skillToAdd = $skill ?: $this->newSkill;
+
+        if (!empty($skillToAdd) && !in_array(trim($skillToAdd), $this->required_skills)) {
+            $this->required_skills[] = trim($skillToAdd);
             $this->newSkill = '';
         }
     }
@@ -119,7 +208,7 @@ class Create extends Component
 
     public function addPreferredSkill()
     {
-        if (!empty($this->newPreferredSkill) && !in_array($this->newPreferredSkill, $this->preferred_skills)) {
+        if (!empty($this->newPreferredSkill) && !in_array(trim($this->newPreferredSkill), $this->preferred_skills)) {
             $this->preferred_skills[] = trim($this->newPreferredSkill);
             $this->newPreferredSkill = '';
         }
@@ -133,7 +222,7 @@ class Create extends Component
 
     public function addPreferredCourse()
     {
-        if (!empty($this->newPreferredCourse) && !in_array($this->newPreferredCourse, $this->preferred_courses)) {
+        if (!empty($this->newPreferredCourse) && !in_array(trim($this->newPreferredCourse), $this->preferred_courses)) {
             $this->preferred_courses[] = trim($this->newPreferredCourse);
             $this->newPreferredCourse = '';
         }
@@ -145,10 +234,19 @@ class Create extends Component
         $this->preferred_courses = array_values($this->preferred_courses);
     }
 
-    public function addOtherBenefit($benefit)
+    // Benefits Management
+    public function handleAddBenefit($benefit)
     {
-        if (!empty($benefit) && !in_array($benefit, $this->other_benefits)) {
-            $this->other_benefits[] = $benefit;
+        $this->addOtherBenefit($benefit);
+    }
+
+    public function addOtherBenefit($benefit = null)
+    {
+        $benefitToAdd = $benefit ?: $this->newBenefitInput;
+
+        if (!empty($benefitToAdd) && !in_array($benefitToAdd, $this->other_benefits)) {
+            $this->other_benefits[] = $benefitToAdd;
+            $this->newBenefitInput = '';
         }
     }
 
@@ -158,7 +256,8 @@ class Create extends Component
         $this->other_benefits = array_values($this->other_benefits);
     }
 
-    public function saveDraft()
+    // Save Actions
+    public function saveAsDraft()
     {
         $this->status = 'draft';
         $this->saveOpportunity();
@@ -178,94 +277,92 @@ class Create extends Component
 
     public function saveOpportunity()
     {
-        $validated = $this->validate([
-            'title' => 'required|string|max:255',
-            'organization_id' => 'required|exists:organizations,id', // Updated table name
-            'opportunity_type' => 'required|string',
-            'employment_type' => 'required|string',
-            'description' => 'required|string|min:100',
-            'responsibilities' => 'nullable|string',
-            'requirements' => 'nullable|string',
-            'benefits' => 'nullable|string',
-            'duration_months' => 'required|integer|min:1',
-            'start_date' => 'required|date|after_or_equal:today',
-            'end_date' => 'required|date|after:start_date',
-            'is_remote' => 'boolean',
-            'is_hybrid' => 'boolean',
-            'location' => 'nullable|string',
-            'county' => 'nullable|string',
-            'town' => 'nullable|string',
-            'application_deadline' => 'required|date|after_or_equal:today',
-            'slots_available' => 'required|integer|min:1',
-            'requires_portfolio' => 'boolean',
-            'requires_cover_letter' => 'boolean',
-            'stipend' => 'nullable|numeric|min:0',
-            'stipend_frequency' => 'nullable|string',
-            'min_cgpa' => 'nullable|numeric|between:0,4',
-            'min_year_of_study' => 'nullable|integer|min:1|max:6',
-            'status' => 'required|string',
-        ]);
+        $this->isProcessing = true;
 
-        // Generate slug from title
-        $slug = Str::slug($this->title);
-        $count = 1;
-        while (AttachmentOpportunity::where('slug', $slug)->exists()) {
-            $slug = Str::slug($this->title) . '-' . $count++;
-        }
+        try {
+            $validated = $this->validate();
 
-        // Prepare array data
-        $arrayData = [
-            'required_skills' => !empty($this->required_skills) ? $this->required_skills : null,
-            'preferred_skills' => !empty($this->preferred_skills) ? $this->preferred_skills : null,
-            'preferred_courses' => !empty($this->preferred_courses) ? $this->preferred_courses : null,
-            'target_institutions' => !empty($this->target_institutions) ? $this->target_institutions : null,
-            'other_benefits' => !empty($this->other_benefits) ? $this->other_benefits : null,
-        ];
+            // Generate unique slug
+            $slug = Str::slug($this->title);
+            $count = 1;
+            while (AttachmentOpportunity::where('slug', $slug)->exists()) {
+                $slug = Str::slug($this->title) . '-' . $count++;
+            }
 
-        // Create opportunity
-        $opportunity = AttachmentOpportunity::create(array_merge($validated, [
-            'slug' => $slug,
-            'required_skills' => $arrayData['required_skills'],
-            'preferred_skills' => $arrayData['preferred_skills'],
-            'preferred_courses' => $arrayData['preferred_courses'],
-            'target_institutions' => $arrayData['target_institutions'],
-            'other_benefits' => $arrayData['other_benefits'],
-            'slots_filled' => 0,
-            'views' => 0,
-            'applications_count' => 0,
-            'published_at' => $this->status === 'published' ? now() : null,
-        ]));
+            // Prepare array data
+            // Map application_deadline to deadline for database
+            $opportunityData = [
+                'title' => $validated['title'],
+                'organization_id' => $validated['organization_id'],
+                'description' => $validated['description'],
+                'responsibilities' => $validated['responsibilities'] ?? null,
+                'requirements' => $validated['requirements'] ?? null,
+                'benefits' => $validated['benefits'] ?? null,
+                'duration_months' => $validated['duration_months'],
+                'start_date' => $validated['start_date'],
+                'end_date' => $validated['end_date'],
+                'deadline' => $this->application_deadline, // <-- Map here
+                'is_remote' => $this->is_remote,
+                'is_hybrid' => $this->is_hybrid,
+                'location' => $this->location,
+                'county' => $this->county,
+                'town' => $this->town,
+                'slots_available' => $validated['slots_available'],
+                'requires_portfolio' => $this->requires_portfolio,
+                'requires_cover_letter' => $this->requires_cover_letter,
+                'stipend' => $this->stipend,
+                'stipend_frequency' => $this->stipend_frequency,
+                'min_gpa' => $this->min_cgpa, // Note: also mapping min_cgpa to min_gpa if needed
+                'min_year_of_study' => $this->min_year_of_study,
+                'slug' => $slug,
+                'skills_required' => !empty($this->required_skills) ? $this->required_skills : null,
+                'preferred_skills' => !empty($this->preferred_skills) ? $this->preferred_skills : null,
+                'preferred_courses' => !empty($this->preferred_courses) ? $this->preferred_courses : null,
+                'target_institutions' => !empty($this->target_institutions) ? $this->target_institutions : null,
+                'other_benefits' => !empty($this->other_benefits) ? $this->other_benefits : null,
+                'slots_filled' => 0,
+                'views' => 0,
+                'applications_count' => 0,
+                'published_at' => $this->status === 'published' ? now() : null,
+            ];
 
-        $message = match ($this->status) {
-            'draft' => 'Opportunity saved as draft!',
-            'pending_approval' => 'Opportunity submitted for approval!',
-            'published' => 'Opportunity published successfully!',
-            default => 'Opportunity created!'
-        };
+            $opportunity = AttachmentOpportunity::create($opportunityData);
 
-        $this->dispatch('show-toast', [
-            'type' => 'success',
-            'message' => $message
-        ]);
+            $message = match ($this->status) {
+                'draft' => 'Opportunity saved as draft!',
+                'pending_approval' => 'Opportunity submitted for approval!',
+                'published' => 'Opportunity published successfully!',
+                default => 'Opportunity created!'
+            };
 
-        // Redirect based on status
-        if ($this->status === 'published') {
-            return redirect()->route('admin.opportunities.show', $opportunity->id);
-        } elseif ($this->status === 'pending_approval') {
-            return redirect()->route('admin.opportunities.pending');
-        } else {
-            return redirect()->route('admin.opportunities.edit', $opportunity->id);
+            $this->dispatch(
+                'notify',
+                type: 'success',
+                message: $message
+            );
+
+            // Delay redirect slightly to show toast
+            $this->dispatch(
+                'redirect-after-save',
+                url: match ($this->status) {
+                    'published' => route('admin.opportunities.show', $opportunity),
+                    'pending_approval' => route('admin.opportunities.pending'),
+                    default => route('admin.opportunities.show', $opportunity),
+                }
+            );
+        } catch (\Exception $e) {
+            $this->dispatch(
+                'notify',
+                type: 'error',
+                message: 'Error saving opportunity: ' . $e->getMessage()
+            );
+        } finally {
+            $this->isProcessing = false;
         }
     }
 
     public function render()
     {
-        return view('livewire.admin.opportunities.create', [
-            'organizations' => $this->organizations,
-            'counties' => getKenyanCounties(),
-            'opportunityTypes' => getOpportunityTypes(),
-            'employmentTypes' => getEmploymentTypes(),
-            'commonSkills' => getCommonSkills(),
-        ]);
+        return view('livewire.admin.opportunities.create');
     }
 }

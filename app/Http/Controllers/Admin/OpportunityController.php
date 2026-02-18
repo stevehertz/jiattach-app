@@ -38,8 +38,16 @@ class OpportunityController extends Controller
         ]);
     }
 
-    public function edit()
+    public function edit(AttachmentOpportunity $opportunity):View
     {
-        return view('admin.opportunities.edit');
+        return view('admin.opportunities.edit', [
+            'opportunity' => $opportunity->load([
+                'organization',
+                'applications.student.studentProfile',
+                'applications' => function ($query) {
+                    $query->latest()->take(20);
+                }
+            ])
+        ]);
     }
 }

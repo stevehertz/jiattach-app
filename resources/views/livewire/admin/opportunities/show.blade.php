@@ -1,400 +1,536 @@
 <div>
-    {{-- If you look to others for fulfillment, you will never truly be fulfilled. --}}
-    <!-- Page Header -->
-    <div class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1 class="m-0">Opportunity Details</h1>
-                </div>
-                <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-                        <li class="breadcrumb-item"><a href="{{ route('admin.opportunities.index') }}">Opportunities</a>
-                        </li>
-                        <li class="breadcrumb-item active">{{ $opportunity->title }}</li>
-                    </ol>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Main Content -->
     <div class="content">
         <div class="container-fluid">
-            <div class="row">
-                <div class="col-md-8">
-                    <!-- Opportunity Details Card -->
-                    <div class="card card-primary">
-                        <div class="card-header">
-                            <h3 class="card-title">{{ $opportunity->title }}</h3>
-                            <div class="card-tools">
-                                {!! getOpportunityStatusBadge($opportunity->status) !!}
+            
+            <!-- Flash Messages -->
+            @if(session('message'))
+                <div class="alert alert-{{ session('alert-type', 'success') }} alert-dismissible fade show mb-4">
+                    <i class="fas fa-{{ session('alert-type') === 'success' ? 'check-circle' : 'info-circle' }} mr-2"></i>
+                    {{ session('message') }}
+                    <button type="button" class="close" data-dismiss="alert">
+                        <span>&times;</span>
+                    </button>
+                </div>
+            @endif
+
+            <!-- Header Stats Row -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card bg-gradient-primary text-white">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-lg-8">
+                                    <h2 class="mb-2">{{ $opportunity->title }}</h2>
+                                    <div class="d-flex align-items-center flex-wrap gap-3">
+                                        <span class="badge badge-light text-primary px-3 py-2">
+                                            <i class="fas fa-building mr-1"></i>
+                                            {{ $opportunity->organization->name ?? 'Unknown Organization' }}
+                                        </span>
+                                        <span class="badge badge-{{ $this->getStatusColor($opportunity->status) }} px-3 py-2">
+                                            {{ $this->getStatusLabel($opportunity->status) }}
+                                        </span>
+                                        <span class="badge badge-light text-dark px-3 py-2">
+                                            <i class="fas fa-clock mr-1"></i>
+                                            {{ $opportunity->days_until_deadline }} days left
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-lg-4 text-lg-right mt-3 mt-lg-0">
+                                    <div class="btn-group">
+                                        <a href="{{ route('admin.opportunities.edit', $opportunity) }}" class="btn btn-light">
+                                            <i class="fas fa-edit mr-1"></i> Edit
+                                        </a>
+                                        <a href="{{ route('admin.opportunities.index') }}" class="btn btn-outline-light">
+                                            <i class="fas fa-arrow-left mr-1"></i> Back
+                                        </a>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Main Content Column -->
+                <div class="col-lg-8">
+                    
+                    <!-- Overview Cards -->
+                    <div class="row mb-4">
+                        <div class="col-md-3 col-6">
+                            <div class="small-box bg-info">
+                                <div class="inner">
+                                    <h3>{{ $opportunity->applications_count ?? $opportunity->applications->count() }}</h3>
+                                    <p>Applications</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-file-alt"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="small-box bg-success">
+                                <div class="inner">
+                                    <h3>{{ $opportunity->slots_filled ?? 0 }}/{{ $opportunity->slots_available }}</h3>
+                                    <p>Slots Filled</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="small-box bg-warning">
+                                <div class="inner">
+                                    <h3>{{ $opportunity->views ?? 0 }}</h3>
+                                    <p>Views</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-eye"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="small-box bg-{{ $opportunity->isOpen ? 'success' : 'danger' }}">
+                                <div class="inner">
+                                    <h3>{{ $opportunity->isOpen ? 'Open' : 'Closed' }}</h3>
+                                    <p>Status</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-{{ $opportunity->isOpen ? 'check-circle' : 'times-circle' }}"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Opportunity Details -->
+                    <div class="card card-outline card-primary shadow-sm">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-info-circle mr-2"></i>Opportunity Details
+                            </h3>
+                        </div>
                         <div class="card-body">
-                            <div class="row mb-4">
-                                <div class="col-md-6">
-                                    <h5><i class="fas fa-building mr-2"></i>Company Details</h5>
-                                    <p><strong>Company:</strong> {{ $opportunity->organization->name ?? 'N/A' }}</p>
-                                    <p><strong>Email:</strong> {{ $opportunity->organization->email ?? 'N/A' }}</p>
-                                    <p><strong>Phone:</strong> {{ $opportunity->organization->phone ?? 'N/A' }}</p>
-                                </div>
-                                <div class="col-md-6">
-                                    <h5><i class="fas fa-info-circle mr-2"></i>Opportunity Details</h5>
-                                    <p><strong>Type:</strong> {{ $opportunity->opportunity_type_label }}</p>
-                                    <p><strong>Employment Type:</strong> {{ $opportunity->employment_type_label }}</p>
-                                    <p><strong>Duration:</strong> {{ $opportunity->duration_label }}</p>
+                            <!-- Description -->
+                            <div class="mb-4">
+                                <h5 class="text-primary border-bottom pb-2">Description</h5>
+                                <div class="bg-light p-3 rounded">
+                                    {!! nl2br(e($opportunity->description)) !!}
                                 </div>
                             </div>
 
-                            <h5><i class="fas fa-map-marker-alt mr-2"></i>Location Details</h5>
-                            <p><strong>Location Type:</strong> {{ $opportunity->location_type }}</p>
-                            <p><strong>Full Location:</strong> {{ $opportunity->full_location }}</p>
-
-                            <h5 class="mt-4"><i class="fas fa-calendar-alt mr-2"></i>Timeline</h5>
-                            <p><strong>Start Date:</strong> {{ formatDate($opportunity->start_date) }}</p>
-                            <p><strong>End Date:</strong> {{ formatDate($opportunity->end_date) }}</p>
-                            <p><strong>Application Deadline:</strong>
-                                <span
-                                    class="{{ $opportunity->application_deadline_passed ? 'text-danger' : 'text-success' }}">
-                                    {{ formatDate($opportunity->application_deadline) }}
-                                    ({{ $opportunity->days_until_deadline }} days remaining)
-                                </span>
-                            </p>
-
-                            <h5 class="mt-4"><i class="fas fa-money-bill-wave mr-2"></i>Stipend & Benefits</h5>
-                            <p><strong>Stipend:</strong> {{ $opportunity->stipend_formatted }}</p>
-                            @if ($opportunity->other_benefits && is_array($opportunity->other_benefits))
-                                <p><strong>Other Benefits:</strong></p>
-                                <ul>
-                                    @foreach ($opportunity->other_benefits as $benefit)
-                                        <li>{{ $benefit }}</li>
-                                    @endforeach
-                                </ul>
-                            @endif
-
-                            <h5 class="mt-4"><i class="fas fa-list-alt mr-2"></i>Description</h5>
-                            <div class="bg-light p-3 rounded">
-                                {!! nl2br(e($opportunity->description)) !!}
-                            </div>
-
-                            @if ($opportunity->responsibilities)
-                                <h5 class="mt-4"><i class="fas fa-tasks mr-2"></i>Responsibilities</h5>
+                            @if($opportunity->responsibilities)
+                            <div class="mb-4">
+                                <h5 class="text-primary border-bottom pb-2">Responsibilities</h5>
                                 <div class="bg-light p-3 rounded">
                                     {!! nl2br(e($opportunity->responsibilities)) !!}
                                 </div>
+                            </div>
                             @endif
 
-                            @if ($opportunity->requirements)
-                                <h5 class="mt-4"><i class="fas fa-list-check mr-2"></i>Requirements</h5>
+                            @if($opportunity->requirements)
+                            <div class="mb-4">
+                                <h5 class="text-primary border-bottom pb-2">Requirements</h5>
                                 <div class="bg-light p-3 rounded">
-                                    {!! $opportunity->requirements !!}
+                                    {!! nl2br(e($opportunity->requirements)) !!}
                                 </div>
+                            </div>
                             @endif
 
-                            @if ($opportunity->benefits)
-                                <h5 class="mt-4"><i class="fas fa-gift mr-2"></i>Benefits</h5>
+                            @if($opportunity->benefits)
+                            <div class="mb-4">
+                                <h5 class="text-primary border-bottom pb-2">Benefits</h5>
                                 <div class="bg-light p-3 rounded">
                                     {!! nl2br(e($opportunity->benefits)) !!}
                                 </div>
+                            </div>
                             @endif
                         </div>
                     </div>
 
-                    <!-- Applications Card -->
-                    <div class="card mt-3">
-                        <div class="card-header">
+                    <!-- Applications Section -->
+                    <div class="card card-outline card-success shadow-sm mt-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
                             <h3 class="card-title">
-                                <i class="fas fa-file-alt mr-1"></i> Applications
-                                <span class="badge badge-info">{{ $opportunity->applications->count() }}</span>
+                                <i class="fas fa-users mr-2"></i>Recent Applications
                             </h3>
+                            <span class="badge badge-success">{{ $opportunity->applications->count() }} total</span>
                         </div>
-                        <div class="card-body">
-                            @if ($opportunity->applications->count() > 0)
+                        <div class="card-body p-0">
+                            @if($opportunity->applications->count() > 0)
                                 <div class="table-responsive">
-                                    <table class="table table-hover">
-                                        <thead>
+                                    <table class="table table-hover table-striped mb-0">
+                                        <thead class="bg-light">
                                             <tr>
                                                 <th>Student</th>
+                                                <th>Match Score</th>
                                                 <th>Status</th>
-                                                <th>Applied Date</th>
+                                                <th>Applied</th>
                                                 <th>Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @foreach ($opportunity->applications as $application)
+                                            @foreach($opportunity->applications->take(10) as $application)
                                                 <tr>
                                                     <td>
                                                         <div class="d-flex align-items-center">
-                                                            <div class="mr-2">
-                                                                @php
-                                                                    $initials = getInitials(
-                                                                        $application->student->full_name,
-                                                                    );
-                                                                    $colors = [
-                                                                        'primary',
-                                                                        'success',
-                                                                        'info',
-                                                                        'warning',
-                                                                        'danger',
-                                                                        'secondary',
-                                                                    ];
-                                                                    $color =
-                                                                        $colors[
-                                                                            crc32($application->student->email) %
-                                                                                count($colors)
-                                                                        ];
-                                                                @endphp
-                                                                <div class="avatar-initials bg-{{ $color }} img-circle"
-                                                                    style="width: 30px; height: 30px; line-height: 30px; text-align: center; color: white; font-weight: bold; font-size: 12px;">
-                                                                    {{ $initials }}
-                                                                </div>
-                                                            </div>
-                                                            <div>
-                                                                <strong>{{ $application->student->full_name }}</strong>
-                                                                <div class="text-muted small">
-                                                                    {{ $application->student->studentProfile?->student_reg_number ?? '' }}
-                                                                </div>
-                                                                <div class="text-muted small">
-                                                                    {{ $application->student->studentProfile?->institution_name ?? '' }}
-                                                                </div>
+                                                            <div class="user-block mr-2">
+                                                                <span class="username">{{ $application->student->full_name ?? 'Unknown' }}</span>
+                                                                <span class="description text-muted small">
+                                                                    {{ $application->student->studentProfile->course ?? 'N/A' }}
+                                                                </span>
                                                             </div>
                                                         </div>
                                                     </td>
                                                     <td>
-                                                        {!! getApplicationStatusBadge($application->status) !!}
-                                                        @if ($application->interview_scheduled_at)
-                                                            <div class="text-muted small">
-                                                                Interview:
-                                                                {{ formatDate($application->interview_scheduled_at) }}
-                                                            </div>
-                                                        @endif
-                                                    </td>
-                                                    <td>
-                                                        {{ formatDate($application->submitted_at ?? $application->created_at) }}
-                                                        <div class="text-muted small">
-                                                            {{ timeAgo($application->submitted_at ?? $application->created_at) }}
+                                                        <div class="d-flex align-items-center">
+                                                            <span class="badge badge-{{ $application->match_score >= 80 ? 'success' : ($application->match_score >= 60 ? 'warning' : 'secondary') }}">
+                                                                {{ round($application->match_score ?? 0) }}%
+                                                            </span>
                                                         </div>
                                                     </td>
                                                     <td>
-                                                        <a href="{{ route('admin.users.show', $application->student->id) }}"
-                                                            class="btn btn-sm btn-info" title="View Student">
+                                                        <span class="badge badge-{{ match($application->status) {
+                                                            'accepted' => 'success',
+                                                            'offered' => 'primary',
+                                                            'shortlisted' => 'info',
+                                                            'reviewing' => 'warning',
+                                                            'rejected' => 'danger',
+                                                            default => 'secondary'
+                                                        } }}">
+                                                            {{ ucfirst($application->status) }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-muted small">
+                                                        {{ $application->created_at->diffForHumans() }}
+                                                    </td>
+                                                    <td>
+                                                        <a href="{{ route('admin.users.show', $application->student) }}" 
+                                                           class="btn btn-sm btn-outline-primary" title="View Student">
                                                             <i class="fas fa-eye"></i>
                                                         </a>
-                                                        <a href="#" class="btn btn-sm btn-warning"
-                                                            title="View Application">
-                                                            <i class="fas fa-file-alt"></i>
-                                                        </a>
+                                                        @if($application->placement)
+                                                            <a href="{{ route('admin.placements.show', $application->placement) }}" 
+                                                               class="btn btn-sm btn-outline-success" title="View Placement">
+                                                                <i class="fas fa-briefcase"></i>
+                                                            </a>
+                                                        @endif
                                                     </td>
                                                 </tr>
                                             @endforeach
                                         </tbody>
                                     </table>
                                 </div>
+                                @if($opportunity->applications->count() > 10)
+                                    <div class="card-footer text-center">
+                                        <a href="{{ route('admin.opportunities.applications', $opportunity) }}" class="btn btn-link">
+                                            View All Applications <i class="fas fa-arrow-right ml-1"></i>
+                                        </a>
+                                    </div>
+                                @endif
                             @else
-                                <div class="text-center py-4">
-                                    <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
-                                    <h5 class="text-muted">No applications yet</h5>
-                                    <p class="text-muted">No students have applied for this opportunity yet.</p>
+                                <div class="text-center py-5">
+                                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                    <h5 class="text-muted">No Applications Yet</h5>
+                                    <p class="text-muted">Students haven't applied for this opportunity.</p>
                                 </div>
                             @endif
                         </div>
                     </div>
-                </div>
 
-                <div class="col-md-4">
-                    <!-- Quick Stats Card -->
-                    <div class="card">
+                    <!-- Activity Timeline -->
+                    @if($opportunity->placements->count() > 0)
+                    <div class="card card-outline card-secondary shadow-sm mt-4">
                         <div class="card-header">
-                            <h3 class="card-title">Quick Stats</h3>
+                            <h3 class="card-title">
+                                <i class="fas fa-history mr-2"></i>Placements
+                            </h3>
                         </div>
                         <div class="card-body">
-                            <div class="info-box mb-3">
-                                <span class="info-box-icon bg-success"><i class="fas fa-users"></i></span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text">Slots Status</span>
-                                    <span class="info-box-number">
-                                        {{ $opportunity->slots_filled }} / {{ $opportunity->slots_available }}
-                                        @if ($opportunity->slots_available > 0)
-                                            ({{ round(($opportunity->slots_filled / $opportunity->slots_available) * 100) }}%)
-                                        @endif
-                                    </span>
-                                    <div class="progress">
-                                        <div class="progress-bar bg-{{ $opportunity->slots_filled >= $opportunity->slots_available ? 'danger' : 'success' }}"
-                                            style="width: {{ ($opportunity->slots_filled / max(1, $opportunity->slots_available)) * 100 }}%">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="info-box mb-3">
-                                <span class="info-box-icon bg-info"><i class="fas fa-file-alt"></i></span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text">Applications</span>
-                                    <span class="info-box-number">{{ $opportunity->applications_count }}</span>
-                                </div>
-                            </div>
-
-                            <div class="info-box mb-3">
-                                <span class="info-box-icon bg-warning"><i class="fas fa-eye"></i></span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text">Views</span>
-                                    <span class="info-box-number">{{ $opportunity->views }}</span>
-                                </div>
-                            </div>
-
-                            <div class="info-box mb-3">
-                                <span class="info-box-icon bg-primary"><i class="fas fa-calendar"></i></span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text">Duration</span>
-                                    <span class="info-box-number">{{ $opportunity->duration_label }}</span>
-                                </div>
-                            </div>
-
-                            @if ($opportunity->is_remote || $opportunity->is_hybrid)
-                                <div class="info-box mb-3">
-                                    <span class="info-box-icon bg-secondary"><i
-                                            class="fas fa-laptop-house"></i></span>
-                                    <div class="info-box-content">
-                                        <span class="info-box-text">Work Mode</span>
-                                        <span class="info-box-number">
-                                            @if ($opportunity->is_remote && $opportunity->is_hybrid)
-                                                Hybrid
-                                            @elseif($opportunity->is_remote)
-                                                Remote
-                                            @elseif($opportunity->is_hybrid)
-                                                Hybrid
-                                            @else
-                                                On-site
-                                            @endif
+                            <div class="timeline">
+                                @foreach($opportunity->placements as $placement)
+                                    <div class="time-label">
+                                        <span class="bg-{{ $placement->status === 'placed' ? 'success' : 'warning' }}">
+                                            {{ $placement->created_at->format('M d, Y') }}
                                         </span>
                                     </div>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-
-                    <!-- Quick Actions Card -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Quick Actions</h3>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-6">
-                                    <a href="{{ route('admin.opportunities.index') }}"
-                                        class="btn btn-default btn-block">
-                                        <i class="fas fa-arrow-left mr-1"></i> Back
-                                    </a>
-                                </div>
-                                <div class="col-6">
-                                    <a href="{{ route('admin.opportunities.edit', $opportunity->id) }}"
-                                        class="btn btn-primary btn-block">
-                                        <i class="fas fa-edit mr-1"></i> Edit
-                                    </a>
-                                </div>
-                            </div>
-
-                            <div class="mt-3">
-                                @if ($opportunity->status === 'pending_approval')
-                                    <button wire:click="publishOpportunity" wire:confirm="Publish this opportunity?"
-                                        class="btn btn-success btn-block mb-2">
-                                        <i class="fas fa-check mr-1"></i> Publish
-                                    </button>
-                                @endif
-
-                                @if ($opportunity->status === 'published')
-                                    <button wire:click="closeOpportunity" wire:confirm="Close this opportunity?"
-                                        class="btn btn-warning btn-block mb-2">
-                                        <i class="fas fa-times mr-1"></i> Close
-                                    </button>
-
-                                    <button wire:click="markAsFilled" wire:confirm="Mark as filled?"
-                                        class="btn btn-info btn-block mb-2">
-                                        <i class="fas fa-check-circle mr-1"></i> Mark as Filled
-                                    </button>
-                                @endif
-
-                                @if (in_array($opportunity->status, ['published', 'pending_approval']))
-                                    <button wire:click="cancelOpportunity" wire:confirm="Cancel this opportunity?"
-                                        class="btn btn-danger btn-block mb-2">
-                                        <i class="fas fa-ban mr-1"></i> Cancel
-                                    </button>
-                                @endif
-
-                                @if (in_array($opportunity->status, ['draft', 'pending_approval']))
-                                    <button wire:click="deleteOpportunity"
-                                        wire:confirm="Delete this opportunity? This action cannot be undone."
-                                        class="btn btn-danger btn-block">
-                                        <i class="fas fa-trash mr-1"></i> Delete
-                                    </button>
-                                @endif
+                                    <div>
+                                        <i class="fas fa-user-check bg-{{ $placement->status === 'placed' ? 'success' : 'warning' }}"></i>
+                                        <div class="timeline-item">
+                                            <span class="time"><i class="fas fa-clock"></i> {{ $placement->created_at->diffForHumans() }}</span>
+                                            <h3 class="timeline-header">
+                                                <a href="{{ route('admin.users.show', $placement->student) }}">
+                                                    {{ $placement->student->full_name ?? 'Unknown' }}
+                                                </a> 
+                                                was {{ $placement->status === 'placed' ? 'placed' : 'assigned' }}
+                                            </h3>
+                                            <div class="timeline-body">
+                                                Department: {{ $placement->department ?? 'N/A' }}<br>
+                                                Supervisor: {{ $placement->supervisor_name ?? 'TBD' }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
                             </div>
                         </div>
                     </div>
+                    @endif
+                </div>
 
-                    <!-- Requirements Card -->
-                    <div class="card mt-3">
+                <!-- Sidebar Column -->
+                <div class="col-lg-4">
+                    
+                    <!-- Action Panel -->
+                    <div class="card card-outline card-warning shadow-sm mb-4">
                         <div class="card-header">
-                            <h3 class="card-title">Requirements & Skills</h3>
+                            <h3 class="card-title">
+                                <i class="fas fa-cogs mr-2"></i>Actions
+                            </h3>
                         </div>
                         <div class="card-body">
-                            @if ($opportunity->min_cgpa)
-                                <p><strong>Minimum CGPA:</strong>
-                                    <span class="badge badge-info">{{ $opportunity->min_cgpa }}</span>
-                                </p>
+                            @if($opportunity->status === 'draft' || $opportunity->status === 'pending_approval')
+                                <button wire:click="publishOpportunity" 
+                                    wire:confirm="Are you sure you want to publish this opportunity? It will be visible to students."
+                                    class="btn btn-success btn-block mb-3" wire:loading.attr="disabled">
+                                    <span wire:loading.remove wire:target="publishOpportunity">
+                                        <i class="fas fa-rocket mr-2"></i>Publish Now
+                                    </span>
+                                    <span wire:loading wire:target="publishOpportunity">
+                                        <i class="fas fa-spinner fa-spin mr-2"></i>Publishing...
+                                    </span>
+                                </button>
                             @endif
 
-                            @if ($opportunity->min_year_of_study)
-                                <p><strong>Minimum Year of Study:</strong>
-                                    <span class="badge badge-secondary">Year
-                                        {{ $opportunity->min_year_of_study }}</span>
-                                </p>
+                            @if($opportunity->status === 'open')
+                                <button wire:click="closeOpportunity" 
+                                    wire:confirm="Close this opportunity? No new applications will be accepted."
+                                    class="btn btn-warning btn-block mb-3" wire:loading.attr="disabled">
+                                    <span wire:loading.remove wire:target="closeOpportunity">
+                                        <i class="fas fa-door-closed mr-2"></i>Close Opportunity
+                                    </span>
+                                    <span wire:loading wire:target="closeOpportunity">
+                                        <i class="fas fa-spinner fa-spin mr-2"></i>Closing...
+                                    </span>
+                                </button>
+
+                                <button wire:click="markAsFilled" 
+                                    wire:confirm="Mark all slots as filled?"
+                                    class="btn btn-info btn-block mb-3" wire:loading.attr="disabled">
+                                    <span wire:loading.remove wire:target="markAsFilled">
+                                        <i class="fas fa-check-double mr-2"></i>Mark as Filled
+                                    </span>
+                                    <span wire:loading wire:target="markAsFilled">
+                                        <i class="fas fa-spinner fa-spin mr-2"></i>Processing...
+                                    </span>
+                                </button>
                             @endif
 
-                            @if ($opportunity->requires_portfolio)
-                                <p><strong>Portfolio Required:</strong>
-                                    <span class="badge badge-warning">Yes</span>
-                                </p>
+                            @if(in_array($opportunity->status, ['draft', 'pending_approval', 'open']))
+                                <button wire:click="cancelOpportunity" 
+                                    wire:confirm="Cancel this opportunity? This action cannot be undone."
+                                    class="btn btn-danger btn-block mb-3" wire:loading.attr="disabled">
+                                    <span wire:loading.remove wire:target="cancelOpportunity">
+                                        <i class="fas fa-ban mr-2"></i>Cancel Opportunity
+                                    </span>
+                                    <span wire:loading wire:target="cancelOpportunity">
+                                        <i class="fas fa-spinner fa-spin mr-2"></i>Cancelling...
+                                    </span>
+                                </button>
                             @endif
 
-                            @if ($opportunity->requires_cover_letter)
-                                <p><strong>Cover Letter Required:</strong>
-                                    <span class="badge badge-warning">Yes</span>
-                                </p>
+                            @if(in_array($opportunity->status, ['draft', 'cancelled']) && $opportunity->applications->count() === 0)
+                                <hr>
+                                <button wire:click="deleteOpportunity" 
+                                    wire:confirm="Permanently delete this opportunity? This cannot be undone."
+                                    class="btn btn-outline-danger btn-block" wire:loading.attr="disabled">
+                                    <span wire:loading.remove wire:target="deleteOpportunity">
+                                        <i class="fas fa-trash-alt mr-2"></i>Delete Permanently
+                                    </span>
+                                    <span wire:loading wire:target="deleteOpportunity">
+                                        <i class="fas fa-spinner fa-spin mr-2"></i>Deleting...
+                                    </span>
+                                </button>
                             @endif
+                        </div>
+                    </div>
 
-                            @if ($opportunity->required_skills && is_array($opportunity->required_skills))
-                                <p><strong>Required Skills:</strong></p>
-                                <div class="mb-2">
-                                    @foreach ($opportunity->required_skills as $skill)
-                                        <span class="badge badge-primary mr-1 mb-1">{{ $skill }}</span>
-                                    @endforeach
+                    <!-- Opportunity Info Card -->
+                    <div class="card card-outline card-primary shadow-sm mb-4">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-clipboard-list mr-2"></i>Opportunity Info
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-group list-group-unbordered">
+                                <li class="list-group-item">
+                                    <b>Type</b> 
+                                    <span class="float-right badge badge-primary">{{ ucfirst($opportunity->type) }}</span>
+                                </li>
+                                <li class="list-group-item">
+                                    <b>Work Type</b> 
+                                    <span class="float-right badge badge-info">{{ ucfirst($opportunity->work_type) }}</span>
+                                </li>
+                                <li class="list-group-item">
+                                    <b>Duration</b> 
+                                    <span class="float-right">{{ $opportunity->duration_months }} months</span>
+                                </li>
+                                <li class="list-group-item">
+                                    <b>Start Date</b> 
+                                    <span class="float-right">{{ $opportunity->start_date?->format('M d, Y') }}</span>
+                                </li>
+                                <li class="list-group-item">
+                                    <b>End Date</b> 
+                                    <span class="float-right">{{ $opportunity->end_date?->format('M d, Y') }}</span>
+                                </li>
+                                <li class="list-group-item">
+                                    <b>Deadline</b> 
+                                    <span class="float-right {{ $opportunity->daysRemaining > 7 ? 'text-success' : ($opportunity->daysRemaining > 0 ? 'text-warning' : 'text-danger') }}">
+                                        {{ $opportunity->deadline?->format('M d, Y') }}
+                                    </span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Location & Logistics -->
+                    <div class="card card-outline card-success shadow-sm mb-4">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-map-marker-alt mr-2"></i>Location & Logistics
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <strong class="d-block text-muted mb-1">Work Mode</strong>
+                                <span class="badge badge-{{ $opportunity->work_type === 'remote' ? 'primary' : ($opportunity->work_type === 'hybrid' ? 'purple' : 'secondary') }}">
+                                    {{ ucfirst($opportunity->work_type) }}
+                                </span>
+                            </div>
+                            
+                            @if($opportunity->location)
+                                <div class="mb-3">
+                                    <strong class="d-block text-muted mb-1">Location</strong>
+                                    {{ $opportunity->location }}
+                                </div>
+                            @endif
+                            
+                            @if($opportunity->county)
+                                <div class="mb-3">
+                                    <strong class="d-block text-muted mb-1">County</strong>
+                                    {{ $opportunity->county }}
                                 </div>
                             @endif
 
-                            @if ($opportunity->preferred_skills && is_array($opportunity->preferred_skills))
-                                <p><strong>Preferred Skills:</strong></p>
-                                <div class="mb-2">
-                                    @foreach ($opportunity->preferred_skills as $skill)
-                                        <span class="badge badge-secondary mr-1 mb-1">{{ $skill }}</span>
-                                    @endforeach
+                            <div class="mb-3">
+                                <strong class="d-block text-muted mb-1">Stipend</strong>
+                                @if($opportunity->stipend)
+                                    <span class="text-success font-weight-bold">KSh {{ number_format($opportunity->stipend) }}</span>
+                                @else
+                                    <span class="text-muted">Unpaid / Not specified</span>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Requirements Summary -->
+                    <div class="card card-outline card-info shadow-sm mb-4">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-graduation-cap mr-2"></i>Requirements
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            @if($opportunity->min_gpa)
+                                <div class="mb-3">
+                                    <strong class="d-block text-muted mb-1">Minimum GPA</strong>
+                                    <span class="badge badge-warning">{{ $opportunity->min_gpa }}</span>
                                 </div>
                             @endif
 
-                            @if ($opportunity->preferred_courses && is_array($opportunity->preferred_courses))
-                                <p><strong>Preferred Courses:</strong></p>
-                                <div>
-                                    @foreach ($opportunity->preferred_courses as $course)
-                                        <span class="badge badge-info mr-1 mb-1">{{ $course }}</span>
-                                    @endforeach
+                            @if($opportunity->skills_required && is_array($opportunity->skills_required))
+                                <div class="mb-3">
+                                    <strong class="d-block text-muted mb-1">Required Skills</strong>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        @foreach($opportunity->skills_required as $skill)
+                                            <span class="badge badge-primary">{{ $skill }}</span>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+
+                            @if($opportunity->courses_required && is_array($opportunity->courses_required))
+                                <div class="mb-3">
+                                    <strong class="d-block text-muted mb-1">Required Courses</strong>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        @foreach($opportunity->courses_required as $course)
+                                            <span class="badge badge-info">{{ $course }}</span>
+                                        @endforeach
+                                    </div>
                                 </div>
                             @endif
                         </div>
                     </div>
+
+                    <!-- Organization Card -->
+                    <div class="card card-outline card-secondary shadow-sm">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-building mr-2"></i>Organization
+                            </h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="text-center mb-3">
+                                <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-2" 
+                                     style="width: 80px; height: 80px;">
+                                    <i class="fas fa-building fa-2x text-muted"></i>
+                                </div>
+                                <h5 class="mb-0">{{ $opportunity->organization->name ?? 'Unknown' }}</h5>
+                                <small class="text-muted">{{ $opportunity->organization->industry ?? '' }}</small>
+                            </div>
+                            
+                            <ul class="list-unstyled mb-0">
+                                @if($opportunity->organization->email)
+                                    <li class="mb-2">
+                                        <i class="fas fa-envelope text-muted mr-2 w-20"></i>
+                                        {{ $opportunity->organization->email }}
+                                    </li>
+                                @endif
+                                @if($opportunity->organization->phone)
+                                    <li class="mb-2">
+                                        <i class="fas fa-phone text-muted mr-2 w-20"></i>
+                                        {{ $opportunity->organization->phone }}
+                                    </li>
+                                @endif
+                                @if($opportunity->organization->address)
+                                    <li class="mb-2">
+                                        <i class="fas fa-map-marker-alt text-muted mr-2 w-20"></i>
+                                        {{ $opportunity->organization->address }}
+                                    </li>
+                                @endif
+                            </ul>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
     </div>
+
+    @push('scripts')
+        <script>
+            document.addEventListener('livewire:initialized', () => {
+                Livewire.on('notify', (event) => {
+                    if (typeof toastr !== 'undefined') {
+                        toastr[event.type](event.message, '', {
+                            closeButton: true,
+                            progressBar: true,
+                            positionClass: 'toast-top-right',
+                            timeOut: 5000
+                        });
+                    }
+                });
+            });
+        </script>
+    @endpush
 </div>

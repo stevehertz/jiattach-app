@@ -116,6 +116,32 @@ class Show extends Component
         return redirect()->route('admin.opportunities.index');
     }
 
+     // Helper methods for status styling
+    public function getStatusColor($status): string
+    {
+        return match($status) {
+            'open', 'published' => 'success',
+            'draft' => 'secondary',
+            'pending_approval' => 'warning',
+            'closed', 'cancelled' => 'danger',
+            'filled' => 'info',
+            default => 'secondary'
+        };
+    }
+
+    public function getStatusLabel($status): string
+    {
+        return match($status) {
+            'open' => 'Active',
+            'draft' => 'Draft',
+            'pending_approval' => 'Pending Approval',
+            'closed' => 'Closed',
+            'filled' => 'Filled',
+            'cancelled' => 'Cancelled',
+            default => ucfirst($status)
+        };
+    }
+
     public function render()
     {
         return view('livewire.admin.opportunities.show');

@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
-use Illuminate\Support\Str;
 use App\Traits\LogsModelActivity;
-use Laravel\Sanctum\HasApiTokens;
-use Laravel\Jetstream\HasProfilePhoto;
-use Illuminate\Notifications\Notifiable;
-use Laravel\Fortify\TwoFactorAuthenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
+use Laravel\Fortify\TwoFactorAuthenticatable;
+use Laravel\Jetstream\HasProfilePhoto;
+use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
@@ -179,6 +181,52 @@ class User extends Authenticatable
     {
         return $this->hasOne(Application::class, 'user_id')->latestOfMany();
     }
+
+    // Relationship with mentorships (as mentee)
+    public function mentorships(): HasMany
+    {
+        return $this->hasMany(Mentorship::class, 'mentee_id');
+    }
+
+    // Active mentorships
+    public function activeMentorships(): HasMany
+    {
+        return $this->mentorships()->where('status', 'active');
+    }
+
+    /**
+     * Get mentorship reviews written by this user.
+     */
+    public function mentorshipReviews()
+    {
+        return $this->hasMany(MentorshipReview::class, 'reviewer_id');
+    }
+
+    /**
+     * Get mentorships where user is a mentor.
+     */
+    public function mentorshipsAsMentor()
+    {
+        return $this->hasMany(Mentorship::class, 'mentor_id');
+    }
+
+    /**
+     * Check if user is a mentor.
+     */
+    public function isMentor(): bool
+    {
+        return $this->hasRole('mentor');
+    }
+
+    /**
+     * Get the mentor profile associated with the user.
+     */
+    public function mentor(): HasOne
+    {
+        return $this->hasOne(Mentor::class);
+    }
+
+
 
     /**
      * Get mentorships where user is a mentee.

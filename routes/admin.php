@@ -1,19 +1,21 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Livewire\Admin\Students\Active;
-use App\Livewire\Admin\Students\Seeking;
-use App\Livewire\Admin\Students\OnAttachment;
-use App\Http\Controllers\Admin\UsersController;
-use App\Http\Controllers\Admin\ProfileController;
-use App\Http\Controllers\Admin\StudentsController;
+use App\Http\Controllers\Admin\AdministratorsController;
+use App\Http\Controllers\Admin\ApplicationController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\MentorController;
 use App\Http\Controllers\Admin\MentorshipController;
 use App\Http\Controllers\Admin\OpportunityController;
-use App\Http\Controllers\Admin\AdministratorsController;
 use App\Http\Controllers\Admin\OrganizationsController;
+use App\Http\Controllers\Admin\ProfileController;
+use App\Http\Controllers\Admin\StudentsController;
+use App\Http\Controllers\Admin\UsersController;
 use App\Livewire\Admin\Opportunities\Active as OpportunitiesActive;
 use App\Livewire\Admin\Opportunities\Pending;
+use App\Livewire\Admin\Students\Active;
+use App\Livewire\Admin\Students\OnAttachment;
+use App\Livewire\Admin\Students\Seeking;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -116,19 +118,19 @@ Route::middleware([
     // Mentorship Management Routes
     Route::prefix('mentorships')->name('mentorships.')->group(function () {
         // All Mentorships
-        Route::get('/', [MentorshipController::class, 'index'])->name('index');
+        Route::view('/', 'admin.mentorship.index')->name('index');
 
         // Active Mentorships
-        Route::get('/active', [MentorshipController::class, 'active'])->name('active');
+        Route::view('/active', 'admin.mentorship.active')->name('active');
 
         // Upcoming Sessions
-        Route::get('/upcoming-sessions', [MentorshipController::class, 'upcomingSessions'])->name('upcoming.sessions');
+        Route::view('/upcoming-sessions', 'admin.mentorship.upcoming-sessions')->name('upcoming.sessions');
 
         // Completed Mentorships
-        Route::get('/completed', [MentorshipController::class, 'completed'])->name('completed');
+        Route::view('/completed', 'admin.mentorship.completed')->name('completed');
 
         // Reviews & Ratings
-        Route::get('/reviews', [MentorshipController::class, 'reviews'])->name('reviews');
+        Route::view('/reviews', 'admin.mentorship.reviews')->name('reviews');
 
         // View Single Mentorship
         Route::get('/{mentorship}/show', [MentorshipController::class, 'show'])->name('show');
@@ -137,7 +139,7 @@ Route::middleware([
         Route::get('/{mentorship}/edit', [MentorshipController::class, 'edit'])->name('edit');
 
         // Add New Mentorship
-        Route::get('/create', [MentorshipController::class, 'create'])->name('create');
+        Route::view('/create', 'admin.mentorship.create')->name('create');
     });
 
 
@@ -162,7 +164,7 @@ Route::middleware([
         Route::get('/{mentor}/show', [MentorController::class, 'show'])->name('show');
 
         // Edit Mentor
-        Route::view('/{mentor}/edit', 'admin.mentors.edit')->name('edit');
+        Route::get('/{mentor}/edit', [MentorController::class, 'edit'])->name('edit');
     });
 
     // Add this to your admin routes group, after opportunities routes

@@ -31,7 +31,7 @@
                                         </span>
                                         <span class="badge badge-light text-dark px-3 py-2">
                                             <i class="fas fa-clock mr-1"></i>
-                                            {{ $opportunity->days_until_deadline }} days left
+                                            {{ $opportunity->daysRemaining ?? $opportunity->deadline->diffInDays(now()) }} days left
                                         </span>
                                     </div>
                                 </div>
@@ -91,13 +91,13 @@
                             </div>
                         </div>
                         <div class="col-md-3 col-6">
-                            <div class="small-box bg-{{ $opportunity->isOpen ? 'success' : 'danger' }}">
+                            <div class="small-box bg-{{ $opportunity->status === 'open' ? 'success' : 'danger' }}">
                                 <div class="inner">
-                                    <h3>{{ $opportunity->isOpen ? 'Open' : 'Closed' }}</h3>
+                                    <h3>{{ $opportunity->status === 'open' ? 'Open' : 'Closed' }}</h3>
                                     <p>Status</p>
                                 </div>
                                 <div class="icon">
-                                    <i class="fas fa-{{ $opportunity->isOpen ? 'check-circle' : 'times-circle' }}"></i>
+                                    <i class="fas fa-{{ $opportunity->status === 'open' ? 'check-circle' : 'times-circle' }}"></i>
                                 </div>
                             </div>
                         </div>
@@ -111,7 +111,6 @@
                             </h3>
                         </div>
                         <div class="card-body">
-                            <!-- Description -->
                             <div class="mb-4">
                                 <h5 class="text-primary border-bottom pb-2">Description</h5>
                                 <div class="bg-light p-3 rounded">
@@ -183,11 +182,9 @@
                                                         </div>
                                                     </td>
                                                     <td>
-                                                        <div class="d-flex align-items-center">
-                                                            <span class="badge badge-{{ $application->match_score >= 80 ? 'success' : ($application->match_score >= 60 ? 'warning' : 'secondary') }}">
-                                                                {{ round($application->match_score ?? 0) }}%
-                                                            </span>
-                                                        </div>
+                                                        <span class="badge badge-{{ ($application->match_score ?? 0) >= 80 ? 'success' : (($application->match_score ?? 0) >= 60 ? 'warning' : 'secondary') }}">
+                                                            {{ round($application->match_score ?? 0) }}%
+                                                        </span>
                                                     </td>
                                                     <td>
                                                         <span class="badge badge-{{ match($application->status) {
@@ -223,7 +220,7 @@
                                 </div>
                                 @if($opportunity->applications->count() > 10)
                                     <div class="card-footer text-center">
-                                        <a href="{{ route('admin.opportunities.applications', $opportunity) }}" class="btn btn-link">
+                                        <a href="#" class="btn btn-link">
                                             View All Applications <i class="fas fa-arrow-right ml-1"></i>
                                         </a>
                                     </div>
@@ -237,44 +234,6 @@
                             @endif
                         </div>
                     </div>
-
-                    <!-- Activity Timeline -->
-                    @if($opportunity->placements->count() > 0)
-                    <div class="card card-outline card-secondary shadow-sm mt-4">
-                        <div class="card-header">
-                            <h3 class="card-title">
-                                <i class="fas fa-history mr-2"></i>Placements
-                            </h3>
-                        </div>
-                        <div class="card-body">
-                            <div class="timeline">
-                                @foreach($opportunity->placements as $placement)
-                                    <div class="time-label">
-                                        <span class="bg-{{ $placement->status === 'placed' ? 'success' : 'warning' }}">
-                                            {{ $placement->created_at->format('M d, Y') }}
-                                        </span>
-                                    </div>
-                                    <div>
-                                        <i class="fas fa-user-check bg-{{ $placement->status === 'placed' ? 'success' : 'warning' }}"></i>
-                                        <div class="timeline-item">
-                                            <span class="time"><i class="fas fa-clock"></i> {{ $placement->created_at->diffForHumans() }}</span>
-                                            <h3 class="timeline-header">
-                                                <a href="{{ route('admin.users.show', $placement->student) }}">
-                                                    {{ $placement->student->full_name ?? 'Unknown' }}
-                                                </a> 
-                                                was {{ $placement->status === 'placed' ? 'placed' : 'assigned' }}
-                                            </h3>
-                                            <div class="timeline-body">
-                                                Department: {{ $placement->department ?? 'N/A' }}<br>
-                                                Supervisor: {{ $placement->supervisor_name ?? 'TBD' }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-                    </div>
-                    @endif
                 </div>
 
                 <!-- Sidebar Column -->
@@ -288,69 +247,74 @@
                             </h3>
                         </div>
                         <div class="card-body">
-                            @if($opportunity->status === 'draft' || $opportunity->status === 'pending_approval')
-                                <button wire:click="publishOpportunity" 
-                                    wire:confirm="Are you sure you want to publish this opportunity? It will be visible to students."
-                                    class="btn btn-success btn-block mb-3" wire:loading.attr="disabled">
-                                    <span wire:loading.remove wire:target="publishOpportunity">
-                                        <i class="fas fa-rocket mr-2"></i>Publish Now
-                                    </span>
-                                    <span wire:loading wire:target="publishOpportunity">
-                                        <i class="fas fa-spinner fa-spin mr-2"></i>Publishing...
-                                    </span>
-                                </button>
-                            @endif
-
-                            @if($opportunity->status === 'open')
-                                <button wire:click="closeOpportunity" 
-                                    wire:confirm="Close this opportunity? No new applications will be accepted."
-                                    class="btn btn-warning btn-block mb-3" wire:loading.attr="disabled">
-                                    <span wire:loading.remove wire:target="closeOpportunity">
-                                        <i class="fas fa-door-closed mr-2"></i>Close Opportunity
-                                    </span>
-                                    <span wire:loading wire:target="closeOpportunity">
-                                        <i class="fas fa-spinner fa-spin mr-2"></i>Closing...
-                                    </span>
+                            
+                            {{-- DRAFT / PENDING APPROVAL ACTIONS --}}
+                            @if(in_array($opportunity->status, ['draft', 'pending_approval']))
+                                <button type="button" 
+                                    wire:click="confirmAction('publish', 'Publish Opportunity?', 'This will make the opportunity visible to all students.')"
+                                    class="btn btn-success btn-block mb-3">
+                                    <i class="fas fa-rocket mr-2"></i>Publish Now
                                 </button>
 
-                                <button wire:click="markAsFilled" 
-                                    wire:confirm="Mark all slots as filled?"
-                                    class="btn btn-info btn-block mb-3" wire:loading.attr="disabled">
-                                    <span wire:loading.remove wire:target="markAsFilled">
-                                        <i class="fas fa-check-double mr-2"></i>Mark as Filled
-                                    </span>
-                                    <span wire:loading wire:target="markAsFilled">
-                                        <i class="fas fa-spinner fa-spin mr-2"></i>Processing...
-                                    </span>
+                                <button type="button"
+                                    wire:click="confirmAction('cancel', 'Cancel Opportunity?', 'This will cancel the opportunity. No students will be able to apply.')"
+                                    class="btn btn-danger btn-block mb-3">
+                                    <i class="fas fa-ban mr-2"></i>Cancel Opportunity
                                 </button>
-                            @endif
 
-                            @if(in_array($opportunity->status, ['draft', 'pending_approval', 'open']))
-                                <button wire:click="cancelOpportunity" 
-                                    wire:confirm="Cancel this opportunity? This action cannot be undone."
-                                    class="btn btn-danger btn-block mb-3" wire:loading.attr="disabled">
-                                    <span wire:loading.remove wire:target="cancelOpportunity">
-                                        <i class="fas fa-ban mr-2"></i>Cancel Opportunity
-                                    </span>
-                                    <span wire:loading wire:target="cancelOpportunity">
-                                        <i class="fas fa-spinner fa-spin mr-2"></i>Cancelling...
-                                    </span>
-                                </button>
-                            @endif
-
-                            @if(in_array($opportunity->status, ['draft', 'cancelled']) && $opportunity->applications->count() === 0)
-                                <hr>
-                                <button wire:click="deleteOpportunity" 
-                                    wire:confirm="Permanently delete this opportunity? This cannot be undone."
-                                    class="btn btn-outline-danger btn-block" wire:loading.attr="disabled">
-                                    <span wire:loading.remove wire:target="deleteOpportunity">
+                                @if($opportunity->applications->count() === 0)
+                                    <button type="button"
+                                        wire:click="confirmAction('delete', 'Delete Permanently?', 'This action cannot be undone. The opportunity will be permanently removed.')"
+                                        class="btn btn-outline-danger btn-block">
                                         <i class="fas fa-trash-alt mr-2"></i>Delete Permanently
-                                    </span>
-                                    <span wire:loading wire:target="deleteOpportunity">
-                                        <i class="fas fa-spinner fa-spin mr-2"></i>Deleting...
-                                    </span>
+                                    </button>
+                                @endif
+                            @endif
+
+                            {{-- ACTIVE (OPEN) ACTIONS --}}
+                            @if($opportunity->status === 'open')
+                                <button type="button"
+                                    wire:click="confirmAction('close', 'Close Opportunity?', 'No new applications will be accepted. Existing applications will remain active.')"
+                                    class="btn btn-warning btn-block mb-3">
+                                    <i class="fas fa-door-closed mr-2"></i>Close Opportunity
+                                </button>
+
+                                <button type="button"
+                                    wire:click="confirmAction('markAsFilled', 'Mark as Filled?', 'All available slots will be marked as filled.')"
+                                    class="btn btn-info btn-block mb-3">
+                                    <i class="fas fa-check-double mr-2"></i>Mark as Filled
+                                </button>
+
+                                <button type="button"
+                                    wire:click="confirmAction('cancel', 'Cancel Opportunity?', 'This will cancel the opportunity immediately.')"
+                                    class="btn btn-danger btn-block">
+                                    <i class="fas fa-ban mr-2"></i>Cancel Opportunity
                                 </button>
                             @endif
+
+                            {{-- CLOSED ACTIONS --}}
+                            @if($opportunity->status === 'closed')
+                                <button type="button"
+                                    wire:click="confirmAction('markAsFilled', 'Mark as Filled?', 'Confirm all slots are now filled?')"
+                                    class="btn btn-info btn-block mb-3">
+                                    <i class="fas fa-check-double mr-2"></i>Mark as Filled
+                                </button>
+
+                                <button type="button"
+                                    wire:click="confirmAction('cancel', 'Cancel Opportunity?', 'Cancel this closed opportunity?')"
+                                    class="btn btn-danger btn-block">
+                                    <i class="fas fa-ban mr-2"></i>Cancel Opportunity
+                                </button>
+                            @endif
+
+                            {{-- FILLED / CANCELLED --}}
+                            @if(in_array($opportunity->status, ['filled', 'cancelled']))
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle mr-2"></i>
+                                    This opportunity is {{ $opportunity->status }}. No further actions available.
+                                </div>
+                            @endif
+
                         </div>
                     </div>
 
@@ -385,7 +349,7 @@
                                 </li>
                                 <li class="list-group-item">
                                     <b>Deadline</b> 
-                                    <span class="float-right {{ $opportunity->daysRemaining > 7 ? 'text-success' : ($opportunity->daysRemaining > 0 ? 'text-warning' : 'text-danger') }}">
+                                    <span class="float-right {{ ($opportunity->daysRemaining ?? 0) > 7 ? 'text-success' : (($opportunity->daysRemaining ?? 0) > 0 ? 'text-warning' : 'text-danger') }}">
                                         {{ $opportunity->deadline?->format('M d, Y') }}
                                     </span>
                                 </li>
@@ -520,6 +484,25 @@
     @push('scripts')
         <script>
             document.addEventListener('livewire:initialized', () => {
+                // SweetAlert confirmation handler
+                Livewire.on('show-swal-confirm', (event) => {
+                    Swal.fire({
+                        title: event.title,
+                        text: event.text,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Yes, proceed!',
+                        cancelButtonText: 'Cancel'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            @this.executeConfirmedAction();
+                        }
+                    });
+                });
+
+                // Toast notifications
                 Livewire.on('notify', (event) => {
                     if (typeof toastr !== 'undefined') {
                         toastr[event.type](event.message, '', {
@@ -527,6 +510,14 @@
                             progressBar: true,
                             positionClass: 'toast-top-right',
                             timeOut: 5000
+                        });
+                    } else if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: event.type,
+                            title: event.type === 'success' ? 'Success!' : 'Error!',
+                            text: event.message,
+                            timer: 3000,
+                            showConfirmButton: false
                         });
                     }
                 });

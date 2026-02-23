@@ -25,12 +25,148 @@ class Index extends Component
     public $showBulkActions = false;
     public $statsOnly = false; // For use by child components
 
+    // Add these properties
+    public $showMatchModal = false;
+    public $selectedStudentForMatch = null;
+    public $studentMatches = [];
+    public $matchLoading = false;
+    public $selectedMatches = [];
+
     protected $listeners = ['refreshStudents' => '$refresh'];
 
     public function mount($statsOnly = false)
     {
         $this->statsOnly = $statsOnly;
     }
+
+    /**
+     * Open match modal for a student
+     */
+    public function matchStudent($studentId)
+    {
+        $this->selectedStudentForMatch = User::with('studentProfile')
+            ->role('student')
+            ->findOrFail($studentId);
+
+        // Check if student is eligible for matching
+        if ($this->selectedStudentForMatch->studentProfile->attachment_status !== 'seeking') {
+            $this->dispatch('show-toast', [
+                'type' => 'warning',
+                'message' => 'This student is not seeking attachment. Only students with "Seeking" status can be matched.'
+            ]);
+            return;
+        }
+
+        $this->showMatchModal = true;
+        $this->findMatches();
+    }
+
+    /**
+     * Find matches for selected student
+     */
+    public function findMatches()
+    {
+        $this->matchLoading = true;
+        $this->studentMatches = [];
+        $this->selectedMatches = [];
+
+        try {
+            $matchingService = app(\App\Services\StudentMatchingService::class);
+            $matches = $matchingService->findMatchesForStudent($this->selectedStudentForMatch, 10);
+
+            $this->studentMatches = $matches;
+        } catch (\Exception $e) {
+            $this->dispatch('show-toast', [
+                'type' => 'error',
+                'message' => 'Error finding matches: ' . $e->getMessage()
+            ]);
+        }
+
+        $this->matchLoading = false;
+    }
+
+    /**
+     * Save selected matches as applications
+     */
+    public function saveMatches()
+    {
+        if (empty($this->selectedMatches)) {
+            $this->dispatch('show-toast', [
+                'type' => 'warning',
+                'message' => 'Please select at least one match to save.'
+            ]);
+            return;
+        }
+
+        try {
+            $matchingService = app(\App\Services\StudentMatchingService::class);
+
+            // Filter selected matches
+            $selectedMatchesData = array_filter($this->studentMatches, function ($match, $key) {
+                return in_array($key, $this->selectedMatches);
+            }, ARRAY_FILTER_USE_BOTH);
+
+            $saved = $matchingService->saveMatchesForStudent(
+                $this->selectedStudentForMatch,
+                $selectedMatchesData
+            );
+
+            $this->showMatchModal = false;
+            $this->selectedStudentForMatch = null;
+            $this->studentMatches = [];
+            $this->selectedMatches = [];
+
+            $this->dispatch('show-toast', [
+                'type' => 'success',
+                'message' => count($saved) . ' matches saved successfully!'
+            ]);
+
+            $this->dispatch('refreshStudents');
+        } catch (\Exception $e) {
+            $this->dispatch('show-toast', [
+                'type' => 'error',
+                'message' => 'Error saving matches: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+
+    /**
+     * Run matching for all seeking students (bulk action)
+     */
+    public function matchAllSeekingStudents()
+    {
+        $this->dispatch('confirm-action', [
+            'title' => 'Match All Seeking Students',
+            'message' => 'This will run the matching algorithm for all students with "Seeking" status. This may take a while. Continue?',
+            'method' => 'processMatchAllSeekingStudents'
+        ]);
+    }
+
+    public function processMatchAllSeekingStudents()
+    {
+        try {
+            $matchingService = app(\App\Services\StudentMatchingService::class);
+            $results = $matchingService->runMatchingForAllSeekingStudents();
+
+            $message = "Processed {$results['total_processed']} students. Created {$results['matches_created']} matches.";
+
+            if (!empty($results['errors'])) {
+                $message .= " Errors: " . implode(', ', $results['errors']);
+            }
+
+            $this->dispatch('show-toast', [
+                'type' => $results['errors'] ? 'warning' : 'success',
+                'message' => $message
+            ]);
+        } catch (\Exception $e) {
+            $this->dispatch('show-toast', [
+                'type' => 'error',
+                'message' => 'Error in bulk matching: ' . $e->getMessage()
+            ]);
+        }
+    }
+
 
     public function updatedSelectAll($value)
     {
@@ -128,7 +264,7 @@ class Index extends Component
         ];
     }
 
-      public function getInstitutionsProperty()
+    public function getInstitutionsProperty()
     {
         return StudentProfile::distinct('institution_name')
             ->whereNotNull('institution_name')
@@ -179,7 +315,7 @@ class Index extends Component
         ]);
     }
 
-     public function updateAttachmentStatus($studentId, $status)
+    public function updateAttachmentStatus($studentId, $status)
     {
         $student = User::findOrFail($studentId);
 

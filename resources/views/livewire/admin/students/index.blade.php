@@ -146,6 +146,14 @@
                             </a>
                         </div>
 
+                        @if ($showBulkActions)
+                            <div class="btn-group mb-3">
+                                <button class="btn btn-success" wire:click="matchAllSeekingStudents">
+                                    <i class="fas fa-handshake mr-1"></i> Match All Seeking Students
+                                </button>
+                            </div>
+                        @endif
+
                         <div class="input-group input-group-sm" style="width: 250px;">
                             <input type="text" wire:model.live.debounce.300ms="search"
                                 class="form-control float-right" placeholder="Search students...">
@@ -160,7 +168,8 @@
                 </div>
 
                 <!-- Filters -->
-                <div class="card-body border-bottom @if (!$showFilters) d-none @endif" id="filterSection">
+                <div class="card-body border-bottom @if (!$showFilters) d-none @endif"
+                    id="filterSection">
                     <div class="row">
                         <div class="col-md-3">
                             <div class="form-group">
@@ -375,6 +384,14 @@
                                                     title="View Details">
                                                     <i class="fas fa-eye"></i>
                                                 </button>
+                                                <!-- Add Match Button for Seeking Students -->
+                                                @if ($student->studentProfile?->attachment_status === 'seeking')
+                                                    <button type="button" class="btn btn-success"
+                                                        wire:click="matchStudent({{ $student->id }})"
+                                                        title="Find Matches for this Student">
+                                                        <i class="fas fa-handshake"></i>
+                                                    </button>
+                                                @endif
                                                 <div class="btn-group">
                                                     <button type="button" class="btn btn-secondary dropdown-toggle"
                                                         data-toggle="dropdown" aria-haspopup="true"
@@ -396,6 +413,7 @@
                                                         @endif
 
                                                         <div class="dropdown-divider"></div>
+
 
                                                         <h6 class="dropdown-header">Attachment Status</h6>
                                                         @foreach ($attachmentStatusOptions as $statusValue => $statusLabel)
@@ -464,6 +482,253 @@
         </div>
     </div>
 
+    <!-- Confirmation Modal -->
+    <div wire:ignore.self class="modal fade" id="confirmModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmModalLabel">Confirm Action</h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="confirmModalBody">
+                    <!-- Dynamic content will be set by JS -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="confirmActionBtn">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Match Modal -->
+    @if ($showMatchModal && $selectedStudentForMatch)
+        <div class="modal fade show" id="matchModal" style="display: block; background-color: rgba(0,0,0,0.5);"
+            tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-xl" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="fas fa-handshake mr-2"></i>
+                            Find Matches for: {{ $selectedStudentForMatch->full_name }}
+                        </h5>
+                        <button type="button" class="close" wire:click="$set('showMatchModal', false)">
+                            <span>&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Student Summary -->
+                        <div class="alert alert-info">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <strong>Course:</strong>
+                                    {{ $selectedStudentForMatch->studentProfile->course_name }}
+                                </div>
+                                <div class="col-md-2">
+                                    <strong>Year:</strong>
+                                    {{ $selectedStudentForMatch->studentProfile->year_of_study }}
+                                </div>
+                                <div class="col-md-2">
+                                    <strong>CGPA:</strong>
+                                    {{ $selectedStudentForMatch->studentProfile->cgpa ?? 'N/A' }}
+                                </div>
+                                <div class="col-md-3">
+                                    <strong>Location:</strong>
+                                    {{ $selectedStudentForMatch->studentProfile->preferred_location ?? $selectedStudentForMatch->county }}
+                                </div>
+                                <div class="col-md-2">
+                                    <strong>Skills:</strong>
+                                    {{ count($selectedStudentForMatch->studentProfile->skills ?? []) }}
+                                </div>
+                            </div>
+                        </div>
+
+                        @if ($matchLoading)
+                            <div class="text-center py-5">
+                                <div class="spinner-border text-primary mb-3" role="status">
+                                    <span class="sr-only">Loading...</span>
+                                </div>
+                                <h5>Finding matches...</h5>
+                                <p class="text-muted">This may take a few moments</p>
+                            </div>
+                        @else
+                            @if (empty($studentMatches))
+                                <div class="text-center py-5">
+                                    <i class="fas fa-search fa-4x text-muted mb-3"></i>
+                                    <h5>No matches found</h5>
+                                    <p class="text-muted">Try expanding search criteria or check if there are open
+                                        opportunities</p>
+                                    <button class="btn btn-primary" wire:click="findMatches">
+                                        <i class="fas fa-sync-alt mr-1"></i> Retry
+                                    </button>
+                                </div>
+                            @else
+                                <div class="mb-3">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-6">
+                                            <h6 class="mb-0">Found {{ count($studentMatches) }} potential matches
+                                            </h6>
+                                        </div>
+                                        <div class="col-md-6 text-right">
+                                            <button class="btn btn-sm btn-outline-primary mr-2"
+                                                wire:click="findMatches">
+                                                <i class="fas fa-sync-alt mr-1"></i> Refresh
+                                            </button>
+                                            <button class="btn btn-sm btn-success" wire:click="saveMatches"
+                                                wire:loading.attr="disabled" wire:target="saveMatches">
+                                                <span wire:loading.remove wire:target="saveMatches">
+                                                    <i class="fas fa-save mr-1"></i> Save Selected
+                                                    ({{ count($selectedMatches) }})
+                                                </span>
+                                                <span wire:loading wire:target="saveMatches">
+                                                    <i class="fas fa-spinner fa-spin mr-1"></i> Saving...
+                                                </span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th width="50">
+                                                    <input type="checkbox" wire:model.live="selectedMatches"
+                                                        value="all" onclick="toggleAllMatches(this)">
+                                                </th>
+                                                <th>Organization</th>
+                                                <th>Opportunity</th>
+                                                <th>Match Score</th>
+                                                <th>Location</th>
+                                                <th>Deadline</th>
+                                                <th>Match Details</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($studentMatches as $index => $match)
+                                                <tr
+                                                    class="{{ in_array($index, $selectedMatches) ? 'table-success' : '' }}">
+                                                    <td>
+                                                        <input type="checkbox" wire:model.live="selectedMatches"
+                                                            value="{{ $index }}">
+                                                    </td>
+                                                    <td>
+                                                        <strong>{{ $match['opportunity']->organization->name }}</strong>
+                                                        @if ($match['opportunity']->organization->is_verified)
+                                                            <i class="fas fa-check-circle text-success ml-1"
+                                                                title="Verified Organization"></i>
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        <a href="#"
+                                                            class="text-primary">{{ $match['opportunity']->title }}</a>
+                                                        <div class="text-muted small">
+                                                            Slots: {{ $match['opportunity']->slots_available }}
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="progress flex-grow-1 mr-2"
+                                                                style="height: 8px; width: 80px;">
+                                                                <div class="progress-bar bg-{{ $match['score'] >= 80 ? 'success' : ($match['score'] >= 60 ? 'info' : 'warning') }}"
+                                                                    style="width: {{ $match['score'] }}%"></div>
+                                                            </div>
+                                                            <span
+                                                                class="badge badge-{{ $match['score'] >= 80 ? 'success' : ($match['score'] >= 60 ? 'info' : 'warning') }}">
+                                                                {{ $match['score'] }}%
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    <td>{{ $match['opportunity']->location ?? ($match['opportunity']->county ?? 'N/A') }}
+                                                    </td>
+                                                    <td>
+                                                        @if ($match['opportunity']->deadline)
+                                                            <span
+                                                                class="badge badge-{{ $match['opportunity']->deadline->isPast() ? 'danger' : 'success' }}">
+                                                                {{ $match['opportunity']->deadline->format('d M Y') }}
+                                                            </span>
+                                                        @else
+                                                            <span class="badge badge-secondary">No deadline</span>
+                                                        @endif
+                                                    </td>
+                                                    <td>
+                                                        <button type="button" class="btn btn-sm btn-outline-info"
+                                                            data-toggle="collapse"
+                                                            data-target="#matchDetails-{{ $index }}">
+                                                            <i class="fas fa-chart-pie"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                                <tr class="collapse" id="matchDetails-{{ $index }}">
+                                                    <td colspan="7" class="bg-light">
+                                                        <div class="p-3">
+                                                            <h6 class="mb-3">Match Score Breakdown:</h6>
+                                                            <div class="row">
+                                                                @foreach ($match['details'] as $criteria => $data)
+                                                                    <div class="col-md-3">
+                                                                        <div class="card">
+                                                                            <div class="card-body p-2">
+                                                                                <h6
+                                                                                    class="card-title text-capitalize mb-2">
+                                                                                    {{ $criteria }}</h6>
+                                                                                <div
+                                                                                    class="d-flex justify-content-between align-items-center">
+                                                                                    <span
+                                                                                        class="h4 mb-0 text-{{ $data['score'] >= 70 ? 'success' : ($data['score'] >= 50 ? 'info' : 'warning') }}">
+                                                                                        {{ $data['score'] }}%
+                                                                                    </span>
+                                                                                    <span
+                                                                                        class="text-muted small">Weight:
+                                                                                        {{ $data['weight'] }}%</span>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                @endforeach
+                                                            </div>
+                                                            @if ($match['opportunity']->description)
+                                                                <div class="mt-3">
+                                                                    <strong>Description:</strong>
+                                                                    <p class="text-muted small mb-0">
+                                                                        {{ Str::limit($match['opportunity']->description, 300) }}
+                                                                    </p>
+                                                                </div>
+                                                            @endif
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @endif
+                        @endif
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" wire:click="$set('showMatchModal', false)">
+                            Cancel
+                        </button>
+                        @if (!empty($studentMatches))
+                            <button type="button" class="btn btn-success" wire:click="saveMatches"
+                                wire:loading.attr="disabled" wire:target="saveMatches">
+                                <span wire:loading.remove wire:target="saveMatches">
+                                    <i class="fas fa-save mr-1"></i> Save Selected ({{ count($selectedMatches) }})
+                                </span>
+                                <span wire:loading wire:target="saveMatches">
+                                    <i class="fas fa-spinner fa-spin mr-1"></i> Saving...
+                                </span>
+                            </button>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    @endif
+
     @push('scripts')
         <script>
             document.addEventListener('livewire:initialized', () => {
@@ -474,6 +739,30 @@
                         progressBar: true,
                         positionClass: 'toast-top-right',
                         timeOut: 5000
+                    });
+                });
+            });
+
+            function toggleAllMatches(checkbox) {
+                let checkboxes = document.querySelectorAll('input[type="checkbox"][wire\\:model\\.live="selectedMatches"]');
+                checkboxes.forEach(cb => {
+                    if (cb.value !== 'all') {
+                        cb.checked = checkbox.checked;
+                        cb.dispatchEvent(new Event('change', {
+                            bubbles: true
+                        }));
+                    }
+                });
+            }
+
+            document.addEventListener('livewire:initialized', () => {
+                Livewire.on('confirm-action', (data) => {
+                    $('#confirmModalBody').text(data.message);
+                    $('#confirmModal').modal('show');
+
+                    $('#confirmActionBtn').off('click').on('click', function() {
+                        Livewire.dispatch(data.method);
+                        $('#confirmModal').modal('hide');
                     });
                 });
             });

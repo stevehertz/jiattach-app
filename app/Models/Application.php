@@ -10,7 +10,7 @@ class Application extends Model
 {
     use HasFactory, SoftDeletes;
 
-     protected $fillable = [
+    protected $fillable = [
         'user_id',
         'student_id',
         'attachment_opportunity_id',
@@ -43,10 +43,18 @@ class Application extends Model
         return $this->hasOne(Placement::class);
     }
 
+    /**
+     * Get the feedback for this application.
+     */
+    public function feedbacks()
+    {
+        return $this->hasMany(Feedback::class);
+    }
+
     // Status Helper
     public function getStatusBadgeAttribute()
     {
-        return match($this->status) {
+        return match ($this->status) {
             'accepted' => 'success',
             'offered' => 'primary',
             'shortlisted' => 'info',

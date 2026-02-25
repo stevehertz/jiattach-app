@@ -17,6 +17,7 @@ class Placement extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'application_id',
         'student_id',
         'admin_id',
         'organization_id',

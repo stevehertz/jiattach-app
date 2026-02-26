@@ -1,6 +1,6 @@
 <div>
     {{-- Success is as dangerous as failure. --}}
-    
+
     <!-- Main Content -->
     <div class="content">
         <div class="container-fluid">
@@ -422,7 +422,7 @@
                                                     </td>
                                                     <td>
                                                         @if ($application->opportunity)
-                                                            <a href="{{ route('admin.opportunities.show', $application->opportunity_id) }}"
+                                                            <a href="{{ route('admin.opportunities.show', $application->opportunity->id) }}"
                                                                 class="btn btn-sm btn-info" title="View Opportunity">
                                                                 <i class="fas fa-eye"></i>
                                                             </a>

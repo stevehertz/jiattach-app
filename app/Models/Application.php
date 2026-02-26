@@ -12,7 +12,6 @@ class Application extends Model
 
     protected $fillable = [
         'user_id',
-        'student_id',
         'attachment_opportunity_id',
         'match_score',
         'cover_letter',

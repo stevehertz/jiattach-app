@@ -113,6 +113,20 @@ Route::middleware([
     Route::prefix('placements')->name('placements.')->group(function () {
         // All Mentors
         Route::view('', 'admin.placements.index')->name('index');
+
+        Route::view('active', 'admin.placements.active')->name('active');
+
+        Route::view('upcoming', 'admin.placements.upcoming')->name('upcoming');
+
+        Route::view('completed', 'admin.placements.completed')->name('completed');
+
+        Route::view('pending', 'admin.placements.pending')->name('pending');
+        
+        Route::view('cancelled', 'admin.placements.cancelled')->name('cancelled');
+
+        Route::view('create', 'admin.placements.create')->name('create');
+
+        Route::view('analytics', 'admin.placements.analytics')->name('analytics');
     });
 
     // Mentorship Management Routes

@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\LogsModelActivity;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Application extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, LogsModelActivity;
 
     protected $fillable = [
         'user_id',
@@ -19,11 +20,18 @@ class Application extends Model
         'status', // pending, reviewing, shortlisted, offered, accepted, rejected
         'employer_notes',
         'reviewed_at',
+        'accepted_at',
+        'declined_at',
+        'decline_reason',
+        'decline_feedback',
     ];
 
     protected $casts = [
         'reviewed_at' => 'datetime',
         'match_score' => 'float',
+        'accepted_at' => 'datetime', // Add this
+        'declined_at' => 'datetime', // Add this
+        'submitted_at' => 'datetime', // Add this if not already there
     ];
 
     // Relationships

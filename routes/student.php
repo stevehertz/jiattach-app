@@ -52,6 +52,9 @@ Route::middleware([
 
         Route::post('/request', [PlacementController::class, 'request'])->name('request');
 
+        Route::post('/accept/{applicationId}', [PlacementController::class, 'acceptMatch'])->name('accept');
+
+        Route::post('/decline/{applicationId}', [PlacementController::class, 'declineMatch'])->name('decline');
     });
 
 
@@ -69,7 +72,6 @@ Route::middleware([
         Route::get('/', [CvTemplateController::class, 'index'])->name('index');
 
         Route::get('/download/{id}', [CvTemplateController::class, 'download'])->name('download');
-
     });
 
 

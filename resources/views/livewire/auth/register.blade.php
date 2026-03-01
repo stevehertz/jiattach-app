@@ -598,7 +598,7 @@
             <div class="flex flex-col gap-2">
                 <label class="text-[#0d141b] dark:text-gray-200 text-sm font-medium leading-normal"
                     for="password">Password</label>
-                <div class="relative">
+                {{-- <div class="relative">
                     <span
                         class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 material-symbols-outlined text-[20px]">lock</span>
                     <input wire:model="password" id="password"
@@ -606,9 +606,26 @@
                         type="password" placeholder="Create a strong password" required />
                     <button type="button" onclick="togglePassword('password')"
                         class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 material-symbols-outlined text-[20px] cursor-pointer">visibility_off</button>
+                </div> --}}
+                <div class="relative" x-data="{ show: false }">
+                    <span
+                        class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 material-symbols-outlined text-[20px]">
+                        lock
+                    </span>
+
+                    <input :type="show ? 'text' : 'password'" wire:model="password" id="password"
+                        class="w-full h-12 rounded-lg border border-[#cfdbe7] dark:border-gray-600 bg-white dark:bg-gray-900 text-[#0d141b] dark:text-white px-3 pl-10 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                        placeholder="Create a strong password" required />
+
+                    <button type="button" @click="show = !show"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer">
+                        <span class="material-symbols-outlined text-[20px]"
+                            x-text="show ? 'visibility' : 'visibility_off'"></span>
+                    </button>
                 </div>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Minimum 8 characters with letters
-                    and numbers</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Minimum 8 characters with letters and numbers
+                </p>
                 @error('password')
                     <span class="text-red-500 text-xs">{{ $message }}</span>
                 @enderror
@@ -618,7 +635,7 @@
             <div class="flex flex-col gap-2">
                 <label class="text-[#0d141b] dark:text-gray-200 text-sm font-medium leading-normal"
                     for="password_confirmation">Confirm Password</label>
-                <div class="relative">
+                {{-- <div class="relative">
                     <span
                         class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 material-symbols-outlined text-[20px]">verified_user</span>
                     <input wire:model="password_confirmation" id="password_confirmation"
@@ -626,7 +643,26 @@
                         type="password" placeholder="Repeat your password" required />
                     <button type="button" onclick="togglePassword('password_confirmation')"
                         class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 material-symbols-outlined text-[20px] cursor-pointer">visibility_off</button>
+                </div> --}}
+
+                <div class="relative" x-data="{ show: false }">
+                    <span
+                        class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 material-symbols-outlined text-[20px]">
+                        verified_user
+                    </span>
+
+                    <input :type="show ? 'text' : 'password'" wire:model="password_confirmation"
+                        id="password_confirmation"
+                        class="w-full h-12 rounded-lg border border-[#cfdbe7] dark:border-gray-600 bg-white dark:bg-gray-900 text-[#0d141b] dark:text-white px-3 pl-10 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                        placeholder="Repeat your password" required />
+
+                    <button type="button" @click="show = !show"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer">
+                        <span class="material-symbols-outlined text-[20px]"
+                            x-text="show ? 'visibility' : 'visibility_off'"></span>
+                    </button>
                 </div>
+
                 @error('password_confirmation')
                     <span class="text-red-500 text-xs">{{ $message }}</span>
                 @enderror

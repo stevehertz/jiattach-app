@@ -17,14 +17,15 @@
                 <div class="bg-gray-50 dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8 lg:p-10 border border-gray-100 dark:border-gray-700">
                     {{ $slot }}
                 </div>
-                
+
             </div>
         </main>
-        
+
         <!-- Footer -->
         @include('partials.landing.foot')
     </div>
-
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    @livewireScripts
     @stack('scripts')
 </body>
 

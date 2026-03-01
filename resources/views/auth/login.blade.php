@@ -1,5 +1,4 @@
 <x-layouts.guests>
-
     <div class="layout-container flex grow flex-col items-center justify-center p-4 py-12">
         <div
             class="w-full max-w-[480px] bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-[#cfdbe7] dark:border-gray-800 overflow-hidden">
@@ -16,22 +15,29 @@
                         Enter your credentials to access your account.
                     </p>
                 </div>
+
                 @if (session('status'))
                     <div class="mb-4 font-medium text-sm text-green-600">
                         {{ session('status') }}
                     </div>
                 @endif
+
                 <form action="{{ route('login') }}" method="POST" class="flex flex-col gap-5">
                     @csrf
+
                     <div class="flex flex-col gap-2">
                         <label class="text-[#0d141b] dark:text-gray-200 text-sm font-medium leading-normal"
                             for="email">Email or Username</label>
                         <input
-                            class="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#0d141b] dark:text-white bg-[#f6f7f8] dark:bg-gray-800 focus:bg-transparent border border-[#cfdbe7] dark:border-gray-700 focus:border-primary px-4 py-3 text-sm focus:outline-none focus:ring-0 transition-colors placeholder:text-gray-400"
+                            class="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#0d141b] dark:text-white bg-[#f6f7f8] dark:bg-gray-800 focus:bg-transparent border border-[#cfdbe7] dark:border-gray-700 focus:border-primary px-4 py-3 text-sm focus:outline-none focus:ring-0 transition-colors placeholder:text-gray-400 @error('email') border-red-500 @enderror"
                             id="email" value="{{ old('email') }}" name="email"
                             placeholder="e.g. johndoe@example.com" type="text" required autofocus
                             autocomplete="email" />
+                        @error('email')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
                     </div>
+
                     <div class="flex flex-col gap-2">
                         <div class="flex justify-between items-center">
                             <label class="text-[#0d141b] dark:text-gray-200 text-sm font-medium leading-normal"
@@ -39,22 +45,27 @@
                         </div>
                         <div class="relative">
                             <input
-                                class="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#0d141b] dark:text-white bg-[#f6f7f8] dark:bg-gray-800 focus:bg-transparent border border-[#cfdbe7] dark:border-gray-700 focus:border-primary px-4 py-3 text-sm focus:outline-none focus:ring-0 transition-colors placeholder:text-gray-400"
+                                class="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#0d141b] dark:text-white bg-[#f6f7f8] dark:bg-gray-800 focus:bg-transparent border border-[#cfdbe7] dark:border-gray-700 focus:border-primary px-4 py-3 text-sm focus:outline-none focus:ring-0 transition-colors placeholder:text-gray-400 @error('password') border-red-500 @enderror"
                                 id="password" name="password" placeholder="Enter your password" type="password"
-                                autocomplete="current-password" required viewable />
+                                autocomplete="current-password" required />
                             <button
-                                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-primary transition-colors"
-                                type="button">
+                                class="toggle-password absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 hover:text-primary transition-colors focus:outline-none"
+                                type="button" onclick="togglePasswordVisibility('password', this)">
                                 <span class="material-symbols-outlined text-xl">visibility_off</span>
                             </button>
                         </div>
+                        @error('password')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
                     </div>
+
                     <div class="flex items-center justify-between">
                         <label class="flex items-center gap-3 cursor-pointer group">
                             <div class="relative flex items-center">
                                 <input
                                     class="peer h-5 w-5 cursor-pointer appearance-none rounded border border-[#cfdbe7] dark:border-gray-600 bg-white dark:bg-gray-800 checked:bg-primary checked:border-primary transition-all"
-                                    type="checkbox" />
+                                    type="checkbox" name="remember" id="remember"
+                                    {{ old('remember') ? 'checked' : '' }} />
                                 <span
                                     class="absolute text-white opacity-0 peer-checked:opacity-100 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none">
                                     <span class="material-symbols-outlined text-sm font-bold">check</span>
@@ -64,24 +75,28 @@
                                 class="text-gray-600 dark:text-gray-300 text-sm font-medium group-hover:text-[#0d141b] dark:group-hover:text-white transition-colors">Remember
                                 me</span>
                         </label>
+
                         @if (Route::has('password.request'))
                             <a class="text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
                                 href="{{ route('password.request') }}" wire:navigate>Forgot Password?
                             </a>
                         @endif
                     </div>
+
                     <button
                         class="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-5 bg-primary text-white text-base font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 transition-all shadow-md hover:shadow-lg mt-2"
                         type="submit">
                         <span class="truncate">Log In</span>
                     </button>
                 </form>
+
                 <div class="flex items-center gap-3 w-full">
                     <div class="h-px bg-[#e7edf3] dark:bg-gray-700 flex-1"></div>
                     <p class="text-gray-500 dark:text-gray-400 text-xs font-medium uppercase tracking-wider">Or
                         continue with</p>
                     <div class="h-px bg-[#e7edf3] dark:bg-gray-700 flex-1"></div>
                 </div>
+
                 <div class="flex gap-4">
                     <!-- Google Button -->
                     <a href="{{ route('social.redirect', 'google') }}"
@@ -115,6 +130,7 @@
                         <span class="text-[#0d141b] dark:text-white text-sm font-medium">LinkedIn</span>
                     </a>
                 </div>
+
                 <div class="text-center mt-2">
                     <p class="text-sm text-gray-500 dark:text-gray-400">
                         Don't have an account?
@@ -125,5 +141,19 @@
             </div>
         </div>
     </div>
-
 </x-layouts.guests>
+
+<script>
+    function togglePasswordVisibility(inputId, button) {
+        const input = document.getElementById(inputId);
+        const iconSpan = button.querySelector('.material-symbols-outlined');
+
+        if (input.type === 'password') {
+            input.type = 'text';
+            iconSpan.textContent = 'visibility';
+        } else {
+            input.type = 'password';
+            iconSpan.textContent = 'visibility_off';
+        }
+    }
+</script>

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Traits\LogsModelActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -143,11 +144,61 @@ class User extends Authenticatable
     }
 
     /**
-     * Relationship with organization (for company users).
+     * The organizations associated with this user.
      */
-    public function organization()
+    public function organizations(): BelongsToMany
     {
-        return $this->hasOne(Organization::class);
+        return $this->belongsToMany(Organization::class)
+            ->withPivot(['role', 'position', 'is_primary_contact', 'is_active'])
+            ->withTimestamps()
+            ->wherePivot('is_active', true);
+    }
+
+    /**
+     * Get the organizations where user is owner.
+     */
+    public function ownedOrganizations()
+    {
+        return $this->organizations()->wherePivot('role', 'owner');
+    }
+
+
+    /**
+     * Get the organizations where user is admin.
+     */
+    public function administeredOrganizations()
+    {
+        return $this->organizations()->wherePivot('role', 'admin');
+    }
+
+
+    /**
+     * Get the primary organization (if any).
+     */
+    public function primaryOrganization()
+    {
+        return $this->organizations()
+            ->wherePivot('is_primary_contact', true)
+            ->first();
+    }
+
+    /**
+     * Check if user is associated with any organization.
+     */
+    public function hasOrganizations(): bool
+    {
+        return $this->organizations()->exists();
+    }
+
+    /**
+     * Check if user owns a specific organization.
+     */
+    public function ownsOrganization(Organization $organization): bool
+    {
+        return $this->organizations()
+            ->where('organization_id', $organization->id)
+            ->wherePivot('role', 'owner')
+            ->exists();
     }
 
     /**

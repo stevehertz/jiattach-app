@@ -180,14 +180,6 @@
                     </a>
                 </li>
 
-                <li class="nav-item">
-                    <a href="{{ route('student.cv.templates.index') }}"
-                       class="nav-link {{ request()->routeIs('student.cv.templates*') ? 'active' : '' }}">
-                        <i class="nav-icon fas fa-file-download"></i>
-                        <p>CV Templates</p>
-                    </a>
-                </li>
-
                 <!-- ACTIVITY & NOTIFICATIONS -->
                 <li class="nav-header">ACTIVITY</li>
 

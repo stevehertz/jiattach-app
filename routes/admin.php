@@ -78,6 +78,7 @@ Route::middleware([
 
     // Organizations Management
     Route::prefix('organizations')->name('organizations.')->group(function () {
+
         Route::get('/', [OrganizationsController::class, 'index'])->name('index');
 
         Route::get('/create', [OrganizationsController::class, 'create'])->name('create');
@@ -85,6 +86,9 @@ Route::middleware([
         Route::get('/{organization}', [OrganizationsController::class, 'show'])->name('show');
 
         Route::get('/{organization}/edit', [OrganizationsController::class, 'edit'])->name('edit');
+
+        Route::get('/{organization}/opportunities', [OrganizationsController::class, 'opportunities'])->name('opportunities');
+
     });
 
     // Opportunities Management Routes

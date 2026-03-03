@@ -69,4 +69,12 @@ class OrganizationsController extends Controller
     {
         //
     }
+
+    public function opportunities($id)
+    {
+        $organization = Organization::findOrFail($id);
+        return view('admin.organizations.opportunities', compact('organization'));
+    }
+
+
 }

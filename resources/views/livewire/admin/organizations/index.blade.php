@@ -346,7 +346,7 @@
                                                     class="btn btn-sm btn-primary" title="Edit">
                                                     <i class="fas fa-pencil-alt"></i>
                                                 </a>
-                                                <a href="" class="btn btn-sm btn-success"
+                                                <a href="{{ route('admin.organizations.opportunities', $org->id) }}" class="btn btn-sm btn-success"
                                                     title="View Opportunities">
                                                     <i class="fas fa-briefcase"></i>
                                                 </a>

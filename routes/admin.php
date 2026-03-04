@@ -61,6 +61,17 @@ Route::middleware([
         Route::get('/super-admins', [AdministratorsController::class, 'super-admins'])->name('super.admins');
     });
 
+    Route::prefix('roles')->name('roles.')->group(function(){
+
+        Route::view('/', 'admin.roles.index')->name('index');
+
+        Route::view('/create', 'admin.roles.create')->name('create');
+
+        Route::view('/{role}/edit', 'admin.roles.edit')->name('edit');
+
+        Route::view('/assign', 'admin.roles.assign')->name('assign');
+    });
+
     // Add to your existing admin routes group
     Route::prefix('students')->name('students.')->group(function () {
 

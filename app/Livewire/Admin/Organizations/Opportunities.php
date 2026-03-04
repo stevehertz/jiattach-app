@@ -14,20 +14,20 @@ class Opportunities extends Component
     use WithPagination;
 
     public Organization $organization;
-    
+
     // Filters
     public $search = '';
     public $work_type_filter = '';
     public $dateFrom = '';
     public $dateTo = '';
     public $perPage = 10;
-    
+
     // Modal properties
     public $showCreateModal = false;
     public $showEditModal = false;
     public $showDeleteModal = false;
     public $editingOpportunity = null;
-    
+
     // Form properties
     public $opportunity_id;
     public $title;
@@ -49,7 +49,7 @@ class Opportunities extends Component
     public $slots_available;
     public $deadline;
     public $status = 'draft';
-    
+
     // UI helpers
     public $showResponsibilityInput = false;
     public $showSkillInput = false;
@@ -182,10 +182,12 @@ class Opportunities extends Component
     }
 
     public function openCreateModal()
-    {
-        $this->resetForm();
-        $this->showCreateModal = true;
-    }
+{
+    $this->resetForm();
+    $this->showCreateModal = true;
+
+    $this->dispatch('showCreateModal');
+}
 
     public function openEditModal($id)
     {
@@ -208,7 +210,7 @@ class Opportunities extends Component
         $this->slots_available = $this->editingOpportunity->slots_available;
         $this->deadline = $this->editingOpportunity->deadline?->format('Y-m-d');
         $this->status = $this->editingOpportunity->status;
-        
+
         $this->showEditModal = true;
     }
 
@@ -292,7 +294,7 @@ class Opportunities extends Component
     public function deleteOpportunity()
     {
         $opportunity = AttachmentOpportunity::find($this->opportunity_id);
-        
+
         if ($opportunity) {
             // Check if there are any applications
             if ($opportunity->applications()->count() > 0) {
@@ -300,11 +302,11 @@ class Opportunities extends Component
                 $this->showDeleteModal = false;
                 return;
             }
-            
+
             $opportunity->delete();
             $this->dispatch('toastr:success', message: 'Opportunity deleted successfully.');
         }
-        
+
         $this->showDeleteModal = false;
         $this->opportunity_id = null;
     }
@@ -314,11 +316,11 @@ class Opportunities extends Component
         $opportunity = AttachmentOpportunity::find($id);
         if ($opportunity) {
             $data = ['status' => $newStatus];
-            
+
             if ($newStatus === 'published' && !$opportunity->published_at) {
                 $data['published_at'] = now();
             }
-            
+
             $opportunity->update($data);
             $this->dispatch('toastr:success', message: 'Opportunity status updated.');
         }
@@ -374,7 +376,7 @@ class Opportunities extends Component
     public function render()
     {
         $opportunities = $this->getFilteredOpportunities()->paginate($this->perPage);
-        
+
         $stats = [
             'total' => AttachmentOpportunity::where('organization_id', $this->organization->id)->count(),
             'published' => AttachmentOpportunity::where('organization_id', $this->organization->id)

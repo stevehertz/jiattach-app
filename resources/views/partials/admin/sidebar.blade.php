@@ -62,8 +62,7 @@
                 </li>
 
                 <li class="nav-item {{ $isRouteActive('admin.administrators.*') ? 'menu-open' : '' }}">
-                    <a href="#"
-                        class="nav-link {{ $isRouteActive('admin.administrators.*') ? 'active' : '' }}">
+                    <a href="#" class="nav-link {{ $isRouteActive('admin.administrators.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-user-shield"></i>
                         <p>Administrators <i class="fas fa-angle-left right"></i></p>
                     </a>
@@ -86,6 +85,27 @@
                         </li>
                     </ul>
                 </li>
+
+                <li class="nav-header">ROLES & PERMISSIONS</li>
+
+                {{-- NEW ROLES & PERMISSIONS SECTION --}}
+                <li class="nav-item {{ $isRouteActive('admin.roles.*') ? 'menu-open' : '' }}">
+                    <a href="#" class="nav-link {{ $isRouteActive('admin.roles.*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-user-shield"></i>
+                        <p>Roles <i class="fas fa-angle-left right"></i></p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a href="{{ route('admin.roles.index') }}"
+                                class="nav-link {{ $isRouteActive('admin.roles.index') ? 'active' : '' }}">
+                                <i class="far {{ $isRouteActive('admin.roles.index') ? 'fa-dot-circle' : 'fa-circle' }} nav-icon"></i>
+                                <p>All Roles</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <li class="nav-header">MENTORSHIP MANAGEMENT</li>
 
                 <!-- MENTORS SECTION -->
                 <li class="nav-item {{ $isRouteActive('admin.mentors.*') ? 'menu-open' : '' }}">
@@ -215,8 +235,7 @@
                 </li>
 
                 <li class="nav-item {{ $isRouteActive('admin.organizations.*') ? 'menu-open' : '' }}">
-                    <a href="#"
-                        class="nav-link {{ $isRouteActive('admin.organizations.*') ? 'active' : '' }}">
+                    <a href="#" class="nav-link {{ $isRouteActive('admin.organizations.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-building"></i>
                         <p>
                             Organizations
@@ -244,8 +263,7 @@
                 <li class="nav-header">OPPORTUNITIES & PLACEMENTS</li>
 
                 <li class="nav-item {{ $isRouteActive('admin.opportunities.*') ? 'menu-open' : '' }}">
-                    <a href="#"
-                        class="nav-link {{ $isRouteActive('admin.opportunities.*') ? 'active' : '' }}">
+                    <a href="#" class="nav-link {{ $isRouteActive('admin.opportunities.*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-briefcase"></i>
                         <p>Opportunities <i class="fas fa-angle-left right"></i></p>
                     </a>

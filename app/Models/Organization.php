@@ -123,6 +123,11 @@ class Organization extends Model
         return $this->hasMany(AttachmentOpportunity::class);
     }
 
+    public function applications()
+    {
+        return $this->hasMany(Application::class, 'organization_id');
+    }
+
     /**
      * Calculate remaining slots for the current intake.
      */

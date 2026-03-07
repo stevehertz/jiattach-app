@@ -74,7 +74,13 @@ if (!function_exists('truncateText')) {
 }
 
 if (!function_exists('getApplicationStatusBadge')) {
-    function getApplicationStatusBadge(string $status): string
+    /**
+     * Get application status badge.
+     * 
+     * @param \App\Enums\ApplicationStatus|string $status
+     * @return string
+     */
+    function getApplicationStatusBadge($status): string
     {
         return Helpers::getApplicationStatusBadge($status);
     }

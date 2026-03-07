@@ -422,20 +422,8 @@
                                             </span>
                                         </td>
                                         <td>
-                                            @php
-                                                $statusColors = [
-                                                    'submitted' => 'info',
-                                                    'under_review' => 'primary',
-                                                    'shortlisted' => 'warning',
-                                                    'interview_scheduled' => 'purple',
-                                                    'hired' => 'success',
-                                                    'rejected' => 'danger',
-                                                    'withdrawn' => 'secondary',
-                                                ];
-                                                $color = $statusColors[$application->status] ?? 'secondary';
-                                            @endphp
-                                            <span class="badge badge-{{ $color }}">
-                                                {{ str_replace('_', ' ', ucfirst($application->status)) }}
+                                            <span class="badge badge-{{ $application->status?->color() ?? 'secondary' }}">
+                                                {{ $application->status?->label() ?? 'Pending' }}
                                             </span>
                                         </td>
                                         <td>

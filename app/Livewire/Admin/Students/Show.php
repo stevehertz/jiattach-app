@@ -14,3 +14,4 @@ class Show extends Component
         return view('livewire.admin.students.show');
     }
 }
+ 

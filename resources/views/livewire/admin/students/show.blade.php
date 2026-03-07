@@ -375,13 +375,13 @@
                         <div class="card-header">
                             <h3 class="card-title">
                                 <i class="fas fa-file-alt mr-1"></i> Recent Applications
-                                @if ($student->applications->count() > 0)
+                                @if ($student->studentApplication->count() > 0)
                                     <span class="badge badge-info">{{ $student->applications->count() }}</span>
                                 @endif
                             </h3>
                         </div>
                         <div class="card-body">
-                            @if ($student->applications->count() > 0)
+                            @if ($student->studentApplication->count() > 0)
                                 <div class="table-responsive">
                                     <table class="table table-hover">
                                         <thead>
@@ -394,7 +394,7 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @foreach ($student->applications as $application)
+                                            @foreach ($student->studentApplication as $application)
                                                 <tr>
                                                     <td>
                                                         <strong>{{ $application->opportunity?->title ?? 'N/A' }}</strong>

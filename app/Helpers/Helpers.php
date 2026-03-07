@@ -2,12 +2,13 @@
 
 namespace App\Helpers;
 
-use App\Models\User;
-use App\Models\AttachmentOpportunity;
+use App\Enums\ApplicationStatus;
 use App\Models\Application;
+use App\Models\AttachmentOpportunity;
 use App\Models\Mentorship;
-use Illuminate\Support\Facades\Auth;
+use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 
 class Helpers
@@ -160,9 +161,21 @@ class Helpers
 
     /**
      * Get application status badge.
+     * 
+     * @param \App\Enums\ApplicationStatus|string $status
+     * @return string
      */
-    public static function getApplicationStatusBadge(string $status): string
+    public static function getApplicationStatusBadge($status): string
     {
+        // If it's an enum instance, use its built-in methods
+        if ($status instanceof ApplicationStatus) {
+            return '<span class="badge badge-' . $status->color() . ' p-2">' .
+                ($status->icon() ? '<i class="fas ' . $status->icon() . ' mr-1"></i>' : '') .
+                $status->label() .
+                '</span>';
+        }
+
+        // Fallback for string status (backward compatibility)
         $statusColors = [
             'draft' => 'secondary',
             'submitted' => 'info',
@@ -176,6 +189,7 @@ class Helpers
             'rejected' => 'danger',
             'withdrawn' => 'dark',
             'hired' => 'success',
+            'pending' => 'secondary', // Added for completeness
         ];
 
         $statusLabels = [
@@ -191,12 +205,25 @@ class Helpers
             'rejected' => 'Rejected',
             'withdrawn' => 'Withdrawn',
             'hired' => 'Hired',
+            'pending' => 'Pending', // Added for completeness
         ];
 
         $color = $statusColors[$status] ?? 'secondary';
         $label = $statusLabels[$status] ?? ucfirst(str_replace('_', ' ', $status));
 
         return '<span class="badge badge-' . $color . '">' . $label . '</span>';
+    }
+
+    public static function getEnumBadge($enum): string
+    {
+        if (method_exists($enum, 'color') && method_exists($enum, 'label')) {
+            return '<span class="badge badge-' . $enum->color() . '">' .
+                (method_exists($enum, 'icon') ? '<i class="fas ' . $enum->icon() . ' mr-1"></i>' : '') .
+                $enum->label() .
+                '</span>';
+        }
+
+        return '<span class="badge badge-secondary">' . $enum->value . '</span>';
     }
 
     /**

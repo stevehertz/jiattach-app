@@ -220,9 +220,17 @@ class User extends Authenticatable
     /**
      * Get the applications (system matches) for this user.
      */
-    public function applications()
+    public function adminApplications()
     {
         return $this->hasMany(Application::class, 'user_id');
+    }
+
+    /**
+     * Get the applications (system matches) for this user.
+     */
+    public function studentApplications()
+    {
+        return $this->hasMany(Application::class, 'student_id');
     }
 
     /**

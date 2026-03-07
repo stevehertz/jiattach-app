@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Applications;
 
+use App\Enums\ApplicationStatus;
 use App\Models\ActivityLog;
 use App\Models\Application;
 use App\Models\Feedback;
@@ -12,6 +13,7 @@ use App\Notifications\InterviewScheduled;
 use App\Notifications\OfferSent;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 
 class Show extends Component
@@ -73,7 +75,7 @@ class Show extends Component
     public function getRules()
     {
         return [
-            'newStatus' => 'required|in:under_review,shortlisted,interview_scheduled,interview_completed,offer_sent,offer_accepted,offer_rejected,hired,rejected',
+            'newStatus' => ['required', Rule::in(ApplicationStatus::values())],
             'statusNotes' => 'nullable|string|max:500',
 
             'interviewDate' => 'required_if:interviewType,scheduled|date|after_or_equal:today',
@@ -154,6 +156,25 @@ class Show extends Component
     // Status Management
     public function openStatusModal($status)
     {
+        // Validate that the requested status transition is allowed
+        $targetStatus = ApplicationStatus::tryFrom($status);
+
+        if (!$targetStatus) {
+            $this->dispatch('show-toast', [
+                'type' => 'error',
+                'message' => 'Invalid status selected'
+            ]);
+            return;
+        }
+
+        if (!$this->application->canTransitionTo($targetStatus)) {
+            $this->dispatch('show-toast', [
+                'type' => 'error',
+                'message' => "Cannot transition from {$this->application->status->label()} to {$targetStatus->label()}"
+            ]);
+            return;
+        }
+
         $this->newStatus = $status;
         $this->statusNotes = '';
         $this->showStatusModal = true;
@@ -162,53 +183,67 @@ class Show extends Component
     public function updateStatus()
     {
         $this->validate([
-            'newStatus' => 'required|in:under_review,shortlisted,interview_scheduled,interview_completed,offer_sent,offer_accepted,offer_rejected,hired,rejected',
+            'newStatus' => ['required', Rule::in(ApplicationStatus::values())],
             'statusNotes' => 'nullable|string|max:500',
         ]);
 
         DB::transaction(function () {
             $oldStatus = $this->application->status;
+            $newStatusEnum = ApplicationStatus::from($this->newStatus);
 
-            // Update application status
-            $this->application->status = $this->newStatus;
+            // Update application status using the enum
+            $this->application->status = $newStatusEnum;
 
-            // Set timestamps based on status
-            switch ($this->newStatus) {
-                case 'under_review':
+            // Set timestamps based on status using enum
+            switch ($newStatusEnum) {
+                case ApplicationStatus::UNDER_REVIEW:
                     $this->application->reviewed_at = now();
                     break;
-                case 'interview_scheduled':
+                case ApplicationStatus::INTERVIEW_SCHEDULED:
                     $this->application->interview_scheduled_at = now();
                     break;
-                case 'offer_sent':
+                case ApplicationStatus::OFFER_SENT:
                     $this->application->offer_sent_at = now();
                     break;
-                case 'offer_accepted':
-                case 'offer_rejected':
+                case ApplicationStatus::OFFER_ACCEPTED:
+                case ApplicationStatus::OFFER_REJECTED:
                     $this->application->offer_response_at = now();
                     break;
-                case 'hired':
+                case ApplicationStatus::HIRED:
                     $this->application->hired_at = now();
                     break;
             }
 
             $this->application->save();
 
-            // Log the activity
-             $this->application->logModelActivity(
-                "Application status updated from {$oldStatus} to {$this->newStatus}",
+            // Log the activity using enum labels
+            activity_log(
+                "Application status updated from {$oldStatus->label()} to {$newStatusEnum->label()}",
                 'status_updated',
                 [
-                    'old_status' => $oldStatus,
-                    'new_status' => $this->newStatus,
+                    'old_status' => $oldStatus->value,
+                    'old_status_label' => $oldStatus->label(),
+                    'new_status' => $newStatusEnum->value,
+                    'new_status_label' => $newStatusEnum->label(),
                     'notes' => $this->statusNotes,
                     'application_id' => $this->application->id,
-                    'opportunity_title' => $this->application->opportunity->title
-                ]
+                    'opportunity_title' => $this->application->opportunity->title,
+                    'subject_id' => $this->application->id,
+                    'subject_type' => Application::class,
+                ],
+                'application'
             );
 
-            // Send notification to student
-            if (in_array($this->newStatus, ['shortlisted', 'interview_scheduled', 'offer_sent', 'hired', 'rejected'])) {
+            // Send notification to student for important status changes
+            $notifiableStatuses = [
+                ApplicationStatus::SHORTLISTED,
+                ApplicationStatus::INTERVIEW_SCHEDULED,
+                ApplicationStatus::OFFER_SENT,
+                ApplicationStatus::HIRED,
+                ApplicationStatus::REJECTED,
+            ];
+
+            if (in_array($newStatusEnum, $notifiableStatuses)) {
                 $this->application->student->notify(new ApplicationStatusChanged($this->application, $this->statusNotes));
             }
         });
@@ -222,10 +257,34 @@ class Show extends Component
         $this->loadActivityLogs();
     }
 
+    // Quick action methods for common status updates
+    public function markAsUnderReview()
+    {
+        $this->openStatusModal(ApplicationStatus::UNDER_REVIEW->value);
+    }
+
+    public function markAsShortlisted()
+    {
+        $this->openStatusModal(ApplicationStatus::SHORTLISTED->value);
+    }
+
+    public function markAsRejected()
+    {
+        $this->openStatusModal(ApplicationStatus::REJECTED->value);
+    }
 
     // Interview Management
     public function openInterviewModal()
     {
+        // Check if we can transition to interview_scheduled
+        if (!$this->application->canTransitionTo(ApplicationStatus::INTERVIEW_SCHEDULED)) {
+            $this->dispatch('show-toast', [
+                'type' => 'error',
+                'message' => 'Cannot schedule interview from current status'
+            ]);
+            return;
+        }
+
         $this->showInterviewModal = true;
         $this->interviewDate = now()->addDays(3)->format('Y-m-d');
         $this->interviewTime = '10:00';
@@ -244,8 +303,8 @@ class Show extends Component
         ]);
 
         DB::transaction(function () {
-            // Update application
-            $this->application->status = 'interview_scheduled';
+            // Update application status using enum
+            $this->application->status = ApplicationStatus::INTERVIEW_SCHEDULED;
             $this->application->interview_scheduled_at = now();
             $this->application->interview_details = [
                 'date' => $this->interviewDate,
@@ -258,10 +317,7 @@ class Show extends Component
             ];
             $this->application->save();
 
-            // Create interview record if you have an Interview model
-            // Alternatively, you can create a calendar event here
-
-            // Log activity using your custom LogsActivity trait
+            // Log activity
             $this->application->logModelActivity(
                 'Interview scheduled for application',
                 'interview_scheduled',
@@ -298,6 +354,15 @@ class Show extends Component
     // Offer Management
     public function openOfferModal()
     {
+        // Check if we can transition to offer_sent
+        if (!$this->application->canTransitionTo(ApplicationStatus::OFFER_SENT)) {
+            $this->dispatch('show-toast', [
+                'type' => 'error',
+                'message' => 'Cannot send offer from current status'
+            ]);
+            return;
+        }
+
         $this->showOfferModal = true;
         $this->offerStipend = $this->application->opportunity->stipend ?? 0;
         $this->offerStartDate = now()->addWeeks(2)->format('Y-m-d');
@@ -317,8 +382,8 @@ class Show extends Component
         ]);
 
         DB::transaction(function () {
-            // Update application
-            $this->application->status = 'offer_sent';
+            // Update application status using enum
+            $this->application->status = ApplicationStatus::OFFER_SENT;
             $this->application->offer_sent_at = now();
             $this->application->offer_details = [
                 'stipend' => $this->offerStipend,
@@ -332,7 +397,7 @@ class Show extends Component
             $this->application->save();
 
             // Log activity
-             $this->application->logModelActivity(
+            $this->application->logModelActivity(
                 'Offer sent to student',
                 'offer_sent',
                 [
@@ -366,9 +431,17 @@ class Show extends Component
         $this->loadActivityLogs();
     }
 
-    
     public function createPlacement()
     {
+        // Check if we can create placement (should be offer_accepted)
+        if ($this->application->status !== ApplicationStatus::OFFER_ACCEPTED) {
+            $this->dispatch('show-toast', [
+                'type' => 'error',
+                'message' => 'Placement can only be created after offer is accepted'
+            ]);
+            return;
+        }
+
         $this->validate([
             'placementSupervisorName' => 'required|string|max:255',
             'placementSupervisorContact' => 'required|string|max:255',
@@ -396,8 +469,8 @@ class Show extends Component
                 'placement_confirmed_at' => now(),
             ]);
 
-            // Update application
-            $this->application->status = 'hired';
+            // Update application status using enum
+            $this->application->status = ApplicationStatus::HIRED;
             $this->application->hired_at = now();
             $this->application->placement_id = $placement->id;
             $this->application->save();
@@ -411,7 +484,7 @@ class Show extends Component
                 ]);
             }
 
-             // Log activity for the placement using your custom LogsActivity trait
+            // Log activity for the placement
             $placement->logModelActivity(
                 'Placement created for student',
                 'placement_created',
@@ -428,7 +501,7 @@ class Show extends Component
                 ]
             );
 
-             // Also log on the application
+            // Also log on the application
             $this->application->logModelActivity(
                 'Student hired and placement created',
                 'hired',
@@ -452,7 +525,6 @@ class Show extends Component
         $this->loadActivityLogs();
     }
 
-    
     // Feedback Management
     public function openFeedbackModal($type = 'general')
     {
@@ -475,8 +547,7 @@ class Show extends Component
             'message' => $this->feedbackMessage,
         ]);
 
-
-         // Log activity using your custom LogsActivity trait
+        // Log activity
         $this->application->logModelActivity(
             "{$this->getFeedbackTypeLabel($this->feedbackType)} feedback sent to student",
             'feedback_sent',
@@ -488,7 +559,6 @@ class Show extends Component
                 'application_id' => $this->application->id
             ]
         );
-
 
         // Notify student
         $this->application->student->notify(new FeedbackReceived($this->application, $feedback));
@@ -502,7 +572,17 @@ class Show extends Component
         $this->loadActivityLogs();
     }
 
-    
+    protected function getFeedbackTypeLabel($type)
+    {
+        return match ($type) {
+            'general' => 'General',
+            'interview' => 'Interview',
+            'offer' => 'Offer',
+            'rejection' => 'Rejection',
+            default => ucfirst($type)
+        };
+    }
+
     // Notes Management
     public function addNote()
     {
@@ -510,7 +590,7 @@ class Show extends Component
             'newNote' => 'required|string|max:500',
         ]);
 
-         // Log the note as activity using your custom LogsActivity trait
+        // Log the note as activity
         $this->application->logModelActivity(
             'Note added to application',
             'note_added',
@@ -530,10 +610,10 @@ class Show extends Component
         $this->loadActivityLogs();
     }
 
-      // Document Management
+    // Document Management
     public function downloadDocument($type)
     {
-        $url = match($type) {
+        $url = match ($type) {
             'cv' => $this->application->student->studentProfile?->cv_url,
             'transcript' => $this->application->student->studentProfile?->transcript_url,
             'school_letter' => $this->application->student->studentProfile?->school_letter_url,
@@ -550,8 +630,6 @@ class Show extends Component
         ]);
     }
 
-
-    
     // Communication
     public function sendEmail()
     {
@@ -570,8 +648,8 @@ class Show extends Component
             'recipient' => $this->application->student->email,
             'subject' => "Application #{$this->application->id} - {$this->application->opportunity->title}",
         ]);
-    } 
-    
+    }
+
     // Navigation
     public function goToNextApplication()
     {
@@ -604,9 +682,11 @@ class Show extends Component
         ]);
     }
 
-     protected function getStatusFlow()
+    protected function getStatusFlow()
     {
-        $flow = [
+        // You could also generate this dynamically from the enum
+        // But keeping it as is for now since it's used in the blade
+        return [
             'submitted' => ['label' => 'Submitted', 'icon' => 'fas fa-file-alt', 'color' => 'info'],
             'under_review' => ['label' => 'Under Review', 'icon' => 'fas fa-search', 'color' => 'primary'],
             'shortlisted' => ['label' => 'Shortlisted', 'icon' => 'fas fa-list-check', 'color' => 'success'],
@@ -618,8 +698,6 @@ class Show extends Component
             'hired' => ['label' => 'Hired/Placed', 'icon' => 'fas fa-user-check', 'color' => 'success'],
             'rejected' => ['label' => 'Rejected', 'icon' => 'fas fa-ban', 'color' => 'danger'],
         ];
-
-        return $flow;
     }
 
     protected function getMatchAnalysis()
@@ -642,6 +720,7 @@ class Show extends Component
                 'student' => $profile->skills ?? [],
                 'required' => $opportunity->skills_required ?? [],
                 'matched' => array_intersect($profile->skills ?? [], $opportunity->skills_required ?? []),
+                'missing' => array_diff($opportunity->skills_required ?? [], $profile->skills ?? []),
             ],
             'location' => [
                 'student' => $profile->preferred_location ?? $student->county,

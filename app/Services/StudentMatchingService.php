@@ -606,10 +606,14 @@ class StudentMatchingService
                     ->first();
 
                 if (!$existingApplication) {
+
+                    $opportunity = AttachmentOpportunity::findOrFail($match['opportunity']->id);
+
                     $application = Application::create([
-                        'user_id' => $student->id,
+                        'user_id' => auth()->id(), // Admin or system user for tracking
                         'student_id' => $student->id,
-                        'attachment_opportunity_id' => $match['opportunity']->id,
+                        'attachment_opportunity_id' => $opportunity->id,
+                        'organization_id' => $opportunity->organization_id,
                         'match_score' => $match['score'],
                         'match_quality' => $match['quality'] ?? 'potential',
                         'matched_criteria' => $match['match_criteria'] ?? [],
@@ -625,7 +629,8 @@ class StudentMatchingService
                         'match_created',
                         [
                             'application_id' => $application->id,
-                            'opportunity_id' => $match['opportunity']->id,
+                            'opportunity_id' => $opportunity->id,
+                            'organization_id' => $opportunity->organization_id,
                             'match_score' => $match['score'],
                             'match_quality' => $match['quality'],
                             'matched_criteria' => $match['match_criteria'],

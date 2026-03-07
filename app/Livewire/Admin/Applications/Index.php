@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Applications;
 
+use App\Enums\ApplicationStatus;
 use App\Models\Application;
 use App\Models\AttachmentOpportunity;
 use Livewire\Component;
@@ -9,6 +10,7 @@ use Livewire\WithPagination;
 
 class Index extends Component
 {
+
     use WithPagination;
 
     public $search = '';
@@ -37,7 +39,10 @@ class Index extends Component
     public $yearOfStudyFilter = '';
     public $skillFilter = '';
 
-    protected $listeners = ['refreshApplications' => '$refresh'];
+    protected $listeners = [
+        'refreshApplications' => '$refresh',
+        'deleteApplication',
+    ];
 
     public function mount($viewType = 'all')
     {
@@ -395,6 +400,16 @@ class Index extends Component
         return redirect()->route('admin.applications.show', $applicationId);
     }
 
+    public function confirmDelete($applicationId)
+    {
+        $this->dispatch('confirm-delete', [
+            'applicationId' => $applicationId,
+            'title' => 'Delete application?',
+            'text' => 'This action cannot be undone.',
+            'confirmButtonText' => 'Yes, delete it',
+        ]);
+    }
+
     public function deleteApplication($applicationId)
     {
         $application = Application::findOrFail($applicationId);
@@ -437,6 +452,26 @@ class Index extends Component
             'message' => 'Selected applications updated successfully!'
         ]);
     }
+
+    public function markAsUnderReview($applicationId)
+    {
+        $application = Application::findOrFail($applicationId);
+
+        try {
+            $application->transitionTo(ApplicationStatus::UNDER_REVIEW, 'Starting review process');
+
+            $this->dispatch('show-toast', [
+                'type' => 'success',
+                'message' => 'Application moved to Under Review'
+            ]);
+        } catch (\Exception $e) {
+            $this->dispatch('show-toast', [
+                'type' => 'error',
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+
 
     public function render()
     {

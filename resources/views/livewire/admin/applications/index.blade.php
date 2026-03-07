@@ -553,23 +553,13 @@
                                             </div>
                                         </td>
                                         <td>
-                                            @if ($application->studentProfile)
+                                            @if ($application->student->studentProfile)
                                                 <div class="small">
-                                                    <strong>{{ $application->studentProfile->institution_name }}</strong><br>
-                                                    {{ $application->studentProfile->course_name }} (Year
-                                                    {{ $application->studentProfile->year_of_study }})<br>
+                                                    <strong>{{ $application->student->studentProfile->institution_name }}</strong><br>
+                                                    {{ $application->student->studentProfile->course_name }} (Year
+                                                    {{ $application->student->studentProfile->year_of_study }})<br>
                                                     CGPA:
-                                                    <strong>{{ $application->studentProfile->cgpa ?? 'N/A' }}</strong><br>
-                                                    @if ($application->studentProfile->skills && count($application->studentProfile->skills) > 0)
-                                                        <span class="text-muted">
-                                                            Skills:
-                                                            {{ implode(', ', array_slice($application->studentProfile->skills, 0, 3)) }}
-                                                            @if (count($application->studentProfile->skills) > 3)
-                                                                +{{ count($application->studentProfile->skills) - 3 }}
-                                                                more
-                                                            @endif
-                                                        </span>
-                                                    @endif
+                                                    <strong>{{ $application->student->studentProfile->cgpa ?? 'N/A' }}</strong><br>
                                                 </div>
                                             @else
                                                 <span class="text-muted">No profile data</span>
@@ -646,67 +636,6 @@
                                                         <i class="fas fa-bolt"></i>
                                                     </button>
                                                     <div class="dropdown-menu dropdown-menu-right">
-                                                        <!-- Status-specific actions -->
-                                                        @if (in_array($application->status, ['submitted', 'under_review']))
-                                                            <button class="dropdown-item text-success"
-                                                                wire:click="updateStatus({{ $application->id }}, 'shortlisted')"
-                                                                wire:confirm="Shortlist this application?">
-                                                                <i class="fas fa-list-check mr-2"></i> Shortlist
-                                                            </button>
-                                                            <button class="dropdown-item text-danger"
-                                                                wire:click="updateStatus({{ $application->id }}, 'rejected')"
-                                                                wire:confirm="Reject this application?">
-                                                                <i class="fas fa-times-circle mr-2"></i> Reject
-                                                            </button>
-                                                        @endif
-
-                                                        @if (in_array($application->status, ['shortlisted', 'under_review']))
-                                                            <button class="dropdown-item text-warning"
-                                                                wire:click="scheduleInterview({{ $application->id }})">
-                                                                <i class="fas fa-calendar-alt mr-2"></i> Schedule
-                                                                Interview
-                                                            </button>
-                                                        @endif
-
-                                                        @if (in_array($application->status, ['interview_completed', 'shortlisted']))
-                                                            <button class="dropdown-item text-info"
-                                                                wire:click="sendOffer({{ $application->id }})">
-                                                                <i class="fas fa-handshake mr-2"></i> Send Offer
-                                                            </button>
-                                                        @endif
-
-                                                        @if ($application->status === 'interview_scheduled')
-                                                            <button class="dropdown-item text-success"
-                                                                wire:click="updateStatus({{ $application->id }}, 'interview_completed')"
-                                                                wire:confirm="Mark interview as completed?">
-                                                                <i class="fas fa-check-circle mr-2"></i> Complete
-                                                                Interview
-                                                            </button>
-                                                        @endif
-
-                                                        @if ($application->status === 'offer_sent')
-                                                            <button class="dropdown-item text-success"
-                                                                wire:click="updateStatus({{ $application->id }}, 'offer_accepted')"
-                                                                wire:confirm="Mark offer as accepted?">
-                                                                <i class="fas fa-check mr-2"></i> Accept Offer
-                                                            </button>
-                                                            <button class="dropdown-item text-danger"
-                                                                wire:click="updateStatus({{ $application->id }}, 'offer_rejected')"
-                                                                wire:confirm="Mark offer as rejected?">
-                                                                <i class="fas fa-times mr-2"></i> Reject Offer
-                                                            </button>
-                                                        @endif
-
-                                                        @if ($application->status === 'offer_accepted')
-                                                            <button class="dropdown-item text-success"
-                                                                wire:click="updateStatus({{ $application->id }}, 'hired')"
-                                                                wire:confirm="Mark student as hired?">
-                                                                <i class="fas fa-user-check mr-2"></i> Mark as Hired
-                                                            </button>
-                                                        @endif
-
-                                                        <div class="dropdown-divider"></div>
-
                                                         <!-- Common actions -->
                                                         <a href="{{ route('admin.applications.edit', $application->id) }}"
                                                             class="dropdown-item">
@@ -716,8 +645,11 @@
                                                         <div class="dropdown-divider"></div>
 
                                                         <button class="dropdown-item text-danger"
-                                                            wire:click="deleteApplication({{ $application->id }})"
-                                                            wire:confirm="Delete this application?">
+                                                            wire:click="$dispatch('confirm-delete', {
+        applicationId: {{ $application->id }},
+        title: 'Delete Application?',
+        text: 'This application will be permanently deleted.'
+    })">
                                                             <i class="fas fa-trash mr-2"></i> Delete
                                                         </button>
                                                     </div>
@@ -830,7 +762,8 @@
                             <p class="text-muted">Rejected applications will be moved to the rejected list.</p>
                         @elseif($bulkAction === 'schedule_interview')
                             <p>You are about to schedule interviews for
-                                <strong>{{ count($selectedApplications) }}</strong> selected application(s).</p>
+                                <strong>{{ count($selectedApplications) }}</strong> selected application(s).
+                            </p>
                             <p class="text-muted">You will be redirected to the bulk interview scheduling page.</p>
                         @elseif($bulkAction === 'send_offer')
                             <p>You are about to send offers to <strong>{{ count($selectedApplications) }}</strong>
@@ -881,22 +814,28 @@
                 justify-content: center;
                 border-radius: 50%;
             }
+
             .table-hover tbody tr:hover {
                 background-color: rgba(0, 123, 255, 0.05);
             }
+
             .table-secondary {
                 opacity: 0.7;
             }
+
             #advancedFilters {
                 transition: all 0.3s ease;
             }
+
             .dropdown-menu {
                 min-width: 200px;
             }
+
             .custom-checkbox .custom-control-label::before {
                 border-radius: 3px;
             }
-            .custom-checkbox .custom-control-input:checked ~ .custom-control-label::before {
+
+            .custom-checkbox .custom-control-input:checked~.custom-control-label::before {
                 background-color: #007bff;
                 border-color: #007bff;
             }
@@ -907,26 +846,51 @@
         <script>
             document.addEventListener('livewire:initialized', () => {
                 // Initialize collapse for advanced filters
-                $('#advancedFilters').on('show.bs.collapse', function () {
-                    $('[data-target="#advancedFilters"] i').removeClass('fa-chevron-down').addClass('fa-chevron-up');
-                }).on('hide.bs.collapse', function () {
-                    $('[data-target="#advancedFilters"] i').removeClass('fa-chevron-up').addClass('fa-chevron-down');
+                $('#advancedFilters').on('show.bs.collapse', function() {
+                    $('[data-target="#advancedFilters"] i').removeClass('fa-chevron-down').addClass(
+                        'fa-chevron-up');
+                }).on('hide.bs.collapse', function() {
+                    $('[data-target="#advancedFilters"] i').removeClass('fa-chevron-up').addClass(
+                        'fa-chevron-down');
                 });
 
                 // Toast notification handler
-                Livewire.on('show-toast', (event) => {
-                    toastr[event.type](event.message, '', {
+                Livewire.on('show-toast', (data) => {
+
+                    let toast = Array.isArray(data) ? data[0] : data;
+
+                    toastr[toast.type](toast.message, '', {
                         closeButton: true,
                         progressBar: true,
                         positionClass: 'toast-top-right',
                         timeOut: 5000
                     });
+
                 });
 
                 // Reset filters function
                 Livewire.on('reset-filters', () => {
                     $('input[type="date"]').val('');
                     $('select').val('');
+                });
+
+                // SweetAlert confirm delete
+                window.addEventListener('confirm-delete', (event) => {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: event.detail.title || 'Are you sure?',
+                        text: event.detail.text || 'This action cannot be undone.',
+                        showCancelButton: true,
+                        confirmButtonText: event.detail.confirmButtonText || 'Yes, delete it',
+                        cancelButtonText: 'Cancel',
+                        reverseButtons: true,
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            Livewire.dispatch('deleteApplication', {
+                                applicationId: event.detail.applicationId
+                            });
+                        }
+                    });
                 });
             });
 

@@ -86,6 +86,36 @@
                     </ul>
                 </li>
 
+                <li class="nav-item {{ $isRouteActive('admin.students.*') ? 'menu-open' : '' }}">
+                    <a href="#" class="nav-link {{ $isRouteActive('admin.students.*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-user-graduate"></i>
+                        <p>Student Tracker <i class="right fas fa-angle-left"></i></p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a href="{{ route('admin.students.index') }}"
+                                class="nav-link {{ $isRouteActive('admin.students.index') ? 'active' : '' }}">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>All Students</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('admin.students.seeking') }}"
+                                class="nav-link {{ $isRouteActive('admin.students.seeking') ? 'active' : '' }}">
+                                <i class="far fa-circle nav-icon text-warning"></i>
+                                <p>Seeking Attachment</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('admin.students.on-attachment') }}"
+                                class="nav-link {{ $isRouteActive('admin.students.on-attachment') ? 'active' : '' }}">
+                                <i class="far fa-circle nav-icon text-success"></i>
+                                <p>Placed Students</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
                 <li class="nav-header">ROLES & PERMISSIONS</li>
 
                 {{-- NEW ROLES & PERMISSIONS SECTION --}}
@@ -98,7 +128,8 @@
                         <li class="nav-item">
                             <a href="{{ route('admin.roles.index') }}"
                                 class="nav-link {{ $isRouteActive('admin.roles.index') ? 'active' : '' }}">
-                                <i class="far {{ $isRouteActive('admin.roles.index') ? 'fa-dot-circle' : 'fa-circle' }} nav-icon"></i>
+                                <i
+                                    class="far {{ $isRouteActive('admin.roles.index') ? 'fa-dot-circle' : 'fa-circle' }} nav-icon"></i>
                                 <p>All Roles</p>
                             </a>
                         </li>
@@ -199,36 +230,6 @@
                                 class="nav-link {{ $isRouteActive('admin.mentorships.create') ? 'active' : '' }}">
                                 <i class="far fa-plus-square nav-icon"></i>
                                 <p>Create New</p>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-
-                <li class="nav-item {{ $isRouteActive('admin.students.*') ? 'menu-open' : '' }}">
-                    <a href="#" class="nav-link {{ $isRouteActive('admin.students.*') ? 'active' : '' }}">
-                        <i class="nav-icon fas fa-user-graduate"></i>
-                        <p>Student Tracker <i class="right fas fa-angle-left"></i></p>
-                    </a>
-                    <ul class="nav nav-treeview">
-                        <li class="nav-item">
-                            <a href="{{ route('admin.students.index') }}"
-                                class="nav-link {{ $isRouteActive('admin.students.index') ? 'active' : '' }}">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>All Students</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('admin.students.seeking') }}"
-                                class="nav-link {{ $isRouteActive('admin.students.seeking') ? 'active' : '' }}">
-                                <i class="far fa-circle nav-icon text-warning"></i>
-                                <p>Seeking Attachment</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('admin.students.on-attachment') }}"
-                                class="nav-link {{ $isRouteActive('admin.students.on-attachment') ? 'active' : '' }}">
-                                <i class="far fa-circle nav-icon text-success"></i>
-                                <p>Placed Students</p>
                             </a>
                         </li>
                     </ul>

@@ -251,12 +251,75 @@
                     </div>
                 </div>
                 <div class="card-footer clearfix">
-                    <div class="float-right">
-                        {{ $logs->links() }}
-                    </div>
-                    <div class="float-left">
-                        Showing {{ $logs->firstItem() }} to {{ $logs->lastItem() }} of {{ $logs->total() }}
-                        entries
+                    <div class="row">
+                        <div class="col-sm-12 col-md-5">
+                            <div class="text-muted" style="line-height: 38px;">
+                                Showing <span class="font-weight-medium">{{ $logs->firstItem() }}</span>
+                                to <span class="font-weight-medium">{{ $logs->lastItem() }}</span>
+                                of <span class="font-weight-medium">{{ number_format($logs->total()) }}</span> entries
+                            </div>
+                        </div>
+                        <div class="col-sm-12 col-md-7">
+                            <div class="d-flex justify-content-center justify-content-md-end">
+                                @if ($logs->hasPages())
+                                    <nav aria-label="Page navigation">
+                                        <ul class="pagination pagination-sm mb-0">
+                                            {{-- Previous Page Link --}}
+                                            @if ($logs->onFirstPage())
+                                                <li class="page-item disabled" aria-disabled="true">
+                                                    <span class="page-link">
+                                                        <i class="fas fa-chevron-left"></i>
+                                                        <span class="d-none d-md-inline ml-1">Previous</span>
+                                                    </span>
+                                                </li>
+                                            @else
+                                                <li class="page-item">
+                                                    <button class="page-link" wire:click="previousPage"
+                                                        wire:loading.attr="disabled">
+                                                        <i class="fas fa-chevron-left"></i>
+                                                        <span class="d-none d-md-inline ml-1">Previous</span>
+                                                    </button>
+                                                </li>
+                                            @endif
+
+                                            {{-- Pagination Elements --}}
+                                            @foreach ($logs->getUrlRange(max(1, $logs->currentPage() - 2), min($logs->lastPage(), $logs->currentPage() + 2)) as $page => $url)
+                                                @if ($page == $logs->currentPage())
+                                                    <li class="page-item active" aria-current="page">
+                                                        <span class="page-link">{{ $page }}</span>
+                                                    </li>
+                                                @else
+                                                    <li class="page-item">
+                                                        <button class="page-link"
+                                                            wire:click="gotoPage({{ $page }})">
+                                                            {{ $page }}
+                                                        </button>
+                                                    </li>
+                                                @endif
+                                            @endforeach
+
+                                            {{-- Next Page Link --}}
+                                            @if ($logs->hasMorePages())
+                                                <li class="page-item">
+                                                    <button class="page-link" wire:click="nextPage"
+                                                        wire:loading.attr="disabled">
+                                                        <span class="d-none d-md-inline mr-1">Next</span>
+                                                        <i class="fas fa-chevron-right"></i>
+                                                    </button>
+                                                </li>
+                                            @else
+                                                <li class="page-item disabled" aria-disabled="true">
+                                                    <span class="page-link">
+                                                        <span class="d-none d-md-inline mr-1">Next</span>
+                                                        <i class="fas fa-chevron-right"></i>
+                                                    </span>
+                                                </li>
+                                            @endif
+                                        </ul>
+                                    </nav>
+                                @endif
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

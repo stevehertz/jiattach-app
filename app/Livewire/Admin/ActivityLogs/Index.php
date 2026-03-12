@@ -10,7 +10,7 @@ use Livewire\WithPagination;
 class Index extends Component
 {
     use WithPagination;
-    
+
     public $search = '';
     public $log_name = '';
     public $event = '';
@@ -18,9 +18,9 @@ class Index extends Component
     public $date_from = '';
     public $date_to = '';
     public $days_to_clear = 30;
-    
+
     public $showClearModal = false;
-    
+
     protected $queryString = [
         'search' => ['except' => ''],
         'log_name' => ['except' => ''],
@@ -32,28 +32,28 @@ class Index extends Component
     public function render()
     {
          $query = ActivityLog::with('causer')->latest();
-        
+
         // Apply filters
         if ($this->log_name) {
             $query->where('log_name', $this->log_name);
         }
-        
+
         if ($this->event) {
             $query->where('event', $this->event);
         }
-        
+
         if ($this->user_id) {
             $query->where('causer_id', $this->user_id);
         }
-        
+
         if ($this->date_from) {
             $query->whereDate('created_at', '>=', $this->date_from);
         }
-        
+
         if ($this->date_to) {
             $query->whereDate('created_at', '<=', $this->date_to);
         }
-        
+
         if ($this->search) {
             $query->where(function ($q) {
                 $q->where('description', 'like', "%{$this->search}%")
@@ -66,21 +66,21 @@ class Index extends Component
                   });
             });
         }
-        
+
         $logs = $query->paginate(25);
-        
+
         // Get filter data
         $logNames = ActivityLog::distinct()->pluck('log_name')->filter()->values();
         $events = ActivityLog::distinct()->pluck('event')->filter()->values();
         $users = User::whereIn('id', ActivityLog::distinct()->pluck('causer_id'))->get();
-        
+
         $todayLogs = ActivityLog::today()->count();
         $totalLogs = ActivityLog::count();
-        
+
         return view('livewire.admin.activity-logs.index',  compact(
-            'logs', 
-            'logNames', 
-            'events', 
+            'logs',
+            'logNames',
+            'events',
             'users',
             'todayLogs',
             'totalLogs'
@@ -91,30 +91,30 @@ class Index extends Component
     {
         $this->resetPage();
     }
-    
+
     public function resetFilters()
     {
         $this->reset(['search', 'log_name', 'event', 'user_id', 'date_from', 'date_to']);
         $this->resetPage();
     }
-    
+
     public function clearOldLogs()
     {
         $deleted = ActivityLog::where('created_at', '<', now()->subDays($this->days_to_clear))->delete();
-        
+
         $this->showClearModal = false;
         $this->dispatchBrowserEvent('notify', [
             'type' => 'success',
             'message' => "Successfully cleared {$deleted} logs older than {$this->days_to_clear} days."
         ]);
     }
-    
+
     public function exportLogs()
     {
         $logs = ActivityLog::with('causer')->latest()->limit(1000)->get();
-        
+
         $csvContent = "ID,Description,Event,User,IP Address,Date\n";
-        
+
         foreach ($logs as $log) {
             $csvContent .= implode(',', [
                 $log->id,
@@ -125,7 +125,7 @@ class Index extends Component
                 $log->created_at->format('Y-m-d H:i:s')
             ]) . "\n";
         }
-        
+
         return response()->streamDownload(function () use ($csvContent) {
             echo $csvContent;
         }, 'activity-logs-' . now()->format('Y-m-d') . '.csv');

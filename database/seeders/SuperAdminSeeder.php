@@ -7,7 +7,6 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 class SuperAdminSeeder extends Seeder
 {
@@ -32,30 +31,30 @@ class SuperAdminSeeder extends Seeder
                 'first_name' => 'System',
                 'last_name'  => 'Admin',
                 'password'   => Hash::make('password'), // Change this in production!
-                
+
                 // Required Personal Info (using reserved system values)
                 'phone'         => '0700000000',
                 'national_id'   => 'ADMIN001',
                 'date_of_birth' => '1990-01-01',
                 'gender'        => 'prefer_not_to_say',
-                
+
                 // Location Defaults
                 'county'       => 'Nairobi',
                 'constituency' => 'Central',
                 'ward'         => 'Central Business District',
-                
+
                 // Disability Status (Default to none)
                 'disability_status' => 'none',
                 'disability_details' => null,
-                
+
                 // Bio
                 'bio' => 'Super Administrator for Jiattach Platform.',
-                
+
                 // Account Status
                 'is_active'          => true,
                 'is_verified'        => true,
                 'email_verified_at'  => Carbon::now(),
-                'verification_token' => null, 
+                'verification_token' => null,
                 'last_login_at'      => Carbon::now(),
             ]
         );

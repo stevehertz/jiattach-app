@@ -23,17 +23,17 @@ class StudentMatchingService
         $profile = $student->studentProfile;
 
         // Only match students who are seeking
-        if ($profile->attachment_status !== 'seeking') {
+        if (!in_array($profile->attachment_status, ['seeking', 'applied', 'interviewing'])) {
             return [];
         }
 
         // Get active opportunities with eager loading
         $opportunities = AttachmentOpportunity::where('status', 'open')
             ->where('deadline', '>=', now())
-            ->with(['organization' => function($query) {
+            ->with(['organization' => function ($query) {
                 $query->where('is_verified', true); // Only verified organizations
             }])
-            ->whereHas('organization', function($query) {
+            ->whereHas('organization', function ($query) {
                 $query->where('is_verified', true);
             })
             ->get();
@@ -161,8 +161,10 @@ class StudentMatchingService
             }
 
             // Check if required course is a subset or superset
-            if (str_contains($studentCourseLower, $requiredLower) ||
-                str_contains($requiredLower, $studentCourseLower)) {
+            if (
+                str_contains($studentCourseLower, $requiredLower) ||
+                str_contains($requiredLower, $studentCourseLower)
+            ) {
                 $bestMatch = max($bestMatch, 90);
                 continue;
             }
@@ -211,8 +213,10 @@ class StudentMatchingService
 
         // Check if opportunity location contains preferred location or vice versa
         if ($preferredLocation) {
-            if (str_contains($opportunityLocation, $preferredLocation) ||
-                str_contains($preferredLocation, $opportunityLocation)) {
+            if (
+                str_contains($opportunityLocation, $preferredLocation) ||
+                str_contains($preferredLocation, $opportunityLocation)
+            ) {
                 return 80;
             }
         }
@@ -262,8 +266,10 @@ class StudentMatchingService
                 }
 
                 // Contains match
-                if (str_contains($studentSkill, $requiredSkill) ||
-                    str_contains($requiredSkill, $studentSkill)) {
+                if (
+                    str_contains($studentSkill, $requiredSkill) ||
+                    str_contains($requiredSkill, $studentSkill)
+                ) {
                     $bestMatchForSkill = max($bestMatchForSkill, 0.8);
                 }
 
@@ -621,6 +627,37 @@ class StudentMatchingService
                         'submitted_at' => now(),
                     ]);
 
+                    // Save match details in metadata
+                    $application->match_quality = $match['quality'] ?? 'potential';
+                    $application->matched_criteria = $match['match_criteria'] ?? [];
+                    $application->match_details = $match['details'] ?? null;
+                    $application->save();
+
+
+                    // ===== ADD HISTORY RECORD =====
+                    // Save history for this match creation
+                    $application->addHistory(
+                        'created', // action
+                        $student->id, // student_id
+                        $opportunity->organization_id, // organization_id
+                        null, // old_status
+                        ApplicationStatus::PENDING->value, // new_status
+                        "System match created with score {$match['score']}% ({$match['quality']})", // notes
+                        [ // metadata
+                            'match_score' => $match['score'],
+                            'match_quality' => $match['quality'],
+                            'matched_criteria' => $match['match_criteria'] ?? [],
+                            'match_details' => $match['details'] ?? [],
+                            'opportunity_id' => $opportunity->id,
+                            'opportunity_title' => $opportunity->title,
+                            'organization_id' => $opportunity->organization_id,
+                            'organization_name' => $opportunity->organization->name ?? null,
+                            'created_by' => 'system_matching',
+                            'created_at' => now()->toDateTimeString(),
+                        ]
+                    );
+                    // ===== END HISTORY RECORD =====
+
                     $savedMatches[] = $application;
 
                     // Log individual match creation
@@ -642,6 +679,8 @@ class StudentMatchingService
             }
 
             if (!empty($savedMatches)) {
+                $oldStatus = $student->studentProfile->attachment_status;
+
                 $student->studentProfile->update([
                     'attachment_status' => 'applied'
                 ]);
@@ -652,9 +691,11 @@ class StudentMatchingService
                     'status_changed',
                     [
                         'student_id' => $student->id,
+                        'student_name' => $student->full_name,
                         'old_status' => 'seeking',
                         'new_status' => 'applied',
-                        'matches_count' => count($savedMatches)
+                        'matches_count' => count($savedMatches),
+                        'match_ids' => collect($savedMatches)->pluck('id')->toArray(),
                     ],
                     'student_profile'
                 );
@@ -669,8 +710,11 @@ class StudentMatchingService
                 [
                     'matches_count' => count($savedMatches),
                     'student_id' => $student->id,
+                    'student_name' => $student->full_name,
                     'opportunity_ids' => collect($savedMatches)->pluck('attachment_opportunity_id')->toArray(),
-                    'match_qualities' => collect($savedMatches)->pluck('match_quality')->toArray()
+                    'opportunity_titles' => collect($savedMatches)->map(fn($app) => $app->opportunity->title ?? null)->toArray(),
+                    'match_qualities' => collect($savedMatches)->pluck('match_quality')->toArray(),
+                    'match_scores' => collect($savedMatches)->pluck('match_score')->toArray(),
                 ],
                 'matching'
             );
@@ -685,6 +729,7 @@ class StudentMatchingService
                 'matches_failed',
                 [
                     'student_id' => $student->id,
+                    'student_name' => $student->full_name,
                     'error' => $e->getMessage(),
                     'matches_attempted' => count($matches)
                 ],

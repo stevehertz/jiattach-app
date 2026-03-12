@@ -18,6 +18,9 @@ class Application extends Model
         'attachment_opportunity_id',
         'organization_id',
         'match_score',
+        'match_quality',
+        'matched_criteria',
+        'match_details',
         'cover_letter',
         'submitted_at',
         'status', // pending, reviewing, shortlisted, offered, accepted, rejected
@@ -32,6 +35,9 @@ class Application extends Model
     protected $casts = [
         'reviewed_at' => 'datetime',
         'match_score' => 'float',
+        'match_quality' => 'string',
+        'matched_criteria' => 'array',
+        'match_details' => 'array',
         'accepted_at' => 'datetime', // Add this
         'declined_at' => 'datetime', // Add this
         'submitted_at' => 'datetime', // Add this if not already there
@@ -59,6 +65,55 @@ class Application extends Model
         return $this->hasOne(Placement::class);
     }
 
+    // In your Application model, add this relationship:
+
+    /**
+     * Get the history records for this application.
+     */
+    public function history()
+    {
+        return $this->hasMany(ApplicationHistory::class)->latest();
+    }
+
+    /**
+     * Get the timeline history grouped by date.
+     */
+    public function getTimelineHistoryAttribute()
+    {
+        return $this->history()
+            ->with('user')
+            ->get()
+            ->groupBy(fn($item) => $item->created_at->format('Y-m-d'));
+    }
+
+    /**
+     * Add a history record for this application.
+     */
+    public function addHistory(
+        string $action,
+        $student_id = null,
+        $organization_id = null,
+        ?string $oldStatus = null,
+        string $newStatus,
+        ?string $notes = null,
+        array $metadata = []
+    ): ApplicationHistory {
+        return $this->history()->create([
+            'user_id' => auth()->id(),
+            'student_id' => $student_id ?? $this->student_id,
+            'organization_id' => $organization_id ?? $this->organization_id,
+            'old_status' => $oldStatus,
+            'new_status' => $newStatus,
+            'action' => $action,
+            'notes' => $notes,
+            'metadata' => $metadata,
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+        ]);
+    }
+
+
+
     /**
      * Get the feedback for this application.
      */
@@ -74,7 +129,7 @@ class Application extends Model
         return "<span class='badge badge-{$color} p-2'>{$this->status->label()}</span>";
     }
 
-     public function getStatusLabelAttribute()
+    public function getStatusLabelAttribute()
     {
         return $this->status->label();
     }
@@ -89,7 +144,7 @@ class Application extends Model
         return $this->status->color();
     }
 
-    
+
     /**
      * Check if status transition is valid using Enum
      */
@@ -111,7 +166,7 @@ class Application extends Model
     public function getAvailableNextStatuses(): array
     {
         $nextStatuses = [];
-        
+
         foreach ($this->status->allowedTransitions() as $status) {
             $nextStatuses[$status->value] = [
                 'value' => $status->value,

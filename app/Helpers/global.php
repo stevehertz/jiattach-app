@@ -80,9 +80,9 @@ if (!function_exists('getApplicationStatusBadge')) {
      * @param \App\Enums\ApplicationStatus|string $status
      * @return string
      */
-    function getApplicationStatusBadge($status): string
+    function getApplicationStatusBadge($status, string $size = 'normal'): string
     {
-        return Helpers::getApplicationStatusBadge($status);
+        return Helpers::getApplicationStatusBadge($status, $size);
     }
 }
 

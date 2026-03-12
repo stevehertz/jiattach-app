@@ -1,36 +1,8 @@
 <div>
-    <!-- Modern Header with Gradient Background -->
-    <div class="bg-gradient-primary-to-secondary py-4 mb-4">
-        <div class="container-fluid">
-            <div class="d-flex justify-content-between align-items-center flex-wrap">
-                <div>
-                    <h1 class="h2 text-white mb-0">
-                        <i class="fas fa-file-alt mr-2"></i>Application #{{ $application->id }}
-                    </h1>
-                    <nav aria-label="breadcrumb" class="mt-2">
-                        <ol class="breadcrumb bg-transparent p-0 mb-0">
-                            <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}"
-                                    class="text-white-50">Dashboard</a></li>
-                            <li class="breadcrumb-item"><a href="{{ route('admin.applications.index') }}"
-                                    class="text-white-50">Applications</a></li>
-                            <li class="breadcrumb-item active text-white" aria-current="page">#{{ $application->id }}
-                            </li>
-                        </ol>
-                    </nav>
-                </div>
-                <div class="mt-2 mt-sm-0">
-                    <span class="badge badge-light p-3">
-                        {!! getApplicationStatusBadge($application->status, 'large') !!}
-                    </span>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Main Content -->
     <div class="container-fluid">
         <!-- Quick Stats Row -->
-        <div class="row mb-4">
+        <div class="row mb-2">
             <div class="col-md-3">
                 <div class="card card-stats border-0 shadow-sm">
                     <div class="card-body">
@@ -105,7 +77,7 @@
         </div>
 
         <!-- Action Bar -->
-        <div class="row mb-4">
+        <div class="row mb-2">
             <div class="col-12">
                 <div class="card border-0 shadow-sm">
                     <div class="card-body py-3">
@@ -130,42 +102,45 @@
                                     @if (!$documentStatus['cv']['exists']) disabled @endif>
                                     <i class="fas fa-download mr-1"></i> CV
                                 </button>
-                                <div class="btn-group">
-                                    <button type="button" class="btn btn-outline-warning dropdown-toggle"
-                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                        <i class="fas fa-bolt mr-1"></i> Actions
-                                    </button>
-                                    <div class="dropdown-menu dropdown-menu-right">
-                                        @if ($application->status === \App\Enums\ApplicationStatus::PENDING)
-                                            <button class="dropdown-item" wire:click="markAsUnderReview">
-                                                <i class="fas fa-search text-primary mr-2"></i> Mark Under Review
-                                            </button>
-                                        @endif
-                                        @if (in_array($application->status, [\App\Enums\ApplicationStatus::UNDER_REVIEW]))
-                                            <button class="dropdown-item" wire:click="openInterviewModal">
-                                                <i class="fas fa-calendar-alt text-warning mr-2"></i> Schedule Interview
-                                            </button>
-                                        @endif
-                                        @if (in_array($application->status, [
-                                                \App\Enums\ApplicationStatus::INTERVIEW_COMPLETED,
-                                                \App\Enums\ApplicationStatus::SHORTLISTED,
-                                            ]))
-                                            <button class="dropdown-item" wire:click="openOfferModal">
-                                                <i class="fas fa-handshake text-info mr-2"></i> Send Offer
-                                            </button>
-                                        @endif
-                                        @if ($application->status === \App\Enums\ApplicationStatus::OFFER_ACCEPTED)
-                                            <button class="dropdown-item" wire:click="openPlacementModal">
-                                                <i class="fas fa-briefcase text-success mr-2"></i> Create Placement
-                                            </button>
-                                        @endif
-                                        <div class="dropdown-divider"></div>
-                                        <button class="dropdown-item text-danger"
-                                            wire:click="openStatusModal('rejected')">
-                                            <i class="fas fa-times-circle mr-2"></i> Reject
+                                @if ($application->status != \App\Enums\ApplicationStatus::REJECTED)
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-outline-warning dropdown-toggle"
+                                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            <i class="fas fa-bolt mr-1"></i> Actions
                                         </button>
+                                        <div class="dropdown-menu dropdown-menu-right">
+                                            @if ($application->status === \App\Enums\ApplicationStatus::PENDING)
+                                                <button class="dropdown-item" wire:click="markAsUnderReview">
+                                                    <i class="fas fa-search text-primary mr-2"></i> Mark Under Review
+                                                </button>
+                                            @endif
+                                            @if (in_array($application->status, [\App\Enums\ApplicationStatus::UNDER_REVIEW]))
+                                                <button class="dropdown-item" wire:click="markAsShortlisted">
+                                                    <i class="fas fa-calendar-alt text-warning mr-2"></i> Shortlist
+                                                    Candidate
+                                                </button>
+                                            @endif
+                                            @if (in_array($application->status, [
+                                                    \App\Enums\ApplicationStatus::INTERVIEW_COMPLETED,
+                                                    \App\Enums\ApplicationStatus::SHORTLISTED,
+                                                ]))
+                                                <button class="dropdown-item" wire:click="openOfferModal">
+                                                    <i class="fas fa-handshake text-info mr-2"></i> Send Offer
+                                                </button>
+                                            @endif
+                                            @if ($application->status === \App\Enums\ApplicationStatus::OFFER_ACCEPTED)
+                                                <button class="dropdown-item" wire:click="openPlacementModal">
+                                                    <i class="fas fa-briefcase text-success mr-2"></i> Create Placement
+                                                </button>
+                                            @endif
+                                            <div class="dropdown-divider"></div>
+                                            <button class="dropdown-item text-danger"
+                                                wire:click="openStatusModal('rejected')">
+                                                <i class="fas fa-times-circle mr-2"></i> Reject
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -253,11 +228,12 @@
                                             </tr>
                                         </table>
                                     </div>
-
                                     <!-- Academic Information -->
                                     <div class="col-md-6 mb-4">
-                                        <h5 class="mb-3"><i
-                                                class="fas fa-graduation-cap text-primary mr-2"></i>Academic</h5>
+                                        <h5 class="mb-3">
+                                            <i class="fas fa-graduation-cap text-primary mr-2"></i>
+                                            Academic
+                                        </h5>
                                         @if ($application->student->studentProfile)
                                             @php $profile = $application->student->studentProfile; @endphp
                                             <table class="table table-sm table-borderless">
@@ -438,7 +414,6 @@
                                         </div>
                                     </div>
                                 </div>
-
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="card bg-light border-0 mb-3">
@@ -501,49 +476,113 @@
                             <!-- Timeline Tab -->
                             <div class="tab-pane" id="timeline" role="tabpanel">
                                 <div class="timeline-modern">
-                                    @forelse($activityLogs as $log)
-                                        <div class="timeline-item-modern">
-                                            <div
-                                                class="timeline-dot bg-{{ $log->properties['color'] ?? 'secondary' }}">
-                                            </div>
-                                            <div class="timeline-content">
-                                                <div class="d-flex justify-content-between mb-2">
-                                                    <div>
-                                                        <strong>{{ $log->causer?->full_name ?? 'System' }}</strong>
-                                                        <span class="text-muted mx-2">•</span>
-                                                        <span
-                                                            class="text-muted">{{ $log->created_at->format('M d, Y H:i') }}</span>
-                                                    </div>
-                                                    <span
-                                                        class="badge badge-light">{{ $log->ip_address ?? 'N/A' }}</span>
-                                                </div>
-                                                <p class="mb-1">{{ $log->description }}</p>
-                                                @if ($log->properties && !empty(array_except($log->properties, ['color', 'icon'])))
-                                                    <div class="small text-muted mt-2">
-                                                        @foreach ($log->properties as $key => $value)
-                                                            @if (!in_array($key, ['color', 'icon']) && !is_null($value) && $value !== '')
-                                                                <div>
-                                                                    <strong>{{ ucfirst(str_replace('_', ' ', $key)) }}:</strong>
-                                                                    @if (is_array($value))
-                                                                        {{ json_encode($value) }}
-                                                                    @else
-                                                                        {{ $value }}
-                                                                    @endif
-                                                                </div>
-                                                            @endif
-                                                        @endforeach
-                                                    </div>
-                                                @endif
-                                            </div>
+                                    @php
+                                        $groupedLogs = collect($activityLogs)->groupBy(
+                                            fn($log) => $log['created_at']->format('Y-m-d'),
+                                        );
+                                    @endphp
+
+                                    @forelse($groupedLogs as $date => $logs)
+
+                                        <!-- Date Separator -->
+                                        <div class="timeline-date-separator">
+                                            <span class="badge badge-light p-2">
+                                                @php
+                                                    $carbonDate = \Carbon\Carbon::parse($date);
+                                                    if ($carbonDate->isToday()) {
+                                                        echo 'Today';
+                                                    } elseif ($carbonDate->isYesterday()) {
+                                                        echo 'Yesterday';
+                                                    } else {
+                                                        echo $carbonDate->format('M d, Y');
+                                                    }
+                                                @endphp
+                                            </span>
                                         </div>
+
+                                        @foreach ($logs as $log)
+                                            <div class="timeline-item-modern">
+                                                <div class="timeline-dot bg-{{ $log->color ?? 'secondary' }}">
+                                                    <i class="fas {{ $log->icon ?? 'fa-circle' }}"></i>
+                                                </div>
+                                                <div class="timeline-content">
+                                                    <div class="d-flex justify-content-between mb-2">
+                                                        <div>
+                                                            <strong>{{ $log->causer?->full_name ?? 'System' }}</strong>
+                                                            <span class="text-muted mx-2">•</span>
+                                                            <span
+                                                                class="text-muted">{{ $log['created_at']->format('h:i A') }}</span>
+                                                        </div>
+                                                        @if (isset($log->properties['action']))
+                                                            <span
+                                                                class="badge badge-light">{{ ucfirst(str_replace('_', ' ', $log->properties['action'])) }}</span>
+                                                        @endif
+                                                        <p class="mb-2">{{ $log['description'] }}</p>
+
+                                                        @if (isset($log->properties['metadata']) ||
+                                                                isset($log->properties['old_status']) ||
+                                                                isset($log->properties['new_status']))
+                                                            <div class="small bg-light p-2 rounded">
+                                                                @if (isset($log->properties['old_status_label']) && isset($log->properties['new_status_label']))
+                                                                    <div class="mb-1">
+                                                                        <span
+                                                                            class="badge badge-secondary">{{ $log->properties['old_status_label'] }}</span>
+                                                                        <i
+                                                                            class="fas fa-arrow-right mx-2 text-muted"></i>
+                                                                        <span
+                                                                            class="badge badge-{{ $log->color ?? 'primary' }}">{{ $log->properties['new_status_label'] }}</span>
+                                                                    </div>
+                                                                @endif
+
+                                                                @if (isset($log->properties['metadata']['interview_details']))
+                                                                    <div class="mt-2">
+                                                                        <i
+                                                                            class="fas fa-calendar-alt text-warning mr-1"></i>
+                                                                        Interview:
+                                                                        {{ $log->properties['metadata']['interview_details']['date'] }}
+                                                                        at
+                                                                        {{ $log->properties['metadata']['interview_details']['time'] }}
+                                                                        ({{ ucfirst($log->properties['metadata']['interview_details']['type']) }})
+                                                                    </div>
+                                                                @endif
+
+                                                                @if (isset($log->properties['metadata']['offer_details']))
+                                                                    <div class="mt-2">
+                                                                        <i
+                                                                            class="fas fa-money-bill text-success mr-1"></i>
+                                                                        Offer: KES
+                                                                        {{ number_format($log->properties['metadata']['offer_details']['stipend']) }}
+                                                                    </div>
+                                                                @endif
+
+                                                                @if (isset($log->properties['notes']))
+                                                                    <div class="mt-2 text-muted">
+                                                                        <i class="fas fa-comment mr-1"></i>
+                                                                        {{ $log->properties['notes'] }}
+                                                                    </div>
+                                                                @endif
+                                                            </div>
+                                                        @endif
+
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endforeach
+
                                     @empty
+
+
                                         <div class="text-center py-5">
                                             <i class="fas fa-history fa-3x text-muted mb-3"></i>
-                                            <p class="text-muted">No activity logs found</p>
+                                            <p class="text-muted">No timeline history found</p>
                                         </div>
                                     @endforelse
+
+
                                 </div>
                             </div>
+
 
                             <!-- Notes Tab -->
                             <div class="tab-pane" id="notes" role="tabpanel">
@@ -558,14 +597,58 @@
                                     </div>
                                 </div>
                                 <div class="notes-list">
-                                    @forelse($activityLogs->where('description', 'note_added') as $note)
+                                    @php
+                                        // Filter notes from both activity logs and history
+                                        $notes = collect($activityLogs)
+                                            ->filter(function ($item) {
+                                                // From activity logs with description containing 'note'
+                                                if (
+                                                    ($item['type'] ?? '') === 'activity' &&
+                                                    (str_contains(strtolower($item['description'] ?? ''), 'note') ||
+                                                        ($item['properties']['note'] ?? false))
+                                                ) {
+                                                    return true;
+                                                }
+
+                                                // From history with action 'note_added'
+                                                if (
+                                                    ($item['type'] ?? '') === 'history' &&
+                                                    ($item['properties']['action'] ?? '') === 'note_added'
+                                                ) {
+                                                    return true;
+                                                }
+
+                                                return false;
+                                            })
+                                            ->sortByDesc('created_at');
+                                    @endphp
+
+                                    @forelse($notes as $note)
                                         <div class="note-item-modern p-3 border-bottom">
                                             <div class="d-flex justify-content-between mb-2">
-                                                <strong>{{ $note->causer?->full_name ?? 'System' }}</strong>
+                                                <strong>
+                                                    @if ($note['type'] === 'activity')
+                                                        {{ $note['causer']['full_name'] ?? 'System' }}
+                                                    @else
+                                                        {{ $note['causer'] ?? 'System' }}
+                                                    @endif
+                                                </strong>
                                                 <small
-                                                    class="text-muted">{{ $note->created_at->diffForHumans() }}</small>
+                                                    class="text-muted">{{ \Carbon\Carbon::parse($note['created_at'])->diffForHumans() }}</small>
                                             </div>
-                                            <p class="mb-0">{{ $note->properties['note'] ?? '' }}</p>
+                                            <p class="mb-0">
+                                                @if ($note['type'] === 'activity')
+                                                    {{ $note['properties']['note'] ?? $note['description'] }}
+                                                @else
+                                                    {{ $note['properties']['notes'] ?? ($note['properties']['metadata']['note'] ?? 'Note added') }}
+                                                @endif
+                                            </p>
+                                            @if (isset($note['properties']['metadata']['opportunity_title']))
+                                                <small class="text-muted">
+                                                    <i class="fas fa-briefcase mr-1"></i>
+                                                    {{ $note['properties']['metadata']['opportunity_title'] }}
+                                                </small>
+                                            @endif
                                         </div>
                                     @empty
                                         <div class="text-center py-4">
@@ -575,9 +658,11 @@
                                     @endforelse
                                 </div>
                             </div>
+
                         </div>
                     </div>
                 </div>
+
             </div>
 
             <!-- Right Column - Status & Actions -->
@@ -768,7 +853,8 @@
                                         </div>
                                     </div>
                                     <small class="text-muted mt-1 d-block">
-                                        <i class="fas fa-clock mr-1"></i>{{ $application->placement->remaining_days }}
+                                        <i
+                                            class="fas fa-clock mr-1"></i>{{ $application->placement->remaining_days }}
                                         days remaining
                                     </small>
                                 </div>
@@ -776,8 +862,11 @@
                         </div>
                     </div>
                 @endif
+
             </div>
+
         </div>
+
     </div>
 
     <!-- Modal Components (keep as is but enhance styling) -->
@@ -829,7 +918,6 @@
     @endif
 
     <!-- Keep other modals with similar styling improvements -->
-
     @push('styles')
         <style>
             /* Gradient Background */
@@ -1094,6 +1182,30 @@
                     height: 40px;
                     font-size: 1rem;
                 }
+            }
+
+            /* Timeline Date Separator */
+            .timeline-date-separator {
+                text-align: center;
+                margin: 20px 0;
+                position: relative;
+            }
+
+            .timeline-date-separator:before {
+                content: '';
+                position: absolute;
+                left: 0;
+                right: 0;
+                top: 50%;
+                height: 1px;
+                background: #e9ecef;
+                z-index: 0;
+            }
+
+            .timeline-date-separator .badge {
+                position: relative;
+                z-index: 1;
+                padding: 0.5rem 1rem;
             }
         </style>
     @endpush

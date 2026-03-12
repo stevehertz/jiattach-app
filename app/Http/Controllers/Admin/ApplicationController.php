@@ -3,15 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Models\Application;
 
 class ApplicationController extends Controller
 {
     //
-    public function show($id)
+    public function show(Application $application)
     {
         return view('admin.applications.show', [
-            'applicationId' => $id
+            'application' => $application
         ]);
     }
 }

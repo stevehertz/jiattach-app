@@ -375,7 +375,7 @@
                         <div class="card-header">
                             <h3 class="card-title">
                                 <i class="fas fa-file-alt mr-1"></i> Recent Applications
-                                @if ($student->studentApplication->count() > 0)
+                                @if ($student->studentApplications->count() > 0)
                                     <span class="badge badge-info">{{ $student->applications->count() }}</span>
                                 @endif
                             </h3>

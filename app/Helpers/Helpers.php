@@ -165,7 +165,7 @@ class Helpers
      * @param \App\Enums\ApplicationStatus|string $status
      * @return string
      */
-    public static function getApplicationStatusBadge($status): string
+    public static function getApplicationStatusBadge($status, string $size = 'normal'): string
     {
         // If it's an enum instance, use its built-in methods
         if ($status instanceof ApplicationStatus) {
@@ -210,8 +210,9 @@ class Helpers
 
         $color = $statusColors[$status] ?? 'secondary';
         $label = $statusLabels[$status] ?? ucfirst(str_replace('_', ' ', $status));
+        $class = $size === 'large' ? 'badge-lg' : '';
 
-        return '<span class="badge badge-' . $color . '">' . $label . '</span>';
+        return '<span class="badge badge-' . $color . ' ' . $class . '">' . $label . '</span>';
     }
 
     public static function getEnumBadge($enum): string

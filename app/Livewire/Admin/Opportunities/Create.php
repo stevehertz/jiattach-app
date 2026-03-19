@@ -97,7 +97,7 @@ class Create extends Component
 
     public function getOrganizationsProperty()
     {
-        return Organization::with('user')
+        return Organization::with('users')
             ->orderBy('name')
             ->get()
             ->mapWithKeys(function ($org) {

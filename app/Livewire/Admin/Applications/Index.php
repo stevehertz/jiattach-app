@@ -54,7 +54,7 @@ class Index extends Component
     {
         switch ($this->viewType) {
             case 'pending':
-                $this->statusFilter = 'submitted,under_review';
+                $this->statusFilter = 'pending,under_review';
                 break;
             case 'interviewing':
                 $this->statusFilter = 'interview_scheduled,interview_completed';
@@ -217,57 +217,36 @@ class Index extends Component
         $this->sortField = $field;
     }
 
+    // In your Index component, update the status filter
     public function getApplicationsQuery()
     {
         $query = Application::with(['student', 'student.studentProfile', 'opportunity'])
             ->when($this->search, function ($query, $search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('cover_letter', 'like', '%' . $search . '%')
-                        ->orWhere('feedback', 'like', '%' . $search . '%')
-                        ->orWhereHas('student', function ($q) use ($search) {
-                            $q->where('first_name', 'like', '%' . $search . '%')
-                                ->orWhere('last_name', 'like', '%' . $search . '%')
-                                ->orWhere('email', 'like', '%' . $search . '%');
-                        })
-                        ->orWhereHas('opportunity', function ($q) use ($search) {
-                            $q->where('title', 'like', '%' . $search . '%');
-                        });
-                });
+                // ... existing search logic
             })
             ->when($this->statusFilter, function ($query, $status) {
                 $statuses = explode(',', $status);
+                // Ensure all statuses are in the correct format
+                $statuses = array_map(function ($s) {
+                    // Convert old format to new format if needed
+                    return match (trim($s)) {
+                        'submitted' => 'pending', // if you're using 'submitted' as 'pending'
+                        'under_review' => 'under_review',
+                        'shortlisted' => 'shortlisted',
+                        'interview_scheduled' => 'interview_scheduled',
+                        'interview_completed' => 'interview_completed',
+                        'offer_sent' => 'offer_sent',
+                        'offer_accepted' => 'offer_accepted',
+                        'offer_rejected' => 'offer_rejected',
+                        'hired' => 'hired',
+                        'rejected' => 'rejected',
+                        default => $s,
+                    };
+                }, $statuses);
+
                 $query->whereIn('status', $statuses);
             })
-            ->when($this->cgpaMin, function ($query, $cgpa) {
-                $query->whereHas('student.studentProfile', function ($q) use ($cgpa) {
-                    $q->where('cgpa', '>=', $cgpa);
-                });
-            })
-            ->when($this->cgpaMax, function ($query, $cgpa) {
-                $query->whereHas('student.studentProfile', function ($q) use ($cgpa) {
-                    $q->where('cgpa', '<=', $cgpa);
-                });
-            })
-            ->when($this->institutionFilter, function ($query, $institution) {
-                $query->whereHas('student.studentProfile', function ($q) use ($institution) {
-                    $q->where('institution_name', 'like', '%' . $institution . '%');
-                });
-            })
-            ->when($this->courseFilter, function ($query, $course) {
-                $query->whereHas('student.studentProfile', function ($q) use ($course) {
-                    $q->where('course_name', 'like', '%' . $course . '%');
-                });
-            })
-            ->when($this->yearOfStudyFilter, function ($query, $year) {
-                $query->whereHas('student.studentProfile', function ($q) use ($year) {
-                    $q->where('year_of_study', $year);
-                });
-            })
-            ->when($this->skillFilter, function ($query, $skill) {
-                $query->whereHas('student.studentProfile', function ($q) use ($skill) {
-                    $q->whereJsonContains('skills', $skill);
-                });
-            })
+            // ... rest of the query
             ->orderBy($this->sortField, $this->sortDirection);
 
         return $query;
@@ -310,7 +289,7 @@ class Index extends Component
     {
         return [
             'total' => Application::count(),
-            'pending' => Application::whereIn('status', ['submitted', 'under_review'])->count(),
+            'pending' => Application::whereIn('status', ['pending', 'under_review'])->count(),
             'interviewing' => Application::whereIn('status', ['interview_scheduled', 'interview_completed'])->count(),
             'offers' => Application::whereIn('status', ['offer_sent', 'offer_accepted', 'offer_rejected'])->count(),
             'hired' => Application::where('status', 'hired')->count(),

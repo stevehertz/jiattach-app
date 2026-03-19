@@ -58,7 +58,8 @@
                             @if ($student->studentProfile)
                                 <div class="progress-group mb-3">
                                     <span class="progress-text">Profile Completion</span>
-                                    <span class="float-right text-bold">{{ $student->studentProfile->profile_completeness }}%</span>
+                                    <span
+                                        class="float-right text-bold">{{ $student->studentProfile->profile_completeness }}%</span>
                                     <div class="progress progress-sm">
                                         <div class="progress-bar bg-success"
                                             style="width: {{ $student->studentProfile->profile_completeness }}%">
@@ -71,15 +72,15 @@
                                 <li class="list-group-item">
                                     <i class="fas fa-envelope mr-2 text-muted"></i>
                                     <b>Email</b>
-                                    <a href="mailto:{{ $student->email }}"
-                                        class="float-right">{{ $student->email }}</a>
+                                    <a href="mailto:{{ $student->email }}" class="float-right">{{ $student->email }}</a>
                                 </li>
                                 <li class="list-group-item">
                                     <i class="fas fa-phone mr-2 text-muted"></i>
                                     <b>Phone</b>
                                     <span class="float-right">
                                         @if ($student->phone)
-                                            <a href="tel:{{ $student->phone }}">{{ formatPhoneNumber($student->phone) }}</a>
+                                            <a
+                                                href="tel:{{ $student->phone }}">{{ formatPhoneNumber($student->phone) }}</a>
                                         @else
                                             <span class="text-muted">N/A</span>
                                         @endif
@@ -109,7 +110,8 @@
                                         <i class="fas fa-wheelchair mr-2 text-muted"></i>
                                         <b>Disability</b>
                                         <span class="float-right">
-                                            <span class="badge badge-info">{{ $student->disability_status_label }}</span>
+                                            <span
+                                                class="badge badge-info">{{ $student->disability_status_label }}</span>
                                         </span>
                                     </li>
                                 @endif
@@ -134,7 +136,7 @@
                                     </a>
                                 </div>
                                 <div class="col-6">
-                                    <a href="mailto:{{ $student->email }}" class="btn btn-primary btn-block">
+                                    <a href="mailto:{{ $student->email }}" class="btn btn-primary btn-block" target="_blank">
                                         <i class="fas fa-envelope mr-1"></i> Email
                                     </a>
                                 </div>
@@ -143,7 +145,7 @@
                     </div>
 
                     <!-- Quick Actions Card -->
-                    <div class="card">
+                    {{-- <div class="card">
                         <div class="card-header">
                             <h3 class="card-title">
                                 <i class="fas fa-bolt mr-1"></i> Quick Actions
@@ -152,33 +154,31 @@
                         <div class="card-body">
                             <!-- Activate/Deactivate -->
                             @if ($student->is_active)
-                                <button wire:click="toggleActive" wire:confirm="Are you sure you want to deactivate this student?"
-                                    class="btn btn-warning btn-block mb-2">
+                                <button wire:click="confirmDeactivation" class="btn btn-warning btn-block mb-2">
                                     <i class="fas fa-ban mr-1"></i> Deactivate Student
                                 </button>
                             @else
-                                <button wire:click="toggleActive" class="btn btn-success btn-block mb-2">
+                                <button wire:click="confirmActivation" class="btn btn-success btn-block mb-2">
                                     <i class="fas fa-check mr-1"></i> Activate Student
                                 </button>
                             @endif
 
                             <!-- Verify Account -->
                             @if (!$student->is_verified)
-                                <button wire:click="verifyUser" wire:confirm="Verify this student's account?"
-                                    class="btn btn-info btn-block mb-2">
+                                <button wire:click="confirmVerification" class="btn btn-info btn-block mb-2">
                                     <i class="fas fa-check-circle mr-1"></i> Verify Account
                                 </button>
                             @endif
 
                             <!-- Match Student Button (Only for seeking students) -->
-                            {{-- @if ($student->studentProfile && $student->studentProfile->attachment_status === 'seeking')
+                            @if ($student->studentProfile && $student->studentProfile->attachment_status === 'seeking')
                                 <button wire:click="matchStudent({{ $student->id }})" class="btn btn-primary btn-block mb-2">
                                     <i class="fas fa-magic mr-1"></i> Find Matches
                                 </button>
-                            @endif --}}
+                            @endif
 
                             <!-- Change Status Dropdown -->
-                            {{-- <div class="dropdown mb-2">
+                            <div class="dropdown mb-2">
                                 <button class="btn btn-secondary btn-block dropdown-toggle" type="button"
                                     data-toggle="dropdown" aria-expanded="false">
                                     <i class="fas fa-exchange-alt mr-1"></i> Change Status
@@ -187,8 +187,7 @@
                                     @foreach (['seeking', 'applied', 'interviewing', 'placed', 'completed'] as $status)
                                         @if (!$student->studentProfile || $student->studentProfile->attachment_status !== $status)
                                             <button class="dropdown-item"
-                                                wire:click="updateAttachmentStatus('{{ $status }}')"
-                                                wire:confirm="Change attachment status to {{ ucfirst($status) }}?">
+                                                wire:click="confirmStatusChange('{{ $status }}')">
                                                 <i
                                                     class="fas fa-{{ $status === 'placed' ? 'briefcase' : ($status === 'seeking' ? 'search' : 'file-alt') }} mr-2"></i>
                                                 {{ ucfirst($status) }}
@@ -196,16 +195,14 @@
                                         @endif
                                     @endforeach
                                 </div>
-                            </div> --}}
+                            </div>
 
                             <!-- Danger Zone -->
-                            <button wire:click="deleteStudent"
-                                wire:confirm="Are you sure you want to delete this student? This action cannot be undone."
-                                class="btn btn-danger btn-block">
+                            <button wire:click="confirmDelete" class="btn btn-danger btn-block">
                                 <i class="fas fa-trash mr-1"></i> Delete Student
                             </button>
                         </div>
-                    </div>
+                    </div> --}}
 
                     <!-- Documents Card -->
                     @if ($student->studentProfile)
@@ -223,8 +220,8 @@
                                             <span>CV/Resume</span>
                                         </div>
                                         @if ($student->studentProfile->cv_url)
-                                            <a href="{{ Storage::url($student->studentProfile->cv_url) }}" target="_blank"
-                                                class="btn btn-sm btn-info">
+                                            <a href="{{ $student->studentProfile->cv_url }}"
+                                                target="_blank" class="btn btn-sm btn-info">
                                                 <i class="fas fa-download"></i>
                                             </a>
                                         @else
@@ -237,7 +234,7 @@
                                             <span>Academic Transcript</span>
                                         </div>
                                         @if ($student->studentProfile->transcript_url)
-                                            <a href="{{ Storage::url($student->studentProfile->transcript_url) }}"
+                                            <a href="{{ $student->studentProfile->transcript_url }}"
                                                 target="_blank" class="btn btn-sm btn-success">
                                                 <i class="fas fa-download"></i>
                                             </a>
@@ -251,7 +248,7 @@
                                             <span>School Letter</span>
                                         </div>
                                         @if ($student->studentProfile->school_letter_url)
-                                            <a href="{{ Storage::url($student->studentProfile->school_letter_url) }}"
+                                            <a href="{{ $student->studentProfile->school_letter_url }}"
                                                 target="_blank" class="btn btn-sm btn-warning">
                                                 <i class="fas fa-download"></i>
                                             </a>
@@ -278,17 +275,19 @@
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link" id="skills-tab" data-toggle="pill" href="#skills" role="tab"
-                                        aria-controls="skills" aria-selected="false">
+                                    <a class="nav-link" id="skills-tab" data-toggle="pill" href="#skills"
+                                        role="tab" aria-controls="skills" aria-selected="false">
                                         <i class="fas fa-tools mr-1"></i> Skills & Interests
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link" id="applications-tab" data-toggle="pill" href="#applications"
-                                        role="tab" aria-controls="applications" aria-selected="false">
+                                    <a class="nav-link" id="applications-tab" data-toggle="pill"
+                                        href="#applications" role="tab" aria-controls="applications"
+                                        aria-selected="false">
                                         <i class="fas fa-file-alt mr-1"></i> Applications
                                         @if ($student->studentApplications->count() > 0)
-                                            <span class="badge badge-info ml-1">{{ $student->studentApplications->count() }}</span>
+                                            <span
+                                                class="badge badge-info ml-1">{{ $student->studentApplications->count() }}</span>
                                         @endif
                                     </a>
                                 </li>
@@ -299,8 +298,8 @@
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link" id="activity-tab" data-toggle="pill" href="#activity" role="tab"
-                                        aria-controls="activity" aria-selected="false">
+                                    <a class="nav-link" id="activity-tab" data-toggle="pill" href="#activity"
+                                        role="tab" aria-controls="activity" aria-selected="false">
                                         <i class="fas fa-history mr-1"></i> Activity
                                     </a>
                                 </li>
@@ -333,7 +332,8 @@
                                                         <span class="info-box-text">Institution</span>
                                                         <span
                                                             class="info-box-number">{{ $student->studentProfile->institution_name ?? 'N/A' }}</span>
-                                                        <span class="info-box-text small">{{ $student->studentProfile->institution_type_label ?? '' }}</span>
+                                                        <span
+                                                            class="info-box-text small">{{ $student->studentProfile->institution_type_label ?? '' }}</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -348,7 +348,8 @@
                                                         <span class="info-box-text">Course</span>
                                                         <span
                                                             class="info-box-number">{{ $student->studentProfile->course_name ?? 'N/A' }}</span>
-                                                        <span class="info-box-text small">{{ $student->studentProfile->course_level_label ?? '' }}</span>
+                                                        <span
+                                                            class="info-box-text small">{{ $student->studentProfile->course_level_label ?? '' }}</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -358,8 +359,8 @@
                                                             class="fas fa-calendar-alt"></i></span>
                                                     <div class="info-box-content">
                                                         <span class="info-box-text">Year of Study</span>
-                                                        <span
-                                                            class="info-box-number">Year {{ $student->studentProfile->year_of_study ?? 'N/A' }}</span>
+                                                        <span class="info-box-number">Year
+                                                            {{ $student->studentProfile->year_of_study ?? 'N/A' }}</span>
                                                         <span class="info-box-text small">Expected Grad:
                                                             {{ $student->studentProfile->expected_graduation_year ?? 'N/A' }}</span>
                                                     </div>
@@ -384,7 +385,8 @@
                                                                 </div>
                                                             </div>
                                                         @else
-                                                            <span class="info-box-number text-muted">Not provided</span>
+                                                            <span class="info-box-number text-muted">Not
+                                                                provided</span>
                                                         @endif
                                                     </div>
                                                 </div>
@@ -449,7 +451,8 @@
                                         @endif
                                     @else
                                         <div class="alert alert-warning">
-                                            <h5><i class="icon fas fa-exclamation-triangle"></i> No Student Profile</h5>
+                                            <h5><i class="icon fas fa-exclamation-triangle"></i> No Student Profile
+                                            </h5>
                                             <p>This user doesn't have a student profile. They may have registered as a
                                                 different user type or haven't completed their profile setup.</p>
                                         </div>
@@ -457,7 +460,8 @@
                                 </div>
 
                                 <!-- Skills & Interests Tab -->
-                                <div class="tab-pane fade" id="skills" role="tabpanel" aria-labelledby="skills-tab">
+                                <div class="tab-pane fade" id="skills" role="tabpanel"
+                                    aria-labelledby="skills-tab">
                                     @if ($student->studentProfile)
                                         <div class="row">
                                             <div class="col-md-6">
@@ -472,14 +476,18 @@
                                                         </h3>
                                                     </div>
                                                     <div class="card-body">
-                                                        @if ($student->studentProfile->skills && is_array($student->studentProfile->skills) && count($student->studentProfile->skills) > 0)
+                                                        @if (
+                                                            $student->studentProfile->skills &&
+                                                                is_array($student->studentProfile->skills) &&
+                                                                count($student->studentProfile->skills) > 0)
                                                             @foreach ($student->studentProfile->skills as $skill)
                                                                 <span
                                                                     class="badge badge-primary p-2 mr-2 mb-2">{{ $skill }}</span>
                                                             @endforeach
                                                         @else
                                                             <p class="text-muted text-center py-3">
-                                                                <i class="fas fa-info-circle mr-1"></i> No skills listed
+                                                                <i class="fas fa-info-circle mr-1"></i> No skills
+                                                                listed
                                                             </p>
                                                         @endif
                                                     </div>
@@ -497,7 +505,10 @@
                                                         </h3>
                                                     </div>
                                                     <div class="card-body">
-                                                        @if ($student->studentProfile->interests && is_array($student->studentProfile->interests) && count($student->studentProfile->interests) > 0)
+                                                        @if (
+                                                            $student->studentProfile->interests &&
+                                                                is_array($student->studentProfile->interests) &&
+                                                                count($student->studentProfile->interests) > 0)
                                                             @foreach ($student->studentProfile->interests as $interest)
                                                                 <span
                                                                     class="badge badge-secondary p-2 mr-2 mb-2">{{ $interest }}</span>
@@ -595,20 +606,7 @@
                                                                 @endif
                                                             </td>
                                                             <td>
-                                                                @php
-                                                                    $statusColors = [
-                                                                        'pending' => 'warning',
-                                                                        'reviewing' => 'info',
-                                                                        'shortlisted' => 'primary',
-                                                                        'offered' => 'success',
-                                                                        'accepted' => 'success',
-                                                                        'rejected' => 'danger',
-                                                                    ];
-                                                                    $color = $statusColors[$application->status] ?? 'secondary';
-                                                                @endphp
-                                                                <span class="badge badge-{{ $color }} p-2">
-                                                                    {{ ucfirst($application->status) }}
-                                                                </span>
+                                                                 {!! getApplicationStatusBadge($application->status) !!}
                                                             </td>
                                                             <td>
                                                                 {{ formatDate($application->submitted_at ?? $application->created_at) }}
@@ -620,7 +618,8 @@
                                                                 <div class="btn-group">
                                                                     @if ($application->opportunity)
                                                                         <a href="{{ route('admin.opportunities.show', $application->opportunity->id) }}"
-                                                                            class="btn btn-sm btn-info" title="View Opportunity">
+                                                                            class="btn btn-sm btn-info"
+                                                                            title="View Opportunity">
                                                                             <i class="fas fa-eye"></i>
                                                                         </a>
                                                                     @endif
@@ -652,7 +651,8 @@
                                         <div class="text-center py-5">
                                             <i class="fas fa-file-alt fa-4x text-muted mb-3"></i>
                                             <h5 class="text-muted">No Applications Found</h5>
-                                            <p class="text-muted mb-3">This student hasn't applied for any opportunities
+                                            <p class="text-muted mb-3">This student hasn't applied for any
+                                                opportunities
                                                 yet.</p>
                                             @if ($student->studentProfile && $student->studentProfile->attachment_status === 'seeking')
                                                 <button wire:click="matchStudent({{ $student->id }})"
@@ -679,8 +679,7 @@
                                                     @if ($student->activeMentorships && $student->activeMentorships->count() > 0)
                                                         @foreach ($student->activeMentorships as $mentorship)
                                                             <div class="d-flex align-items-center mb-3">
-                                                                <div
-                                                                    class="avatar-initials bg-info img-circle mr-3 d-flex align-items-center justify-content-center"
+                                                                <div class="avatar-initials bg-info img-circle mr-3 d-flex align-items-center justify-content-center"
                                                                     style="width: 40px; height: 40px; color: white; font-weight: bold;">
                                                                     {{ getInitials($mentorship->mentor->full_name) }}
                                                                 </div>
@@ -701,7 +700,8 @@
                                                         @endforeach
                                                     @else
                                                         <p class="text-muted text-center py-3">
-                                                            <i class="fas fa-info-circle mr-1"></i> No active mentorships
+                                                            <i class="fas fa-info-circle mr-1"></i> No active
+                                                            mentorships
                                                         </p>
                                                     @endif
                                                 </div>
@@ -718,8 +718,7 @@
                                                     @if ($student->mentorshipsAsMentee && $student->mentorshipsAsMentee->where('status', 'completed')->count() > 0)
                                                         @foreach ($student->mentorshipsAsMentee->where('status', 'completed') as $mentorship)
                                                             <div class="d-flex align-items-center mb-3">
-                                                                <div
-                                                                    class="avatar-initials bg-secondary img-circle mr-3 d-flex align-items-center justify-content-center"
+                                                                <div class="avatar-initials bg-secondary img-circle mr-3 d-flex align-items-center justify-content-center"
                                                                     style="width: 40px; height: 40px; color: white; font-weight: bold;">
                                                                     {{ getInitials($mentorship->mentor->full_name) }}
                                                                 </div>
@@ -767,12 +766,14 @@
                                             @if ($loop->first || $activities[$loop->index - 1]->created_at->format('Y-m-d') !== $date)
                                                 <!-- Timeline time label -->
                                                 <div class="time-label">
-                                                    <span class="bg-primary">{{ $activity->created_at->format('M d, Y') }}</span>
+                                                    <span
+                                                        class="bg-primary">{{ $activity->created_at->format('M d, Y') }}</span>
                                                 </div>
                                             @endif
 
                                             <div>
-                                                <i class="fas {{ $activity->icon ?? 'fa-history' }} bg-{{ $activity->event === 'created' ? 'success' : ($activity->event === 'updated' ? 'warning' : ($activity->event === 'deleted' ? 'danger' : 'info')) }}"></i>
+                                                <i
+                                                    class="fas {{ $activity->icon ?? 'fa-history' }} bg-{{ $activity->event === 'created' ? 'success' : ($activity->event === 'updated' ? 'warning' : ($activity->event === 'deleted' ? 'danger' : 'info')) }}"></i>
                                                 <div class="timeline-item">
                                                     <span class="time">
                                                         <i class="fas fa-clock mr-1"></i>
@@ -781,7 +782,8 @@
                                                     <h3 class="timeline-header">
                                                         <span class="text-capitalize">{{ $activity->log_name }}</span>
                                                         @if ($activity->causer)
-                                                            <small class="ml-2">by {{ $activity->causer->full_name }}</small>
+                                                            <small class="ml-2">by
+                                                                {{ $activity->causer->full_name }}</small>
                                                         @endif
                                                     </h3>
                                                     <div class="timeline-body">
@@ -792,13 +794,13 @@
                                                                     data-toggle="collapse"
                                                                     data-target="#changes-{{ $activity->id }}"
                                                                     aria-expanded="false">
-                                                                    <i class="fas fa-code-branch mr-1"></i> View Changes
+                                                                    <i class="fas fa-code-branch mr-1"></i> View
+                                                                    Changes
                                                                 </button>
                                                                 <div class="collapse mt-2"
                                                                     id="changes-{{ $activity->id }}">
                                                                     <div class="card card-body p-2 bg-light">
-                                                                        <pre
-                                                                            class="mb-0 small">{{ json_encode($activity->properties['changes'], JSON_PRETTY_PRINT) }}</pre>
+                                                                        <pre class="mb-0 small">{{ json_encode($activity->properties['changes'], JSON_PRETTY_PRINT) }}</pre>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -835,20 +837,23 @@
 
     <!-- Match Student Modal -->
     @if ($showMatchModal && $selectedStudentForMatch)
-        <div class="modal fade show" id="matchModal" style="display: block;" tabindex="-1" role="dialog"
-            aria-modal="true" wire:ignore.self>
-            <div class="modal-dialog modal-xl" role="document">
+        <div class="modal fade show" id="matchModal" tabindex="-1" role="dialog" aria-modal="true"
+            wire:ignore.self style="display: block; background-color: rgba(0,0,0,0.5);">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable" role="document">
                 <div class="modal-content">
                     <div class="modal-header bg-primary">
                         <h5 class="modal-title">
-                            <i class="fas fa-magic mr-2"></i> Find Matches for {{ $selectedStudentForMatch->full_name }}
+                            <i class="fas fa-magic mr-2"></i> Find Matches for
+                            {{ $selectedStudentForMatch->full_name }}
                         </h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close"
                             wire:click="$set('showMatchModal', false)">
                             <span aria-hidden="true">×</span>
                         </button>
                     </div>
-                    <div class="modal-body">
+
+                    <!-- Modal Body with max-height and scrolling -->
+                    <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
                         @if ($matchLoading)
                             <div class="text-center py-5">
                                 <div class="spinner-border text-primary mb-3" role="status">
@@ -858,49 +863,48 @@
                                 <p class="text-muted">Analyzing opportunities based on student's profile</p>
                             </div>
                         @else
-                            <!-- Student Profile Summary -->
-                            <div class="row mb-4">
-                                <div class="col-md-12">
-                                    <div class="card bg-light">
-                                        <div class="card-header">
-                                            <h3 class="card-title">
-                                                <i class="fas fa-user mr-2"></i> Student Profile Summary
-                                            </h3>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="row">
-                                                <div class="col-md-3">
-                                                    <strong>Course:</strong>
-                                                    <p>{{ $selectedStudentForMatch->studentProfile->course_name }}</p>
-                                                </div>
-                                                <div class="col-md-2">
-                                                    <strong>Year:</strong>
-                                                    <p>Year {{ $selectedStudentForMatch->studentProfile->year_of_study }}
-                                                    </p>
-                                                </div>
-                                                <div class="col-md-2">
-                                                    <strong>CGPA:</strong>
-                                                    <p>{{ $selectedStudentForMatch->studentProfile->cgpa ?? 'N/A' }}</p>
-                                                </div>
-                                                <div class="col-md-2">
-                                                    <strong>Location:</strong>
-                                                    <p>{{ $selectedStudentForMatch->studentProfile->preferred_location ?? $selectedStudentForMatch->county ?? 'Anywhere' }}
-                                                    </p>
-                                                </div>
-                                                <div class="col-md-3">
-                                                    <strong>Skills:</strong>
-                                                    <p>
-                                                        @if ($selectedStudentForMatch->studentProfile->skills && count($selectedStudentForMatch->studentProfile->skills) > 0)
-                                                            {{ implode(', ', array_slice($selectedStudentForMatch->studentProfile->skills, 0, 3)) }}
-                                                            @if (count($selectedStudentForMatch->studentProfile->skills) > 3)
-                                                                +{{ count($selectedStudentForMatch->studentProfile->skills) - 3 }}
-                                                                more
-                                                            @endif
-                                                        @else
-                                                            No skills listed
+                            <!-- Student Profile Summary - Sticky within modal -->
+                            <div class="sticky-top bg-light p-3 mb-4 rounded" style="top: 0; z-index: 10;">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <h6 class="text-primary mb-3">
+                                            <i class="fas fa-user mr-1"></i> Student Profile Summary
+                                        </h6>
+                                        <div class="row">
+                                            <div class="col-md-3">
+                                                <strong>Course:</strong>
+                                                <p class="mb-0">
+                                                    {{ $selectedStudentForMatch->studentProfile->course_name }}</p>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <strong>Year:</strong>
+                                                <p class="mb-0">Year
+                                                    {{ $selectedStudentForMatch->studentProfile->year_of_study }}</p>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <strong>CGPA:</strong>
+                                                <p class="mb-0">
+                                                    {{ $selectedStudentForMatch->studentProfile->cgpa ?? 'N/A' }}</p>
+                                            </div>
+                                            <div class="col-md-2">
+                                                <strong>Location:</strong>
+                                                <p class="mb-0">
+                                                    {{ $selectedStudentForMatch->studentProfile->preferred_location ?? ($selectedStudentForMatch->county ?? 'Anywhere') }}
+                                                </p>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <strong>Skills:</strong>
+                                                <p class="mb-0">
+                                                    @if ($selectedStudentForMatch->studentProfile->skills && count($selectedStudentForMatch->studentProfile->skills) > 0)
+                                                        {{ implode(', ', array_slice($selectedStudentForMatch->studentProfile->skills, 0, 3)) }}
+                                                        @if (count($selectedStudentForMatch->studentProfile->skills) > 3)
+                                                            +{{ count($selectedStudentForMatch->studentProfile->skills) - 3 }}
+                                                            more
                                                         @endif
-                                                    </p>
-                                                </div>
+                                                    @else
+                                                        No skills listed
+                                                    @endif
+                                                </p>
                                             </div>
                                         </div>
                                     </div>
@@ -908,173 +912,231 @@
                             </div>
 
                             @if (count($studentMatches) > 0)
-                                <div class="row mb-3">
-                                    <div class="col-md-6">
-                                        <div class="btn-group">
-                                            <button type="button" class="btn btn-default btn-sm"
-                                                wire:click="$set('selectedMatches', [])">
-                                                <i class="fas fa-times mr-1"></i> Clear Selection
-                                            </button>
-                                            <button type="button" class="btn btn-default btn-sm"
-                                                wire:click="$set('selectedMatches', collect($studentMatches)->keys()->toArray())">
-                                                <i class="fas fa-check-double mr-1"></i> Select All
-                                            </button>
-                                        </div>
+                                <!-- Selection Controls - Sticky below summary -->
+                                <div class="d-flex justify-content-between align-items-center mb-3 bg-white p-2 rounded border"
+                                    style="position: sticky; top: 100px; z-index: 9;">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-default btn-sm"
+                                            wire:click="clearSelectedMatches" wire:loading.attr="disabled">
+                                            <i class="fas fa-times mr-1"></i> Clear Selection
+                                        </button>
+                                        <button type="button" class="btn btn-default btn-sm"
+                                            wire:click="selectAllMatches" wire:loading.attr="disabled">
+                                            <i class="fas fa-check-double mr-1"></i> Select All
+                                        </button>
                                     </div>
-                                    <div class="col-md-6 text-right">
-                                        <span class="text-muted">
-                                            {{ count($selectedMatches) }} of {{ count($studentMatches) }} selected
+                                    <div>
+                                        <span class="text-muted" wire:key="selected-count">
+                                            <span x-data="{ count: @entangle('selectedMatches') }" x-text="count.length"></span> of
+                                            {{ count($studentMatches) }} selected
                                         </span>
+                                        @if (count($studentMatches) >= 10)
+                                            <span class="badge badge-info ml-2">
+                                                <i class="fas fa-info-circle mr-1"></i> Showing top 10 matches
+                                            </span>
+                                        @endif
                                     </div>
                                 </div>
 
-                                <div class="row">
-                                    @foreach ($studentMatches as $index => $match)
-                                        <div class="col-md-6">
-                                            <div
-                                                class="card card-{{ $match['score'] >= 85 ? 'success' : ($match['score'] >= 70 ? 'info' : 'warning') }} card-outline">
-                                                <div class="card-header">
-                                                    <div class="d-flex justify-content-between align-items-center">
-                                                        <h5 class="card-title">
-                                                            <input type="checkbox" wire:model="selectedMatches"
-                                                                value="{{ $index }}" class="mr-2">
-                                                            <strong>{{ $match['opportunity']->title }}</strong>
-                                                        </h5>
-                                                        <span
-                                                            class="badge badge-{{ $match['score'] >= 85 ? 'success' : ($match['score'] >= 70 ? 'info' : 'warning') }} p-2">
-                                                            <i class="fas fa-star mr-1"></i> {{ $match['score'] }}%
-                                                        </span>
-                                                    </div>
-                                                    <div class="card-tools">
-                                                        <span class="badge badge-{{ $match['badge'] }}">
-                                                            {{ $match['quality']['label'] ?? ($match['quality'] ?? 'Match') }}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                <div class="card-body">
-                                                    <div class="row">
-                                                        <div class="col-md-7">
-                                                            <p class="mb-1">
-                                                                <i class="fas fa-building mr-1 text-muted"></i>
-                                                                {{ $match['opportunity']->organization->name }}
-                                                            </p>
-                                                            <p class="mb-1">
-                                                                <i class="fas fa-map-marker-alt mr-1 text-muted"></i>
-                                                                {{ $match['opportunity']->location ?? $match['opportunity']->county ?? 'N/A' }}
-                                                                @if ($match['opportunity']->work_type === 'remote')
-                                                                    <span class="badge badge-info ml-1">Remote</span>
-                                                                @endif
-                                                            </p>
-                                                            <p class="mb-1">
-                                                                <i class="fas fa-clock mr-1 text-muted"></i>
-                                                                Deadline: {{ formatDate($match['opportunity']->deadline) }}
-                                                            </p>
-                                                            <p class="mb-1">
-                                                                <i class="fas fa-users mr-1 text-muted"></i>
-                                                                {{ $match['opportunity']->slots_available }} slots
-                                                                available
-                                                            </p>
+                                <!-- Scrollable Matches Container -->
+                                <div class="matches-container"
+                                    style="max-height: calc(70vh - 200px); overflow-y: auto;">
+                                    <div class="row">
+                                        @foreach ($studentMatches as $index => $match)
+                                            <div class="col-md-6 mb-3"
+                                                wire:key="match-{{ $index }}-{{ $match['opportunity']->id }}">
+                                                <div
+                                                    class="card card-{{ $match['score'] >= 85 ? 'success' : ($match['score'] >= 70 ? 'info' : 'warning') }} card-outline h-100">
+                                                    <div class="card-header">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <h5 class="card-title mb-0">
+                                                                <div class="custom-control custom-checkbox">
+                                                                    <input type="checkbox"
+                                                                        class="custom-control-input"
+                                                                        wire:model="selectedMatches"
+                                                                        value="{{ $index }}"
+                                                                        id="match-{{ $index }}">
+                                                                    <label
+                                                                        class="custom-control-label font-weight-bold"
+                                                                        for="match-{{ $index }}"
+                                                                        style="cursor: pointer;">
+                                                                        {{ \Str::limit($match['opportunity']->title, 40) }}
+                                                                    </label>
+                                                                </div>
+                                                            </h5>
+                                                            <span
+                                                                class="badge badge-{{ $match['score'] >= 85 ? 'success' : ($match['score'] >= 70 ? 'info' : 'warning') }} p-2">
+                                                                <i class="fas fa-star mr-1"></i>
+                                                                {{ $match['score'] }}%
+                                                            </span>
                                                         </div>
-                                                        <div class="col-md-5">
-                                                            <div class="progress-group mb-2">
-                                                                <span class="progress-text">Match Details</span>
-                                                                @if (isset($match['match_criteria']) && count($match['match_criteria']) > 0)
-                                                                    <div>
-                                                                        @foreach ($match['match_criteria'] as $criteria)
-                                                                            <span
-                                                                                class="badge badge-success mr-1 mb-1">{{ $criteria }}</span>
-                                                                        @endforeach
-                                                                    </div>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div class="row">
+                                                            <div class="col-md-7">
+                                                                <p class="mb-1 small">
+                                                                    <i class="fas fa-building mr-1 text-muted"></i>
+                                                                    {{ $match['opportunity']->organization->name }}
+                                                                </p>
+                                                                <p class="mb-1 small">
+                                                                    <i
+                                                                        class="fas fa-map-marker-alt mr-1 text-muted"></i>
+                                                                    {{ $match['opportunity']->location ?? ($match['opportunity']->county ?? 'N/A') }}
+                                                                    @if ($match['opportunity']->work_type === 'remote')
+                                                                        <span
+                                                                            class="badge badge-info ml-1">Remote</span>
+                                                                    @endif
+                                                                </p>
+                                                                <p class="mb-1 small">
+                                                                    <i class="fas fa-clock mr-1 text-muted"></i>
+                                                                    Deadline:
+                                                                    {{ $match['opportunity']->deadline ? $match['opportunity']->deadline->format('M d, Y') : 'N/A' }}
+                                                                </p>
+                                                                <p class="mb-1 small">
+                                                                    <i class="fas fa-users mr-1 text-muted"></i>
+                                                                    {{ $match['opportunity']->slots_available }} slots
+                                                                    available
+                                                                </p>
+                                                            </div>
+                                                            <div class="col-md-5">
+                                                                <div class="progress-group mb-2">
+                                                                    <span class="progress-text small">Match
+                                                                        Details</span>
+                                                                    @if (isset($match['match_criteria']) && count($match['match_criteria']) > 0)
+                                                                        <div>
+                                                                            @foreach ($match['match_criteria'] as $criteria)
+                                                                                <span
+                                                                                    class="badge badge-success mr-1 mb-1"
+                                                                                    style="font-size: 0.7rem;">{{ $criteria }}</span>
+                                                                            @endforeach
+                                                                        </div>
+                                                                    @endif
+                                                                </div>
+                                                                @if (isset($match['details']))
+                                                                    <button class="btn btn-sm btn-default btn-block"
+                                                                        type="button" data-toggle="collapse"
+                                                                        data-target="#details-{{ $index }}"
+                                                                        aria-expanded="false">
+                                                                        <i class="fas fa-chart-pie mr-1"></i> View
+                                                                        Breakdown
+                                                                    </button>
                                                                 @endif
                                                             </div>
-                                                            @if (isset($match['details']))
-                                                                <button class="btn btn-sm btn-default btn-block"
-                                                                    type="button" data-toggle="collapse"
-                                                                    data-target="#details-{{ $index }}"
-                                                                    aria-expanded="false">
-                                                                    <i class="fas fa-chart-pie mr-1"></i> View Breakdown
-                                                                </button>
-                                                            @endif
                                                         </div>
-                                                    </div>
 
-                                                    <!-- Match Details Breakdown -->
-                                                    @if (isset($match['details']))
-                                                        <div class="collapse mt-3" id="details-{{ $index }}">
-                                                            <div class="card card-body p-2 bg-light">
-                                                                <div class="row">
-                                                                    @foreach ($match['details'] as $key => $detail)
-                                                                        @if (isset($detail['score']))
-                                                                            <div class="col-md-6">
-                                                                                <div class="mb-2">
-                                                                                    <div
-                                                                                        class="d-flex justify-content-between">
-                                                                                        <span
-                                                                                            class="text-capitalize">{{ $key }}:</span>
-                                                                                        <span
-                                                                                            class="badge badge-{{ $detail['status'] === 'excellent' ? 'success' : ($detail['status'] === 'good' ? 'info' : ($detail['status'] === 'fair' ? 'warning' : 'danger')) }}">
-                                                                                            {{ $detail['score'] }}%
-                                                                                        </span>
-                                                                                    </div>
-                                                                                    <div class="progress progress-xs">
-                                                                                        <div class="progress-bar bg-{{ $detail['status'] === 'excellent' ? 'success' : ($detail['status'] === 'good' ? 'info' : ($detail['status'] === 'fair' ? 'warning' : 'danger')) }}"
-                                                                                            style="width: {{ $detail['score'] }}%">
+                                                        <!-- Match Details Breakdown - Collapsible -->
+                                                        @if (isset($match['details']))
+                                                            <div class="collapse mt-2"
+                                                                id="details-{{ $index }}">
+                                                                <div class="card card-body p-2 bg-light">
+                                                                    <div class="row">
+                                                                        @foreach ($match['details'] as $key => $detail)
+                                                                            @if (isset($detail['score']))
+                                                                                <div class="col-md-6">
+                                                                                    <div class="mb-1">
+                                                                                        <div
+                                                                                            class="d-flex justify-content-between small">
+                                                                                            <span
+                                                                                                class="text-capitalize">{{ $key }}:</span>
+                                                                                            <span
+                                                                                                class="badge badge-{{ $detail['status'] === 'excellent' ? 'success' : ($detail['status'] === 'good' ? 'info' : ($detail['status'] === 'fair' ? 'warning' : 'danger')) }}">
+                                                                                                {{ $detail['score'] }}%
+                                                                                            </span>
+                                                                                        </div>
+                                                                                        <div
+                                                                                            class="progress progress-xs">
+                                                                                            <div class="progress-bar bg-{{ $detail['status'] === 'excellent' ? 'success' : ($detail['status'] === 'good' ? 'info' : ($detail['status'] === 'fair' ? 'warning' : 'danger')) }}"
+                                                                                                style="width: {{ $detail['score'] }}%">
+                                                                                            </div>
                                                                                         </div>
                                                                                     </div>
                                                                                 </div>
-                                                                            </div>
-                                                                        @endif
-                                                                    @endforeach
+                                                                            @endif
+                                                                        @endforeach
+                                                                    </div>
                                                                 </div>
                                                             </div>
+                                                        @endif
+                                                    </div>
+                                                    <div class="card-footer py-2">
+                                                        <small class="text-muted">
+                                                            <i class="fas fa-calendar-alt mr-1"></i>
+                                                            Posted:
+                                                            {{ $match['opportunity']->created_at ? $match['opportunity']->created_at->diffForHumans() : 'N/A' }}
+                                                        </small>
+                                                        <div class="float-right">
+                                                            <a href="{{ route('admin.opportunities.show', $match['opportunity']->id) }}"
+                                                                target="_blank" class="btn btn-xs btn-default">
+                                                                <i class="fas fa-external-link-alt mr-1"></i> View
+                                                            </a>
                                                         </div>
-                                                    @endif
-                                                </div>
-                                                <div class="card-footer">
-                                                    <small class="text-muted">
-                                                        <i class="fas fa-calendar-alt mr-1"></i>
-                                                        Posted: {{ timeAgo($match['opportunity']->created_at) }}
-                                                    </small>
-                                                    <div class="float-right">
-                                                        <a href="{{ route('admin.opportunities.show', $match['opportunity']->id) }}"
-                                                            target="_blank" class="btn btn-xs btn-default">
-                                                            <i class="fas fa-external-link-alt mr-1"></i> View
-                                                        </a>
                                                     </div>
                                                 </div>
                                             </div>
+
+                                            <!-- Add separator after every 2 items on large screens -->
+                                            @if (($index + 1) % 2 == 0 && !$loop->last)
+                                                <div class="w-100 d-none d-md-block"></div>
+                                            @endif
+                                        @endforeach
+                                    </div>
+
+                                    <!-- Show total count at bottom -->
+                                    @if (count($studentMatches) > 0)
+                                        <div class="text-center text-muted small mt-3">
+                                            <i class="fas fa-list mr-1"></i> Showing {{ count($studentMatches) }}
+                                            matches
                                         </div>
-                                    @endforeach
+                                    @endif
                                 </div>
                             @else
                                 <div class="text-center py-5">
                                     <i class="fas fa-search fa-4x text-muted mb-3"></i>
                                     <h5 class="text-muted">No Matches Found</h5>
-                                    <p class="text-muted">No suitable opportunities found for this student at the moment.
-                                    </p>
-                                    <a href="{{ route('admin.opportunities.create') }}" class="btn btn-primary mt-3">
-                                        <i class="fas fa-plus-circle mr-1"></i> Create New Opportunity
-                                    </a>
+                                    <p class="text-muted mb-3">No suitable opportunities found for this student at the
+                                        moment.</p>
+                                    <div class="d-flex justify-content-center gap-2">
+                                        <button class="btn btn-primary" wire:click="refreshMatches">
+                                            <i class="fas fa-sync-alt mr-1"></i> Refresh
+                                        </button>
+                                        <a href="{{ route('admin.opportunities.create') }}" class="btn btn-success">
+                                            <i class="fas fa-plus-circle mr-1"></i> Create New Opportunity
+                                        </a>
+                                    </div>
                                 </div>
                             @endif
                         @endif
                     </div>
+
+                    <!-- Modal Footer - Sticky at bottom -->
                     @if (!$matchLoading && count($studentMatches) > 0)
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-default" data-dismiss="modal"
-                                wire:click="$set('showMatchModal', false)">
-                                <i class="fas fa-times mr-1"></i> Cancel
-                            </button>
-                            <button type="button" class="btn btn-primary" wire:click="saveMatches"
-                                wire:loading.attr="disabled">
-                                <i class="fas fa-save mr-1" wire:loading.remove></i>
-                                <span wire:loading wire:target="saveMatches">
-                                    <i class="fas fa-spinner fa-spin mr-1"></i> Saving...
-                                </span>
-                                <span wire:loading.remove wire:target="saveMatches">
-                                    Save Selected Matches ({{ count($selectedMatches) }})
-                                </span>
-                            </button>
+                            <div class="d-flex justify-content-between w-100">
+                                <div>
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        Selected: <span x-data="{ count: @entangle('selectedMatches') }" x-text="count.length"></span>
+                                        of {{ count($studentMatches) }}
+                                    </small>
+                                </div>
+                                <div>
+                                    <button type="button" class="btn btn-default mr-2" data-dismiss="modal"
+                                        wire:click="$set('showMatchModal', false)">
+                                        <i class="fas fa-times mr-1"></i> Cancel
+                                    </button>
+                                    <button type="button" class="btn btn-primary" wire:click="saveMatches"
+                                        wire:loading.attr="disabled" x-data="{ count: @entangle('selectedMatches') }"
+                                        :disabled="count.length === 0">
+                                        <span wire:loading.remove wire:target="saveMatches">
+                                            <i class="fas fa-save mr-1"></i>
+                                            Save Selected Matches (<span x-text="count.length"></span>)
+                                        </span>
+                                        <span wire:loading wire:target="saveMatches">
+                                            <i class="fas fa-spinner fa-spin mr-1"></i> Saving...
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     @endif
                 </div>
@@ -1085,6 +1147,82 @@
 
     @push('styles')
         <style>
+            /* Modal scrolling styles */
+            .modal-dialog-scrollable .modal-body {
+                max-height: calc(100vh - 200px);
+                overflow-y: auto;
+            }
+
+            /* Custom scrollbar for better UX */
+            .modal-body::-webkit-scrollbar {
+                width: 8px;
+            }
+
+            .modal-body::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 4px;
+            }
+
+            .modal-body::-webkit-scrollbar-thumb {
+                background: #888;
+                border-radius: 4px;
+            }
+
+            .modal-body::-webkit-scrollbar-thumb:hover {
+                background: #555;
+            }
+
+            /* Matches container scrollbar */
+            .matches-container::-webkit-scrollbar {
+                width: 6px;
+            }
+
+            .matches-container::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 3px;
+            }
+
+            .matches-container::-webkit-scrollbar-thumb {
+                background: #ccc;
+                border-radius: 3px;
+            }
+
+            .matches-container::-webkit-scrollbar-thumb:hover {
+                background: #999;
+            }
+
+            /* Sticky elements */
+            .sticky-top {
+                position: sticky;
+                top: 0;
+                z-index: 10;
+                background-color: #f8f9fa;
+                border-bottom: 1px solid #dee2e6;
+            }
+
+            /* Card hover effect */
+            .card:hover {
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                transition: box-shadow 0.3s ease;
+            }
+
+            /* Disabled button state */
+            .btn-primary:disabled {
+                opacity: 0.65;
+                cursor: not-allowed;
+            }
+
+            /* Modal backdrop */
+            .modal-backdrop {
+                opacity: 0.5;
+            }
+
+            /* Ensure modal is above backdrop */
+            .modal {
+                background-color: transparent;
+                z-index: 1050;
+            }
+
             .avatar-initials {
                 display: inline-flex;
                 align-items: center;
@@ -1212,8 +1350,79 @@
 
     @push('scripts')
         <script>
-            document.addEventListener('livewire:initialized', () => {
-                // Toast notification handler
+            document.addEventListener('livewire:init', () => {
+                // SweetAlert Confirmation
+                Livewire.on('swal:confirm', (data) => {
+                    Swal.fire({
+                        title: data.title,
+                        text: data.text,
+                        icon: data.icon || 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: data.danger ? '#d33' : '#3085d6',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: data.confirmButtonText || 'Yes',
+                        cancelButtonText: data.cancelButtonText || 'Cancel',
+                        reverseButtons: true
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            if (data.params) {
+                                Livewire.dispatch(data.method, ...data.params);
+                            } else {
+                                Livewire.dispatch(data.method);
+                            }
+                        }
+                    });
+                });
+
+                // SweetAlert Success
+                Livewire.on('swal:success', (data) => {
+                    Swal.fire({
+                        title: data.title || 'Success!',
+                        text: data.text,
+                        icon: 'success',
+                        timer: 3000,
+                        showConfirmButton: true
+                    }).then(() => {
+                        if (data.redirect) {
+                            window.location.href = data.redirect;
+                        }
+                    });
+                });
+
+                // SweetAlert Error
+                Livewire.on('swal:error', (data) => {
+                    Swal.fire({
+                        title: data.title || 'Error!',
+                        text: data.text,
+                        icon: 'error',
+                        timer: 5000,
+                        showConfirmButton: true
+                    });
+                });
+
+                // SweetAlert Warning
+                Livewire.on('swal:warning', (data) => {
+                    Swal.fire({
+                        title: data.title || 'Warning!',
+                        text: data.text,
+                        icon: 'warning',
+                        timer: 4000,
+                        showConfirmButton: true
+                    });
+                });
+
+                // SweetAlert Info
+                Livewire.on('swal:info', (data) => {
+                    Swal.fire({
+                        title: data.title || 'Info',
+                        text: data.text,
+                        icon: 'info',
+                        timer: 3000,
+                        showConfirmButton: true
+                    });
+                });
+
+                // Toast notification handler (for non-critical notifications)
                 Livewire.on('show-toast', (event) => {
                     toastr[event.type](event.message, '', {
                         closeButton: true,
@@ -1221,6 +1430,18 @@
                         positionClass: 'toast-top-right',
                         timeOut: 5000
                     });
+                });
+
+                // Redirect after delete
+                Livewire.on('redirect-after-delete', (data) => {
+                    setTimeout(() => {
+                        window.location.href = data.url;
+                    }, 2000);
+                });
+
+                // Force refresh counts when selection changes
+                Livewire.on('selection-updated', () => {
+                    Livewire.dispatch('$refresh');
                 });
 
                 // Handle modal visibility
@@ -1231,16 +1452,13 @@
                 Livewire.on('hideMatchModal', () => {
                     $('#matchModal').modal('hide');
                 });
+            });
 
-                // Auto-hide modal when showMatchModal becomes false
-                Livewire.hook('morph.updated', ({
-                    el,
-                    component
-                }) => {
-                    if (!component.get('showMatchModal')) {
-                        $('.modal-backdrop').remove();
-                    }
-                });
+            // Clean up modal backdrop when Livewire updates
+            document.addEventListener('livewire:updated', () => {
+                if (!document.getElementById('matchModal')?.classList.contains('show')) {
+                    $('.modal-backdrop').remove();
+                }
             });
         </script>
     @endpush

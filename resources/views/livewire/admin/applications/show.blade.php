@@ -120,19 +120,25 @@
                                                     Candidate
                                                 </button>
                                             @endif
-                                            @if (in_array($application->status, [
-                                                    \App\Enums\ApplicationStatus::INTERVIEW_COMPLETED,
-                                                    \App\Enums\ApplicationStatus::SHORTLISTED,
+
+                                            <!-- In the dropdown menu section, update the condition for SHORTLISTED -->
+                                            @if (in_array($application->status->value, [\App\Enums\ApplicationStatus::SHORTLISTED->value]))
+                                                <button class="dropdown-item" wire:click="openInterviewModal">
+                                                    <i class="fas fa-calendar-plus text-warning mr-2"></i> Schedule
+                                                    Interview
+                                                </button>
+                                            @endif
+
+                                            @if (in_array($application->status->value, [
+                                                    \App\Enums\ApplicationStatus::INTERVIEW_COMPLETED->value,
                                                 ]))
                                                 <button class="dropdown-item" wire:click="openOfferModal">
                                                     <i class="fas fa-handshake text-info mr-2"></i> Send Offer
                                                 </button>
                                             @endif
-                                            @if ($application->status === \App\Enums\ApplicationStatus::OFFER_ACCEPTED)
-                                                <button class="dropdown-item" wire:click="openPlacementModal">
-                                                    <i class="fas fa-briefcase text-success mr-2"></i> Create Placement
-                                                </button>
-                                            @endif
+
+
+
                                             <div class="dropdown-divider"></div>
                                             <button class="dropdown-item text-danger"
                                                 wire:click="openStatusModal('rejected')">
@@ -483,7 +489,6 @@
                                     @endphp
 
                                     @forelse($groupedLogs as $date => $logs)
-
                                         <!-- Date Separator -->
                                         <div class="timeline-date-separator">
                                             <span class="badge badge-light p-2">
@@ -517,70 +522,111 @@
                                                             <span
                                                                 class="badge badge-light">{{ ucfirst(str_replace('_', ' ', $log->properties['action'])) }}</span>
                                                         @endif
-                                                        <p class="mb-2">{{ $log['description'] }}</p>
-
-                                                        @if (isset($log->properties['metadata']) ||
-                                                                isset($log->properties['old_status']) ||
-                                                                isset($log->properties['new_status']))
-                                                            <div class="small bg-light p-2 rounded">
-                                                                @if (isset($log->properties['old_status_label']) && isset($log->properties['new_status_label']))
-                                                                    <div class="mb-1">
-                                                                        <span
-                                                                            class="badge badge-secondary">{{ $log->properties['old_status_label'] }}</span>
-                                                                        <i
-                                                                            class="fas fa-arrow-right mx-2 text-muted"></i>
-                                                                        <span
-                                                                            class="badge badge-{{ $log->color ?? 'primary' }}">{{ $log->properties['new_status_label'] }}</span>
-                                                                    </div>
-                                                                @endif
-
-                                                                @if (isset($log->properties['metadata']['interview_details']))
-                                                                    <div class="mt-2">
-                                                                        <i
-                                                                            class="fas fa-calendar-alt text-warning mr-1"></i>
-                                                                        Interview:
-                                                                        {{ $log->properties['metadata']['interview_details']['date'] }}
-                                                                        at
-                                                                        {{ $log->properties['metadata']['interview_details']['time'] }}
-                                                                        ({{ ucfirst($log->properties['metadata']['interview_details']['type']) }})
-                                                                    </div>
-                                                                @endif
-
-                                                                @if (isset($log->properties['metadata']['offer_details']))
-                                                                    <div class="mt-2">
-                                                                        <i
-                                                                            class="fas fa-money-bill text-success mr-1"></i>
-                                                                        Offer: KES
-                                                                        {{ number_format($log->properties['metadata']['offer_details']['stipend']) }}
-                                                                    </div>
-                                                                @endif
-
-                                                                @if (isset($log->properties['notes']))
-                                                                    <div class="mt-2 text-muted">
-                                                                        <i class="fas fa-comment mr-1"></i>
-                                                                        {{ $log->properties['notes'] }}
-                                                                    </div>
-                                                                @endif
-                                                            </div>
-                                                        @endif
-
-
                                                     </div>
+                                                    <p class="mb-2">{{ $log['description'] }}</p>
+
+                                                    @if (isset($log->properties['metadata']) ||
+                                                            isset($log->properties['old_status']) ||
+                                                            isset($log->properties['new_status']))
+                                                        <div class="small bg-light p-2 rounded">
+                                                            @if (isset($log->properties['old_status_label']) && isset($log->properties['new_status_label']))
+                                                                <div class="mb-1">
+                                                                    <span
+                                                                        class="badge badge-secondary">{{ $log->properties['old_status_label'] }}</span>
+                                                                    <i class="fas fa-arrow-right mx-2 text-muted"></i>
+                                                                    <span
+                                                                        class="badge badge-{{ $log->color ?? 'primary' }}">{{ $log->properties['new_status_label'] }}</span>
+                                                                </div>
+                                                            @endif
+
+                                                            @if (isset($log->properties['metadata']['interview_details']))
+                                                                <div class="mt-2">
+                                                                    <i
+                                                                        class="fas fa-calendar-alt text-warning mr-1"></i>
+                                                                    Interview:
+                                                                    {{ $log->properties['metadata']['interview_details']['date'] }}
+                                                                    at
+                                                                    {{ $log->properties['metadata']['interview_details']['time'] }}
+                                                                    ({{ ucfirst($log->properties['metadata']['interview_details']['type']) }})
+                                                                </div>
+                                                            @endif
+
+                                                            @if (isset($log->properties['metadata']['offer_details']))
+                                                                <div class="mt-2">
+                                                                    <i class="fas fa-money-bill text-success mr-1"></i>
+                                                                    Offer: KES
+                                                                    {{ number_format($log->properties['metadata']['offer_details']['stipend']) }}
+                                                                </div>
+                                                            @endif
+
+                                                            @if (isset($log->properties['notes']))
+                                                                <div class="mt-2 text-muted">
+                                                                    <i class="fas fa-comment mr-1"></i>
+                                                                    {{ $log->properties['notes'] }}
+                                                                </div>
+                                                            @endif
+                                                        </div>
+                                                    @endif
                                                 </div>
                                             </div>
                                         @endforeach
-
                                     @empty
-
-
                                         <div class="text-center py-5">
                                             <i class="fas fa-history fa-3x text-muted mb-3"></i>
                                             <p class="text-muted">No timeline history found</p>
                                         </div>
                                     @endforelse
-
-
                                 </div>
+
+                                <!-- Interviews Section -->
+                                @if ($application->interviews && $application->interviews->count() > 0)
+                                    <div class="mt-4">
+                                        <h6 class="mb-3">
+                                            <i class="fas fa-calendar-alt text-warning mr-2"></i>
+                                            Interviews
+                                        </h6>
+                                        @foreach ($application->interviews as $interview)
+                                            <div class="card border-0 bg-light mb-3">
+                                                <div class="card-body">
+                                                    <div class="d-flex justify-content-between align-items-start">
+                                                        <div>
+                                                            <span
+                                                                class="badge badge-{{ $interview->status_badge }} mb-2">
+                                                                {{ $interview->status }}
+                                                            </span>
+                                                            <h6 class="mb-2">
+                                                                <i class="fas {{ $interview->type_icon }} mr-1"></i>
+                                                                {{ ucfirst($interview->type) }} Interview
+                                                            </h6>
+                                                            <p class="mb-1">
+                                                                <i class="fas fa-calendar mr-1"></i>
+                                                                {{ $interview->scheduled_at->format('M d, Y h:i A') }}
+                                                                ({{ $interview->duration_formatted }})
+                                                            </p>
+                                                            @if ($interview->meeting_details)
+                                                                <p class="mb-1">
+                                                                    <i class="fas fa-link mr-1"></i>
+                                                                    {{ $interview->meeting_details }}
+                                                                </p>
+                                                            @endif
+                                                            @if ($interview->notes)
+                                                                <p class="mb-0 text-muted">{{ $interview->notes }}</p>
+                                                            @endif
+                                                        </div>
+                                                        @if ($interview->status === 'scheduled' && $interview->isUpcoming())
+                                                            <div class="btn-group">
+                                                                <button class="btn btn-sm btn-success"
+                                                                    wire:click="markInterviewCompleted({{ $interview->id }})">
+                                                                    <i class="fas fa-check"></i> Complete
+                                                                </button>
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @endif
                             </div>
 
 
@@ -909,6 +955,150 @@
                         </button>
                         <button type="button" class="btn btn-primary" wire:click="updateStatus">
                             <i class="fas fa-check mr-1"></i> Update Status
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-backdrop fade show"></div>
+    @endif
+
+    <!-- Schedule Interview Modal -->
+    @if ($showInterviewModal)
+        <div class="modal fade show" style="display: block;" tabindex="-1" role="dialog">
+            <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+                <div class="modal-content border-0 shadow-lg">
+                    <div class="modal-header bg-warning text-white border-0">
+                        <h5 class="modal-title">
+                            <i class="fas fa-calendar-plus mr-2"></i>Schedule Interview
+                        </h5>
+                        <button type="button" class="close text-white"
+                            wire:click="$set('showInterviewModal', false)">
+                            <span>&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="font-weight-bold">Interview Date <span
+                                            class="text-danger">*</span></label>
+                                    <input type="date" wire:model="interviewDate"
+                                        class="form-control @error('interviewDate') is-invalid @enderror"
+                                        min="{{ now()->format('Y-m-d') }}">
+                                    @error('interviewDate')
+                                        <span class="invalid-feedback">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="font-weight-bold">Interview Time <span
+                                            class="text-danger">*</span></label>
+                                    <input type="time" wire:model="interviewTime"
+                                        class="form-control @error('interviewTime') is-invalid @enderror">
+                                    @error('interviewTime')
+                                        <span class="invalid-feedback">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="font-weight-bold">Interview Type <span
+                                            class="text-danger">*</span></label>
+                                    <select wire:model="interviewType"
+                                        class="form-control @error('interviewType') is-invalid @enderror">
+                                        <option value="online">Online (Video Call)</option>
+                                        <option value="phone">Phone Call</option>
+                                        <option value="in_person">In Person</option>
+                                    </select>
+                                    @error('interviewType')
+                                        <span class="invalid-feedback">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="font-weight-bold">Duration (minutes) <span
+                                            class="text-danger">*</span></label>
+                                    <select wire:model="interviewDuration" class="form-control">
+                                        <option value="15">15 minutes</option>
+                                        <option value="30">30 minutes</option>
+                                        <option value="45">45 minutes</option>
+                                        <option value="60">1 hour</option>
+                                        <option value="90">1.5 hours</option>
+                                        <option value="120">2 hours</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if ($interviewType === 'online')
+                            <div class="form-group">
+                                <label class="font-weight-bold">Meeting Link <span
+                                        class="text-danger">*</span></label>
+                                <input type="url" wire:model="interviewMeetingLink"
+                                    class="form-control @error('interviewMeetingLink') is-invalid @enderror"
+                                    placeholder="https://meet.google.com/xxx or Zoom link">
+                                @error('interviewMeetingLink')
+                                    <span class="invalid-feedback">{{ $message }}</span>
+                                @enderror
+                            </div>
+                        @endif
+
+                        @if ($interviewType === 'phone')
+                            <div class="form-group">
+                                <label class="font-weight-bold">Phone Number <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" wire:model="interviewPhoneNumber"
+                                    class="form-control @error('interviewPhoneNumber') is-invalid @enderror"
+                                    placeholder="+254 XXX XXX XXX">
+                                @error('interviewPhoneNumber')
+                                    <span class="invalid-feedback">{{ $message }}</span>
+                                @enderror
+                            </div>
+                        @endif
+
+                        @if ($interviewType === 'in_person')
+                            <div class="form-group">
+                                <label class="font-weight-bold">Location <span class="text-danger">*</span></label>
+                                <input type="text" wire:model="interviewLocation"
+                                    class="form-control @error('interviewLocation') is-invalid @enderror"
+                                    placeholder="Office address, building, room number">
+                                @error('interviewLocation')
+                                    <span class="invalid-feedback">{{ $message }}</span>
+                                @enderror
+                            </div>
+                        @endif
+
+                        <div class="form-group">
+                            <label class="font-weight-bold">Interviewer (Optional)</label>
+                            <select wire:model="interviewerId" class="form-control">
+                                <option value="">Select Interviewer</option>
+                                @foreach ($application->opportunity->organization->users as $user)
+                                    <option value="{{ $user->id }}">{{ $user->full_name }}
+                                        ({{ $user->pivot->role }})
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="font-weight-bold">Notes / Instructions</label>
+                            <textarea wire:model="interviewNotes" class="form-control" rows="3"
+                                placeholder="Any special instructions for the student..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light border-0">
+                        <button type="button" class="btn btn-outline-secondary"
+                            wire:click="$set('showInterviewModal', false)">
+                            Cancel
+                        </button>
+                        <button type="button" class="btn btn-warning" wire:click="scheduleInterview">
+                            <i class="fas fa-calendar-check mr-1"></i> Schedule Interview
                         </button>
                     </div>
                 </div>

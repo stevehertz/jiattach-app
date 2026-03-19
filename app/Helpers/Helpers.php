@@ -161,7 +161,7 @@ class Helpers
 
     /**
      * Get application status badge.
-     * 
+     *
      * @param \App\Enums\ApplicationStatus|string $status
      * @return string
      */
@@ -175,7 +175,22 @@ class Helpers
                 '</span>';
         }
 
-        // Fallback for string status (backward compatibility)
+        // If it's a string, try to convert to enum first
+        if (is_string($status)) {
+            try {
+                $enum = ApplicationStatus::tryFrom($status);
+                if ($enum) {
+                    return '<span class="badge badge-' . $enum->color() . ' p-2">' .
+                        ($enum->icon() ? '<i class="fas ' . $enum->icon() . ' mr-1"></i>' : '') .
+                        $enum->label() .
+                        '</span>';
+                }
+            } catch (\Exception $e) {
+                // Fallback to old method if conversion fails
+            }
+        }
+
+        // Fallback for old string status values (backward compatibility)
         $statusColors = [
             'draft' => 'secondary',
             'submitted' => 'info',
@@ -189,7 +204,17 @@ class Helpers
             'rejected' => 'danger',
             'withdrawn' => 'dark',
             'hired' => 'success',
-            'pending' => 'secondary', // Added for completeness
+            'pending' => 'secondary',
+            'Pending' => 'secondary', // Handle old capitalized values
+            'Under Review' => 'primary',
+            'Shortlisted' => 'warning',
+            'Interview Scheduled' => 'purple',
+            'Interview Completed' => 'indigo',
+            'Offer Sent' => 'teal',
+            'Offer Accepted' => 'success',
+            'Offer Rejected' => 'orange',
+            'Hired' => 'success',
+            'Rejected' => 'danger',
         ];
 
         $statusLabels = [
@@ -205,7 +230,17 @@ class Helpers
             'rejected' => 'Rejected',
             'withdrawn' => 'Withdrawn',
             'hired' => 'Hired',
-            'pending' => 'Pending', // Added for completeness
+            'pending' => 'Pending',
+            'Pending' => 'Pending',
+            'Under Review' => 'Under Review',
+            'Shortlisted' => 'Shortlisted',
+            'Interview Scheduled' => 'Interview Scheduled',
+            'Interview Completed' => 'Interview Completed',
+            'Offer Sent' => 'Offer Sent',
+            'Offer Accepted' => 'Offer Accepted',
+            'Offer Rejected' => 'Offer Rejected',
+            'Hired' => 'Hired',
+            'Rejected' => 'Rejected',
         ];
 
         $color = $statusColors[$status] ?? 'secondary';

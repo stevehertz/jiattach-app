@@ -316,7 +316,7 @@
                         </li>
                         <li class="nav-item">
                             <a href="{{ route('admin.applications.interviewing') }}"
-                                class="nav-link {{ $isRouteActive('admin.applications.interviewing') ? 'active' : '' }}">
+                                class="nav-link ">
                                 <i class="far fa-calendar-check nav-icon text-info"></i>
                                 <p>Interview Stage</p>
                             </a>

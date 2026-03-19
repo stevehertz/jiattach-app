@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 namespace App\Enums;
 
@@ -8,7 +8,7 @@ enum ApplicationStatus: string
 {
     use EnumHelpers;
 
-    case PENDING = 'Pending';
+    case PENDING = 'pending';
     case UNDER_REVIEW = 'under_review';
     case SHORTLISTED = 'shortlisted';
     case INTERVIEW_SCHEDULED = 'interview_scheduled';
@@ -62,7 +62,8 @@ enum ApplicationStatus: string
             self::PENDING => 'fa-clock',
             self::UNDER_REVIEW => 'fa-search',
             self::SHORTLISTED => 'fa-list-check',
-            self::INTERVIEW_SCHEDULED, self::INTERVIEW_COMPLETED => 'fa-calendar-check',
+            self::INTERVIEW_SCHEDULED => 'fa-calendar-plus',
+            self::INTERVIEW_COMPLETED => 'fa-calendar-check',
             self::OFFER_SENT => 'fa-paper-plane',
             self::OFFER_ACCEPTED => 'fa-handshake',
             self::OFFER_REJECTED, self::REJECTED => 'fa-times-circle',
@@ -236,4 +237,3 @@ enum ApplicationStatus: string
         ];
     }
 }
-

@@ -38,9 +38,9 @@ class Application extends Model
         'match_quality' => 'string',
         'matched_criteria' => 'array',
         'match_details' => 'array',
-        'accepted_at' => 'datetime', // Add this
-        'declined_at' => 'datetime', // Add this
-        'submitted_at' => 'datetime', // Add this if not already there
+        'accepted_at' => 'datetime',
+        'declined_at' => 'datetime',
+        'submitted_at' => 'datetime',
         'status' => ApplicationStatus::class,
     ];
 
@@ -74,6 +74,35 @@ class Application extends Model
     {
         return $this->hasMany(ApplicationHistory::class)->latest();
     }
+
+    /**
+     * Get the interviews for this application.
+     */
+    public function interviews()
+    {
+        return $this->hasMany(Interview::class);
+    }
+
+    /**
+     * Get the latest interview.
+     */
+    public function latestInterview()
+    {
+        return $this->hasOne(Interview::class)->latestOfMany();
+    }
+
+    /**
+     * Get the upcoming interview.
+     */
+    public function upcomingInterview()
+    {
+        return $this->hasOne(Interview::class)
+            ->where('status', 'scheduled')
+            ->where('scheduled_at', '>', now())
+            ->latest('scheduled_at');
+    }
+
+
 
     /**
      * Get the timeline history grouped by date.

@@ -61,7 +61,7 @@ Route::middleware([
         Route::get('/super-admins', [AdministratorsController::class, 'super-admins'])->name('super.admins');
     });
 
-    Route::prefix('roles')->name('roles.')->group(function(){
+    Route::prefix('roles')->name('roles.')->group(function () {
 
         Route::view('/', 'admin.roles.index')->name('index');
 
@@ -99,7 +99,6 @@ Route::middleware([
         Route::get('/{organization}/edit', [OrganizationsController::class, 'edit'])->name('edit');
 
         Route::get('/{organization}/opportunities', [OrganizationsController::class, 'opportunities'])->name('opportunities');
-
     });
 
     // Opportunities Management Routes
@@ -136,7 +135,7 @@ Route::middleware([
         Route::view('completed', 'admin.placements.completed')->name('completed');
 
         Route::view('pending', 'admin.placements.pending')->name('pending');
-        
+
         Route::view('cancelled', 'admin.placements.cancelled')->name('cancelled');
 
         Route::view('create', 'admin.placements.create')->name('create');
@@ -206,6 +205,14 @@ Route::middleware([
 
         // Interview Stage
         Route::view('interviewing', 'admin.applications.interviewing')->name('interviewing');
+
+        Route::view('interviewing/today', 'admin.applications.interviewing.today')->name('interviewing.today');
+
+        Route::view('interviewing/upcoming', 'admin.applications.interviewing.upcoming')->name('interviewing.upcoming');
+
+        Route::view('interviewing/completed', 'admin.applications.interviewing.completed')->name('interviewing.completed');
+
+         Route::view('interviewing/pending', 'admin.applications.interviewing.pending')->name('interviewing.pending');
 
         // Offer Stage
         Route::view('offers', 'admin.applications.offers')->name('offers');

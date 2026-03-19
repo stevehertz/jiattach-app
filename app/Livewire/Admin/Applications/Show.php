@@ -5,6 +5,7 @@ namespace App\Livewire\Admin\Applications;
 use App\Enums\ApplicationStatus;
 use App\Models\ActivityLog;
 use App\Models\Application;
+use App\Models\Interview;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -25,6 +26,18 @@ class Show extends Component
 
     // Similar applications
     public $similarApplications;
+
+    // Add these properties
+    public $showInterviewModal = false;
+    public $interviewDate;
+    public $interviewTime;
+    public $interviewType = 'online';
+    public $interviewDuration = 60;
+    public $interviewLocation;
+    public $interviewMeetingLink;
+    public $interviewPhoneNumber;
+    public $interviewNotes;
+    public $interviewerId;
 
     public function mount(Application $application)
     {
@@ -367,7 +380,7 @@ class Show extends Component
             }
 
             // ===== END STUDENT PROFILE UPDATE =====
-            
+
             // Add history record
             $this->application->addHistory(
                 'status_changed',
@@ -408,7 +421,155 @@ class Show extends Component
         $this->loadActivityLogs();
     }
 
-     // Document Management
+    // Add this method
+    public function openInterviewModal()
+    {
+        $this->resetInterviewForm();
+        $this->showInterviewModal = true;
+    }
+
+    protected function resetInterviewForm()
+    {
+        $this->interviewDate = null;
+        $this->interviewTime = null;
+        $this->interviewType = 'online';
+        $this->interviewDuration = 60;
+        $this->interviewLocation = null;
+        $this->interviewMeetingLink = null;
+        $this->interviewPhoneNumber = null;
+        $this->interviewNotes = null;
+        $this->interviewerId = null;
+    }
+
+    public function scheduleInterview()
+    {
+        $this->validate([
+            'interviewDate' => 'required|date|after_or_equal:today',
+            'interviewTime' => 'required',
+            'interviewType' => 'required|in:online,phone,in_person',
+            'interviewDuration' => 'required|integer|min:15|max:480',
+            'interviewLocation' => 'required_if:interviewType,in_person|nullable|string|max:255',
+            'interviewMeetingLink' => 'required_if:interviewType,online|nullable|url|max:255',
+            'interviewPhoneNumber' => 'required_if:interviewType,phone|nullable|string|max:20',
+            'interviewNotes' => 'nullable|string|max:1000',
+            'interviewerId' => 'nullable|exists:users,id',
+        ]);
+
+        DB::transaction(function () {
+            // Create datetime from date and time
+            $scheduledAt = \Carbon\Carbon::parse($this->interviewDate . ' ' . $this->interviewTime);
+
+            // Create interview record
+            $interview = Interview::create([
+                'application_id' => $this->application->id,
+                'scheduled_by' => auth()->id(),
+                'interviewer_id' => $this->interviewerId,
+                'scheduled_at' => $scheduledAt,
+                'duration_minutes' => $this->interviewDuration,
+                'type' => $this->interviewType,
+                'location' => $this->interviewLocation,
+                'meeting_link' => $this->interviewMeetingLink,
+                'phone_number' => $this->interviewPhoneNumber,
+                'notes' => $this->interviewNotes,
+                'status' => 'scheduled',
+            ]);
+
+            // Update application status
+            $oldStatus = $this->application->status;
+            $this->application->status = ApplicationStatus::INTERVIEW_SCHEDULED;
+            $this->application->save();
+
+            // Update student profile status if needed
+            $studentProfile = $this->application->student->studentProfile;
+            if ($studentProfile && $studentProfile->attachment_status === 'applied') {
+                $studentProfile->update(['attachment_status' => 'interviewing']);
+            }
+
+            // Add application history
+            $this->application->addHistory(
+                'interview_scheduled',
+                $this->application->student_id,
+                $this->application->organization_id,
+                $oldStatus->value,
+                ApplicationStatus::INTERVIEW_SCHEDULED->value,
+                'Interview scheduled',
+                [
+                    'interview_id' => $interview->id,
+                    'scheduled_at' => $scheduledAt->toDateTimeString(),
+                    'type' => $this->interviewType,
+                    'duration' => $this->interviewDuration,
+                    'notes' => $this->interviewNotes,
+                ]
+            );
+
+            // Add interview history
+            $interview->history()->create([
+                'application_id' => $this->application->id,
+                'user_id' => auth()->id(),
+                'action' => 'scheduled',
+                'notes' => 'Interview scheduled',
+                'metadata' => [
+                    'scheduled_at' => $scheduledAt->toDateTimeString(),
+                    'type' => $this->interviewType,
+                ],
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ]);
+
+            // Log activity
+            activity_log(
+                "Interview scheduled for application #{$this->application->id}",
+                'interview_scheduled',
+                [
+                    'application_id' => $this->application->id,
+                    'student_name' => $this->application->student->full_name,
+                    'interview_id' => $interview->id,
+                    'scheduled_at' => $scheduledAt->toDateTimeString(),
+                ],
+                'interview'
+            );
+        });
+
+        $this->showInterviewModal = false;
+        $this->dispatch('show-toast', [
+            'type' => 'success',
+            'message' => 'Interview scheduled successfully!'
+        ]);
+
+        $this->loadActivityLogs();
+    }
+
+    public function markInterviewCompleted($interviewId)
+    {
+        $interview = Interview::findOrFail($interviewId);
+
+        DB::transaction(function () use ($interview) {
+            $oldStatus = $this->application->status;
+
+            // Mark interview as completed
+            $interview->markAsCompleted();
+
+            // Add application history
+            $this->application->addHistory(
+                'interview_completed',
+                $this->application->student_id,
+                $this->application->organization_id,
+                $oldStatus->value,
+                ApplicationStatus::INTERVIEW_COMPLETED->value,
+                'Interview completed',
+                ['interview_id' => $interview->id]
+            );
+        });
+
+        $this->dispatch('show-toast', [
+            'type' => 'success',
+            'message' => 'Interview marked as completed!'
+        ]);
+
+        $this->loadActivityLogs();
+    }
+
+    // Document Management
     public function downloadDocument($type)
     {
         $url = match ($type) {
@@ -427,10 +588,6 @@ class Show extends Component
             'message' => 'Document not found!'
         ]);
     }
-
-
-
-
 
     protected function getStatusFlow()
     {

@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Log;
 class Show extends Component
 {
     public User $student;
-    
+
     // Match modal properties
     public $showMatchModal = false;
     public $selectedStudentForMatch = null;
@@ -22,7 +22,14 @@ class Show extends Component
     public $selectedMatches = [];
 
     // Event listeners
-    protected $listeners = ['refreshStudent' => '$refresh'];
+    protected $listeners = [
+        'refreshStudent' => '$refresh',
+        'confirmDeactivation',
+        'confirmActivation',
+        'confirmVerification',
+        'confirmDelete',
+        'confirmStatusChange'
+    ];
 
     /**
      * Mount the component
@@ -38,7 +45,139 @@ class Show extends Component
             'mentor',
             'activityLogs.causer'
         ]);
+
+        // Initialize selectedMatches as an empty array
+        $this->selectedMatches = [];
     }
+
+
+    /**
+     * Clear all selected matches
+     */
+    public function clearSelectedMatches()
+    {
+        $this->selectedMatches = [];
+        $this->dispatch('selection-updated');
+    }
+
+    /**
+     * Select all matches
+     */
+    public function selectAllMatches()
+    {
+        $this->selectedMatches = collect($this->studentMatches)
+            ->keys()
+            ->map(fn($key) => (string) $key)
+            ->values()
+            ->toArray();
+
+        $this->dispatch('selection-updated');
+    }
+
+    /**
+     * Update selected matches when checkbox changes
+     */
+    public function updatedSelectedMatches($value)
+    {
+        // Ensure all values are strings
+        $this->selectedMatches = array_map('strval', $this->selectedMatches);
+        $this->dispatch('selection-updated');
+    }
+
+    /**
+     * Confirm deactivation with SweetAlert
+     */
+    public function confirmDeactivation()
+    {
+        $this->dispatch('swal:confirm', [
+            'title' => 'Deactivate Student?',
+            'text' => "Are you sure you want to deactivate {$this->student->full_name}? They will not be able to access the platform.",
+            'icon' => 'warning',
+            'confirmButtonText' => 'Yes, deactivate',
+            'cancelButtonText' => 'Cancel',
+            'method' => 'toggleActive'
+        ]);
+    }
+
+    /**
+     * Confirm activation with SweetAlert
+     */
+    public function confirmActivation()
+    {
+        $this->dispatch('swal:confirm', [
+            'title' => 'Activate Student?',
+            'text' => "Are you sure you want to activate {$this->student->full_name}? They will regain access to the platform.",
+            'icon' => 'info',
+            'confirmButtonText' => 'Yes, activate',
+            'cancelButtonText' => 'Cancel',
+            'method' => 'toggleActive'
+        ]);
+    }
+
+    /**
+     * Confirm verification with SweetAlert
+     */
+    public function confirmVerification()
+    {
+        $this->dispatch('swal:confirm', [
+            'title' => 'Verify Student?',
+            'text' => "Are you sure you want to verify {$this->student->full_name}'s account?",
+            'icon' => 'question',
+            'confirmButtonText' => 'Yes, verify',
+            'cancelButtonText' => 'Cancel',
+            'method' => 'verifyUser'
+        ]);
+    }
+
+    /**
+     * Confirm status change with SweetAlert
+     */
+    public function confirmStatusChange($status)
+    {
+        $statusLabels = [
+            'seeking' => 'Seeking Attachment',
+            'applied' => 'Applied',
+            'interviewing' => 'Interviewing',
+            'placed' => 'Placed',
+            'completed' => 'Completed'
+        ];
+
+        $this->dispatch('swal:confirm', [
+            'title' => 'Change Status?',
+            'text' => "Are you sure you want to change status to " . $statusLabels[$status] . "?",
+            'icon' => 'question',
+            'confirmButtonText' => 'Yes, change',
+            'cancelButtonText' => 'Cancel',
+            'method' => 'updateAttachmentStatus',
+            'params' => [$status]
+        ]);
+    }
+
+    /**
+     * Confirm delete with SweetAlert
+     */
+    public function confirmDelete()
+    {
+        // Check if student has active placements
+        if ($this->hasActivePlacement) {
+            $this->dispatch('swal:error', [
+                'title' => 'Cannot Delete',
+                'text' => 'This student has an active placement and cannot be deleted.',
+            ]);
+            return;
+        }
+
+        $this->dispatch('swal:confirm', [
+            'title' => 'Delete Student?',
+            'text' => "Are you sure you want to delete {$this->student->full_name}? This action cannot be undone and will permanently remove all student data.",
+            'icon' => 'error',
+            'confirmButtonText' => 'Yes, delete permanently',
+            'cancelButtonText' => 'Cancel',
+            'method' => 'deleteStudent',
+            'danger' => true
+        ]);
+    }
+
 
     /**
      * Toggle student active status
@@ -50,7 +189,7 @@ class Show extends Component
         ]);
 
         $status = $this->student->is_active ? 'activated' : 'deactivated';
-        
+
         // Log activity
         activity_log(
             "Student {$status} by admin",
@@ -77,9 +216,9 @@ class Show extends Component
     public function verifyUser()
     {
         if ($this->student->is_verified) {
-            $this->dispatch('show-toast', [
-                'type' => 'warning',
-                'message' => 'Student is already verified!'
+            $this->dispatch('swal:warning', [
+                'title' => 'Already Verified',
+                'text' => 'Student is already verified!'
             ]);
             return;
         }
@@ -100,9 +239,9 @@ class Show extends Component
             'student'
         );
 
-        $this->dispatch('show-toast', [
-            'type' => 'success',
-            'message' => 'Student verified successfully!'
+        $this->dispatch('swal:success', [
+            'title' => 'Success!',
+            'text' => 'Student verified successfully!'
         ]);
 
         $this->dispatch('refreshStudent');
@@ -122,7 +261,7 @@ class Show extends Component
         }
 
         $oldStatus = $this->student->studentProfile->attachment_status;
-        
+
         $this->student->studentProfile->update([
             'attachment_status' => $status
         ]);
@@ -165,7 +304,7 @@ class Show extends Component
         $studentName = $this->student->full_name;
 
         DB::beginTransaction();
-        
+
         try {
             // Log before deletion
             activity_log(
@@ -184,18 +323,24 @@ class Show extends Component
 
             DB::commit();
 
-            session()->flash('success', 'Student deleted successfully!');
-            
-            return redirect()->route('admin.students.index');
+            $this->dispatch('swal:success', [
+                'title' => 'Deleted!',
+                'text' => 'Student deleted successfully!',
+                'redirect' => route('admin.students.index')
+            ]);
 
+            // Redirect after a short delay
+            $this->dispatch('redirect-after-delete', [
+                'url' => route('admin.students.index')
+            ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             Log::error('Failed to delete student: ' . $e->getMessage());
-            
-            $this->dispatch('show-toast', [
-                'type' => 'error',
-                'message' => 'Failed to delete student: ' . $e->getMessage()
+
+            $this->dispatch('swal:error', [
+                'title' => 'Error!',
+                'text' => 'Failed to delete student: ' . $e->getMessage()
             ]);
         }
     }
@@ -244,17 +389,16 @@ class Show extends Component
             $matches = $matchingService->findMatchesForStudent($this->selectedStudentForMatch, 10);
 
             $this->studentMatches = $matches;
-            
+
             // Auto-select high-quality matches (optional)
             foreach ($matches as $index => $match) {
                 if ($match['score'] >= 85) {
                     $this->selectedMatches[] = (string) $index;
                 }
             }
-
         } catch (\Exception $e) {
             Log::error('Error finding matches: ' . $e->getMessage());
-            
+
             $this->dispatch('show-toast', [
                 'type' => 'error',
                 'message' => 'Error finding matches: ' . $e->getMessage()
@@ -270,7 +414,7 @@ class Show extends Component
     public function refreshMatches()
     {
         $this->findMatches();
-        
+
         $this->dispatch('show-toast', [
             'type' => 'success',
             'message' => 'Matches refreshed successfully!'
@@ -318,16 +462,34 @@ class Show extends Component
             ]);
 
             $this->dispatch('refreshStudent');
-
         } catch (\Exception $e) {
             Log::error('Error saving matches: ' . $e->getMessage());
-            
+
             $this->dispatch('show-toast', [
                 'type' => 'error',
                 'message' => 'Error saving matches: ' . $e->getMessage()
             ]);
         }
     }
+
+    /**
+     * Toggle a single match
+     */
+    public function toggleMatch($index)
+    {
+        if (in_array((string) $index, $this->selectedMatches)) {
+            $this->selectedMatches = array_values(array_diff($this->selectedMatches, [(string) $index]));
+        } else {
+            $this->selectedMatches[] = (string) $index;
+        }
+
+        $this->dispatch('selection-updated');
+    }
+
+
+
+
+
 
     /**
      * Create placement from an application
@@ -409,12 +571,11 @@ class Show extends Component
                 'type' => 'success',
                 'message' => 'Placement created successfully!'
             ]);
-
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             Log::error('Failed to create placement: ' . $e->getMessage());
-            
+
             $this->dispatch('show-toast', [
                 'type' => 'error',
                 'message' => 'Failed to create placement: ' . $e->getMessage()
@@ -469,4 +630,3 @@ class Show extends Component
         ]);
     }
 }
- 

@@ -269,7 +269,7 @@
                                 <label>Status</label>
                                 <select wire:model.live="statusFilter" class="form-control">
                                     <option value="">All Statuses</option>
-                                    <option value="submitted,under_review">Pending Review</option>
+                                    <option value="pending,under_review">Pending Review</option>
                                     <option value="shortlisted">Shortlisted</option>
                                     <option value="interview_scheduled,interview_completed">Interview Stage</option>
                                     <option value="offer_sent,offer_accepted,offer_rejected">Offer Stage</option>

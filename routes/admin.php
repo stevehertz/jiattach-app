@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdministratorsController;
 use App\Http\Controllers\Admin\ApplicationController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\InterviewsController;
 use App\Http\Controllers\Admin\MentorController;
 use App\Http\Controllers\Admin\MentorshipController;
 use App\Http\Controllers\Admin\OpportunityController;
@@ -212,7 +213,7 @@ Route::middleware([
 
         Route::view('interviewing/completed', 'admin.applications.interviewing.completed')->name('interviewing.completed');
 
-         Route::view('interviewing/pending', 'admin.applications.interviewing.pending')->name('interviewing.pending');
+        Route::view('interviewing/pending', 'admin.applications.interviewing.pending')->name('interviewing.pending');
 
         // Offer Stage
         Route::view('offers', 'admin.applications.offers')->name('offers');
@@ -237,6 +238,12 @@ Route::middleware([
         Route::view('bulk-offer', 'admin.applications.bulk-offer')->name('bulk-offer');
 
         Route::view('reports', 'admin.applications.reports')->name('reports');
+    });
+
+    // Inteviews
+    Route::prefix('interviews')->name('interviews.')->group(function () {
+
+        Route::get('/{interview}', [InterviewsController::class, 'show'])->name('show');
     });
 
     // Reports & Analytics Routes

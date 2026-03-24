@@ -50,7 +50,7 @@ class Application extends Model
         'offer_letter_generated_at' => 'datetime',
     ];
 
-     /**
+    /**
      * Get the payment transaction associated with this application.
      */
     public function paymentTransaction()
@@ -99,6 +99,60 @@ class Application extends Model
         );
 
         return true;
+    }
+
+
+    /**
+     * Get the offer stipend if available
+     */
+    public function getOfferStipendAttribute()
+    {
+        if ($this->offer_details && isset($this->offer_details['stipend'])) {
+            return $this->offer_details['stipend'];
+        }
+        return null;
+    }
+
+    /**
+     * Get the offer start date if available
+     */
+    public function getOfferStartDateAttribute()
+    {
+        if ($this->offer_details && isset($this->offer_details['start_date'])) {
+            return $this->offer_details['start_date'];
+        }
+        return null;
+    }
+
+    /**
+     * Get the offer end date if available
+     */
+    public function getOfferEndDateAttribute()
+    {
+        if ($this->offer_details && isset($this->offer_details['end_date'])) {
+            return $this->offer_details['end_date'];
+        }
+        return null;
+    }
+
+    /**
+     * Get formatted offer details for display
+     */
+    public function getFormattedOfferDetailsAttribute()
+    {
+        if (!$this->offer_details) {
+            return null;
+        }
+
+        return [
+            'stipend' => isset($this->offer_details['stipend']) ? 'KSh ' . number_format($this->offer_details['stipend'], 2) : 'N/A',
+            'start_date' => isset($this->offer_details['start_date']) ? date('d M Y', strtotime($this->offer_details['start_date'])) : 'N/A',
+            'end_date' => isset($this->offer_details['end_date']) ? date('d M Y', strtotime($this->offer_details['end_date'])) : 'N/A',
+            'notes' => $this->offer_details['notes'] ?? null,
+            'terms' => $this->offer_details['terms'] ?? null,
+            'sent_by' => $this->offer_details['sent_by'] ?? null,
+            'sent_at' => isset($this->offer_details['sent_at']) ? date('d M Y h:i A', strtotime($this->offer_details['sent_at'])) : null,
+        ];
     }
 
     // Relationships

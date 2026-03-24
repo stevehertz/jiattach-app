@@ -61,6 +61,8 @@ class Show extends Component
     public $offerNotes;
     public $offerTerms;
 
+    public $selectedApplicationId = null;
+
     // Common skills list for assessment
     public $commonSkills = [
         'Technical Knowledge',
@@ -592,7 +594,7 @@ class Show extends Component
         $this->loadActivityLogs();
     }
 
-     /**
+    /**
      * Check if offer can be sent (for UI button visibility)
      */
     public function canSendOffer()
@@ -601,17 +603,17 @@ class Show extends Component
         if ($this->application->status !== ApplicationStatus::INTERVIEW_COMPLETED) {
             return false;
         }
-        
+
         // Check if payment is completed
         if ($this->application->payment_completed_at) {
             return true;
         }
-        
+
         // Check if payment transaction exists and is completed
         if ($this->application->paymentTransaction && $this->application->paymentTransaction->status === 'completed') {
             return true;
         }
-        
+
         return false;
     }
 
@@ -629,7 +631,7 @@ class Show extends Component
                 'date' => $this->application->payment_completed_at,
             ];
         }
-        
+
         if ($this->application->paymentTransaction) {
             $statusColors = [
                 'pending' => 'warning',
@@ -637,7 +639,7 @@ class Show extends Component
                 'failed' => 'danger',
                 'refunded' => 'danger',
             ];
-            
+
             return [
                 'label' => 'Payment ' . ucfirst($this->application->paymentTransaction->status),
                 'color' => $statusColors[$this->application->paymentTransaction->status] ?? 'secondary',
@@ -645,7 +647,7 @@ class Show extends Component
                 'status' => $this->application->paymentTransaction->status,
             ];
         }
-        
+
         return [
             'label' => 'Payment Required',
             'color' => 'warning',
@@ -653,10 +655,10 @@ class Show extends Component
             'status' => 'required',
         ];
     }
-    
+
     protected function getPaymentIcon($status)
     {
-        return match($status) {
+        return match ($status) {
             'pending' => 'fa-clock',
             'processing' => 'fa-spinner fa-pulse',
             'completed' => 'fa-check-circle',
@@ -860,9 +862,9 @@ class Show extends Component
     /**
      * Send offer to student (with payment verification)
      */
+
     public function sendOffer()
     {
-        // Validate offer details
         $this->validate([
             'offerStipend' => 'required|numeric|min:0',
             'offerStartDate' => 'required|date|after_or_equal:today',
@@ -871,32 +873,24 @@ class Show extends Component
             'offerTerms' => 'nullable|string|max:2000',
         ]);
 
-        // Double-check payment status before sending offer
-        if ($this->application->hasPaymentRequired()) {
+        $application = Application::findOrFail($this->selectedApplicationId);
+
+        // Double-check payment status
+        if (!$application->payment_completed_at) {
             $this->dispatch('show-toast', [
                 'type' => 'error',
-                'message' => 'Cannot send offer: Payment is required and not yet completed.'
+                'message' => 'Cannot send offer: Payment not completed.'
             ]);
             $this->showOfferModal = false;
             return;
         }
 
-        if ($this->application->paymentTransaction && $this->application->paymentTransaction->status !== 'completed') {
-            $this->dispatch('show-toast', [
-                'type' => 'error',
-                'message' => 'Cannot send offer: Payment is not completed. Current status: ' . ucfirst($this->application->paymentTransaction->status)
-            ]);
-            $this->showOfferModal = false;
-            return;
-        }
-
-        DB::transaction(function () {
-            $oldStatus = $this->application->status;
+        DB::transaction(function () use ($application) {
+            $oldStatus = $application->status;
 
             // Update application with offer details
-            $this->application->status = ApplicationStatus::OFFER_SENT;
-            $this->application->offer_sent_at = now();
-            $this->application->offer_details = [
+            $application->status = ApplicationStatus::OFFER_SENT;
+            $application->offer_details = [
                 'stipend' => $this->offerStipend,
                 'start_date' => $this->offerStartDate,
                 'end_date' => $this->offerEndDate,
@@ -905,13 +899,13 @@ class Show extends Component
                 'sent_by' => auth()->user()->full_name,
                 'sent_at' => now()->toDateTimeString(),
             ];
-            $this->application->save();
+            $application->save();
 
             // Add application history
-            $this->application->addHistory(
+            $application->addHistory(
                 'offer_sent',
-                $this->application->student_id,
-                $this->application->organization_id,
+                $application->student_id,
+                $application->organization_id,
                 $oldStatus->value,
                 ApplicationStatus::OFFER_SENT->value,
                 $this->offerNotes ?: 'Offer sent to student',
@@ -919,41 +913,34 @@ class Show extends Component
                     'stipend' => $this->offerStipend,
                     'start_date' => $this->offerStartDate,
                     'end_date' => $this->offerEndDate,
-                    'payment_completed_at' => $this->application->payment_completed_at,
-                    'payment_reference' => $this->application->payment_reference,
+                    'payment_reference' => $application->payment_reference,
                 ]
             );
 
             // Log activity
             activity_log(
-                "Offer sent for application #{$this->application->id} - Stipend: KSh {$this->offerStipend}",
+                "Offer sent for application #{$application->id} - KSh {$this->offerStipend}",
                 'offer_sent',
                 [
-                    'application_id' => $this->application->id,
-                    'student_name' => $this->application->student->full_name,
-                    'opportunity' => $this->application->opportunity->title,
-                    'organization' => $this->application->opportunity->organization->name,
+                    'application_id' => $application->id,
+                    'student_name' => $application->student->full_name,
+                    'opportunity' => $application->opportunity->title,
                     'stipend' => $this->offerStipend,
-                    'payment_completed' => true,
-                    'payment_reference' => $this->application->payment_reference,
                 ],
                 'application'
             );
-
-            // TODO: Send email notification to student with offer details
-            // $this->application->student->notify(new OfferSentNotification($this->application));
         });
 
         $this->showOfferModal = false;
+        $this->selectedApplicationId = null;
 
         $this->dispatch('show-toast', [
             'type' => 'success',
-            'message' => 'Offer sent successfully to the student!'
+            'message' => 'Offer sent successfully!'
         ]);
 
-        $this->loadActivityLogs();
+        $this->dispatch('refreshComponent');
     }
-
 
     // Document Management
     public function downloadDocument($type)
@@ -1086,6 +1073,31 @@ class Show extends Component
                 'uploaded_at' => $profile->updated_at,
             ],
         ];
+    }
+
+
+    /**
+     * Get the next steps message for the application
+     */
+    public function getNextStepsMessage()
+    {
+        if ($this->application->status === ApplicationStatus::INTERVIEW_COMPLETED) {
+            if (!$this->application->payment_completed_at) {
+                return [
+                    'message' => 'Waiting for student to complete payment before offer can be sent.',
+                    'icon' => 'fa-credit-card',
+                    'color' => 'warning'
+                ];
+            } else {
+                return [
+                    'message' => 'Payment completed. Ready to send offer.',
+                    'icon' => 'fa-check-circle',
+                    'color' => 'success'
+                ];
+            }
+        }
+
+        return null;
     }
 
     public function render()

@@ -17,6 +17,7 @@ class Application extends Model
         'student_id', // Student's User ID for relationship
         'attachment_opportunity_id',
         'organization_id',
+        'payment_transaction_id',
         'match_score',
         'match_quality',
         'matched_criteria',
@@ -30,6 +31,9 @@ class Application extends Model
         'declined_at',
         'decline_reason',
         'decline_feedback',
+        'payment_completed_at',
+        'offer_letter_generated_at',
+        'offer_letter_url',
     ];
 
     protected $casts = [
@@ -42,7 +46,60 @@ class Application extends Model
         'declined_at' => 'datetime',
         'submitted_at' => 'datetime',
         'status' => ApplicationStatus::class,
+        'payment_completed_at' => 'datetime',
+        'offer_letter_generated_at' => 'datetime',
     ];
+
+     /**
+     * Get the payment transaction associated with this application.
+     */
+    public function paymentTransaction()
+    {
+        return $this->belongsTo(PaymentTransaction::class);
+    }
+
+    // Helper methods
+    public function hasPaymentRequired()
+    {
+        // Check if payment is required for this application
+        // Payment is required when interview is completed and payment not yet made
+        return $this->status === ApplicationStatus::INTERVIEW_COMPLETED
+            && !$this->payment_completed_at
+            && (!$this->paymentTransaction || $this->paymentTransaction->status !== 'completed');
+    }
+
+    public function canGenerateOfferLetter()
+    {
+        return $this->payment_completed_at !== null
+            && $this->status === ApplicationStatus::INTERVIEW_COMPLETED;
+    }
+
+    public function generateOfferLetter()
+    {
+        if (!$this->canGenerateOfferLetter()) {
+            return false;
+        }
+
+        // Generate offer letter (you can implement PDF generation here)
+        $this->status = ApplicationStatus::OFFER_SENT;
+        $this->offer_sent_at = now();
+        $this->offer_letter_generated_at = now();
+        $this->save();
+
+        // Log activity
+        activity_log(
+            "Offer letter generated for application #{$this->id}",
+            'offer_letter_generated',
+            [
+                'application_id' => $this->id,
+                'student_name' => $this->student->full_name,
+                'opportunity' => $this->opportunity->title,
+            ],
+            'application'
+        );
+
+        return true;
+    }
 
     // Relationships
     public function student()
@@ -100,6 +157,27 @@ class Application extends Model
             ->where('status', 'scheduled')
             ->where('scheduled_at', '>', now())
             ->latest('scheduled_at');
+    }
+
+    /**
+     * Get the progress percentage for the application status.
+     */
+    public function getProgressPercentage(): ?int
+    {
+        $statuses = [
+            'pending' => 10,
+            'under_review' => 20,
+            'shortlisted' => 40,
+            'interview_scheduled' => 60,
+            'interview_completed' => 80,
+            'offer_sent' => 90,
+            'offer_accepted' => 95,
+            'hired' => 100,
+            'rejected' => 100,
+            'offer_rejected' => 100,
+        ];
+
+        return $statuses[$this->status->value] ?? 0;
     }
 
 

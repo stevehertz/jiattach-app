@@ -91,8 +91,8 @@
                 <li class="nav-header">PLACEMENT</li>
 
                 <li class="nav-item">
-                    <a href="{{ route('student.placement.status') }}"
-                       class="nav-link {{ request()->routeIs('student.placement.status') ? 'active' : '' }}">
+                    <a href="{{ route('student.placement.applications') }}"
+                       class="nav-link {{ request()->routeIs('student.placement.applications') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-briefcase"></i>
                         <p>My Placement</p>
                         @if($placement)

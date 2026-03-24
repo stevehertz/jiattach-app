@@ -13,6 +13,90 @@ use Illuminate\Support\Facades\DB;
 class PlacementController extends Controller
 {
     //
+
+
+    /**
+     * Display all applications made by the student.
+     */
+    public function applications()
+    {
+        $user = User::findOrFail(Auth::user()->id);
+
+        // Get all applications for the student with relationships
+        $applications = Application::where('student_id', $user->id)
+            ->with(['opportunity.organization', 'interviews' => function ($query) {
+                $query->latest()->take(1);
+            }, 'placement'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        // Get statistics
+        $stats = [
+            'total' => $applications->total(),
+            'active' => Application::where('student_id', $user->id)
+                ->whereIn('status', [
+                    'pending',
+                    'under_review',
+                    'shortlisted',
+                    'interview_scheduled',
+                    'interview_completed',
+                    'offer_sent'
+                ])
+                ->count(),
+            'accepted' => Application::where('student_id', $user->id)
+                ->where('status', 'offer_accepted')
+                ->count(),
+            'rejected' => Application::where('student_id', $user->id)
+                ->whereIn('status', ['rejected', 'offer_rejected'])
+                ->count(),
+            'hired' => Application::where('student_id', $user->id)
+                ->where('status', 'hired')
+                ->count(),
+        ];
+
+        // Get the current active placement if any
+        $currentPlacement = $user->placements()
+            ->where('status', 'placed')
+            ->where('start_date', '<=', now())
+            ->where('end_date', '>=', now())
+            ->first();
+
+        return view('student.placement.applications', compact('applications', 'stats', 'currentPlacement'));
+    }
+
+     /**
+     * View details of a specific application.
+     */
+    public function showApplication($applicationId)
+    {
+        $user = Auth::user();
+        
+        $application = Application::where('student_id', $user->id)
+            ->where('id', $applicationId)
+            ->with([
+                'opportunity.organization',
+                'interviews' => function($query) {
+                    $query->with('outcome', 'interviewer')->latest();
+                },
+                'placement',
+                'history' => function($query) {
+                    $query->with('user')->latest()->limit(20);
+                }
+            ])
+            ->firstOrFail();
+        
+        // Get similar applications (same opportunity or similar skills)
+        $similarApplications = Application::where('student_id', $user->id)
+            ->where('id', '!=', $application->id)
+            ->whereIn('status', ['pending', 'under_review', 'shortlisted', 'interview_scheduled'])
+            ->with(['opportunity.organization'])
+            ->latest()
+            ->take(5)
+            ->get();
+        
+        return view('student.placement.application-details', compact('application', 'similarApplications'));
+    }
+
     /**
      * Display the current placement status and details.
      */

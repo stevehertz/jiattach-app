@@ -124,18 +124,25 @@
                                             <!-- In the dropdown menu section, update the condition for SHORTLISTED -->
                                             @if (in_array($application->status->value, [\App\Enums\ApplicationStatus::SHORTLISTED->value]))
                                                 <button class="dropdown-item" wire:click="openInterviewModal">
-                                                    <i class="fas fa-calendar-plus text-warning mr-2"></i> Schedule Interview
+                                                    <i class="fas fa-calendar-plus text-warning mr-2"></i> Schedule
+                                                    Interview
                                                 </button>
                                             @endif
 
-                                            
 
-                                            @if (in_array($application->status->value, [
-                                                    \App\Enums\ApplicationStatus::INTERVIEW_COMPLETED->value,
-                                                ]))
-                                                <button class="dropdown-item" wire:click="openOfferModal">
-                                                    <i class="fas fa-handshake text-info mr-2"></i> Send Offer
-                                                </button>
+
+                                            @if (in_array($application->status->value, [\App\Enums\ApplicationStatus::INTERVIEW_COMPLETED->value]))
+                                                @if ($this->canSendOffer())
+                                                    <button class="dropdown-item" wire:click="openOfferModal">
+                                                        <i class="fas fa-handshake text-info mr-2"></i> Send Offer
+                                                    </button>
+                                                @else
+                                                    <button class="dropdown-item disabled" disabled
+                                                        title="Payment required before sending offer">
+                                                        <i class="fas fa-handshake text-muted mr-2"></i> Send Offer
+                                                        <small class="text-warning">(Payment Pending)</small>
+                                                    </button>
+                                                @endif
                                             @endif
 
 
@@ -829,6 +836,67 @@
                         </div>
                     </div>
                 @endif
+
+                <!-- Payment Status Card -->
+                @if ($application->status === \App\Enums\ApplicationStatus::INTERVIEW_COMPLETED)
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-white border-0">
+                            <h5 class="mb-0">
+                                <i class="fas fa-credit-card text-primary mr-2"></i>
+                                Payment Status
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            @php $paymentStatus = $this->getPaymentStatusAttribute(); @endphp
+                            <div class="text-center mb-3">
+                                <div class="status-circle-wrapper">
+                                    <div class="status-circle status-{{ $paymentStatus['color'] }}"
+                                        style="background: linear-gradient(135deg, {{ $paymentStatus['color'] === 'success' ? '#28a745' : ($paymentStatus['color'] === 'warning' ? '#ffc107' : ($paymentStatus['color'] === 'danger' ? '#dc3545' : '#17a2b8')) }} 0%, {{ $paymentStatus['color'] === 'success' ? '#20c997' : ($paymentStatus['color'] === 'warning' ? '#f4a81d' : ($paymentStatus['color'] === 'danger' ? '#c82333' : '#138496')) }} 100%);">
+                                        <i class="fas {{ $paymentStatus['icon'] }} fa-2x text-white"></i>
+                                    </div>
+                                </div>
+                                <h5 class="mt-3 mb-0">
+                                    <span class="badge badge-{{ $paymentStatus['color'] }} p-2">
+                                        <i class="fas {{ $paymentStatus['icon'] }} mr-1"></i>
+                                        {{ $paymentStatus['label'] }}
+                                    </span>
+                                </h5>
+                                @if (isset($paymentStatus['date']))
+                                    <small class="text-muted d-block mt-2">
+                                        Completed: {{ $paymentStatus['date']->format('d M, Y h:i A') }}
+                                    </small>
+                                @endif
+                                @if (isset($paymentStatus['status']) && $paymentStatus['status'] === 'required')
+                                    <div class="alert alert-warning mt-3 mb-0">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        Payment is required before sending offer letter.
+                                    </div>
+                                @endif
+                                @if (isset($paymentStatus['status']) && $paymentStatus['status'] === 'pending')
+                                    <div class="alert alert-info mt-3 mb-0">
+                                        <i class="fas fa-spinner fa-pulse mr-1"></i>
+                                        Payment is pending. The student has initiated payment.
+                                    </div>
+                                @endif
+                                @if (isset($paymentStatus['status']) && $paymentStatus['status'] === 'processing')
+                                    <div class="alert alert-info mt-3 mb-0">
+                                        <i class="fas fa-spinner fa-pulse mr-1"></i>
+                                        Payment is being processed. Please wait for confirmation.
+                                    </div>
+                                @endif
+                            </div>
+
+                            @if ($application->payment_reference)
+                                <hr>
+                                <div class="small text-muted">
+                                    <i class="fas fa-hashtag mr-1"></i>
+                                    Payment Reference: <strong>{{ $application->payment_reference }}</strong>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                @endif
+
 
                 <!-- Offer Card (if applicable) -->
                 @if ($application->offer_details)

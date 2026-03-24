@@ -46,6 +46,11 @@ Route::middleware([
     Route::prefix('placement')->name('placement.')->group(function () {
 
         // Placement Routes
+
+        Route::get('/applications', [PlacementController::class, 'applications'])->name('applications');
+
+        Route::get('/applications/{application}', [PlacementController::class, 'showApplication'])->name('applications.show');
+
         Route::get('/status', [PlacementController::class, 'status'])->name('status');
 
         Route::get('/timeline', [PlacementController::class, 'timeline'])->name('timeline');

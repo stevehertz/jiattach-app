@@ -53,6 +53,14 @@ class Show extends Component
     public $followUpDate;
     public $nextSteps = '';
 
+    // Offer modal properties
+    public $showOfferModal = false;
+    public $offerStipend;
+    public $offerStartDate;
+    public $offerEndDate;
+    public $offerNotes;
+    public $offerTerms;
+
     // Common skills list for assessment
     public $commonSkills = [
         'Technical Knowledge',
@@ -438,6 +446,26 @@ class Show extends Component
             return;
         }
 
+        // Special validation: When trying to move to OFFER_SENT, check payment
+        if ($targetStatus === ApplicationStatus::OFFER_SENT) {
+            if ($this->application->hasPaymentRequired()) {
+                $this->dispatch('show-toast', [
+                    'type' => 'error',
+                    'message' => 'Cannot move to Offer Sent: Payment is required and not yet completed. Payment status: ' .
+                        ($this->application->paymentTransaction ? ucfirst($this->application->paymentTransaction->status) : 'Not initiated')
+                ]);
+                return;
+            }
+
+            if ($this->application->paymentTransaction && $this->application->paymentTransaction->status !== 'completed') {
+                $this->dispatch('show-toast', [
+                    'type' => 'error',
+                    'message' => 'Cannot move to Offer Sent: Payment is not completed. Current status: ' . ucfirst($this->application->paymentTransaction->status)
+                ]);
+                return;
+            }
+        }
+
         if (!$this->application->canTransitionTo($targetStatus)) {
             $this->dispatch('show-toast', [
                 'type' => 'error',
@@ -475,9 +503,31 @@ class Show extends Component
             'statusNotes' => 'nullable|string|max:500',
         ]);
 
-        DB::transaction(function () {
+        $newStatusEnum = ApplicationStatus::from($this->newStatus);
+
+        // Double-check payment requirement before updating to OFFER_SENT
+        if ($newStatusEnum === ApplicationStatus::OFFER_SENT) {
+            if ($this->application->hasPaymentRequired()) {
+                $this->dispatch('show-toast', [
+                    'type' => 'error',
+                    'message' => 'Cannot update to Offer Sent: Payment is required and not yet completed.'
+                ]);
+                $this->showStatusModal = false;
+                return;
+            }
+
+            if ($this->application->paymentTransaction && $this->application->paymentTransaction->status !== 'completed') {
+                $this->dispatch('show-toast', [
+                    'type' => 'error',
+                    'message' => 'Cannot update to Offer Sent: Payment is not completed.'
+                ]);
+                $this->showStatusModal = false;
+                return;
+            }
+        }
+
+        DB::transaction(function () use ($newStatusEnum) {
             $oldStatus = $this->application->status;
-            $newStatusEnum = ApplicationStatus::from($this->newStatus);
 
             // Update application status
             $this->application->status = $newStatusEnum;
@@ -486,9 +536,6 @@ class Show extends Component
             switch ($newStatusEnum) {
                 case ApplicationStatus::UNDER_REVIEW:
                     $this->application->reviewed_at = now();
-                    break;
-                case ApplicationStatus::INTERVIEW_SCHEDULED:
-                    $this->application->interview_scheduled_at = now();
                     break;
                 case ApplicationStatus::OFFER_SENT:
                     $this->application->offer_sent_at = now();
@@ -504,92 +551,6 @@ class Show extends Component
 
             $this->application->save();
 
-            // ===== UPDATE STUDENT PROFILE BASED ON STATUS =====
-            $studentProfile = $this->application->student->studentProfile;
-
-            if ($studentProfile) {
-
-                $oldAttachmentStatus = $studentProfile->attachment_status;
-                $newAttachmentStatus = null;
-                $startDate = null;
-                $endDate = null;
-
-                // Determine new attachment status based on application status
-                switch ($newStatusEnum) {
-                    case ApplicationStatus::HIRED:
-                        $newAttachmentStatus = 'placed';
-                        // If we have placement dates, use them
-                        if ($this->application->placement) {
-                            $startDate = $this->application->placement->start_date;
-                            $endDate = $this->application->placement->end_date;
-                        } elseif ($this->application->offer_details) {
-                            // Otherwise use offer dates
-                            $startDate = $this->application->offer_details['start_date'] ?? null;
-                            $endDate = $this->application->offer_details['end_date'] ?? null;
-                        }
-                        break;
-                    case ApplicationStatus::REJECTED:
-                        // If rejected and no other active applications, reset to seeking
-                        $hasOtherActiveApps = Application::where('user_id', $this->application->user_id)
-                            ->where('id', '!=', $this->application->id)
-                            ->whereIn('status', [
-                                ApplicationStatus::UNDER_REVIEW->value,
-                                ApplicationStatus::SHORTLISTED->value,
-                                ApplicationStatus::INTERVIEW_SCHEDULED->value,
-                                ApplicationStatus::INTERVIEW_COMPLETED->value,
-                                ApplicationStatus::OFFER_SENT->value,
-                            ])
-                            ->exists();
-
-                        if (!$hasOtherActiveApps) {
-                            $newAttachmentStatus = 'seeking';
-                        }
-                        break;
-                    case ApplicationStatus::OFFER_ACCEPTED:
-                        // Student has accepted offer but not yet placed
-                        // Keep as 'interviewing' or 'applied' - no change
-                        break;
-
-                    case ApplicationStatus::INTERVIEW_SCHEDULED:
-                    case ApplicationStatus::INTERVIEW_COMPLETED:
-                        if ($oldAttachmentStatus === 'applied') {
-                            $newAttachmentStatus = 'interviewing';
-                        }
-                        break;
-                }
-
-                // Update student profile if status changed
-                if ($newAttachmentStatus && $newAttachmentStatus !== $oldAttachmentStatus) {
-                    $updateData = ['attachment_status' => $newAttachmentStatus];
-
-                    if ($startDate) {
-                        $updateData['attachment_start_date'] = $startDate;
-                    }
-                    if ($endDate) {
-                        $updateData['attachment_end_date'] = $endDate;
-                    }
-
-                    $studentProfile->update($updateData);
-
-                    // Log the student profile status change
-                    activity_log(
-                        "Student attachment status updated from {$oldAttachmentStatus} to {$newAttachmentStatus}",
-                        'student_status_changed',
-                        [
-                            'student_id' => $this->application->student->id,
-                            'student_name' => $this->application->student->full_name,
-                            'old_status' => $oldAttachmentStatus,
-                            'new_status' => $newAttachmentStatus,
-                            'application_id' => $this->application->id,
-                            'application_status' => $newStatusEnum->value,
-                        ],
-                        'student_profile'
-                    );
-                }
-            }
-
-            // ===== END STUDENT PROFILE UPDATE =====
-
             // Add history record
             $this->application->addHistory(
                 'status_changed',
@@ -602,10 +563,11 @@ class Show extends Component
                     'old_status_label' => $oldStatus->label(),
                     'new_status_label' => $newStatusEnum->label(),
                     'opportunity_title' => $this->application->opportunity->title,
+                    'payment_completed' => $this->application->payment_completed_at ? true : false,
                 ]
             );
 
-            // Log to activity log as well (optional)
+            // Log to activity log
             activity_log(
                 "Application status updated from {$oldStatus->label()} to {$newStatusEnum->label()}",
                 'status_updated',
@@ -614,20 +576,94 @@ class Show extends Component
                     'new_status' => $newStatusEnum->value,
                     'notes' => $this->statusNotes,
                     'application_id' => $this->application->id,
+                    'payment_verified' => $newStatusEnum === ApplicationStatus::OFFER_SENT,
                 ],
                 'application'
             );
-
-            // Send notification...
         });
 
         $this->showStatusModal = false;
+
         $this->dispatch('show-toast', [
             'type' => 'success',
             'message' => 'Application status updated successfully!'
         ]);
 
         $this->loadActivityLogs();
+    }
+
+     /**
+     * Check if offer can be sent (for UI button visibility)
+     */
+    public function canSendOffer()
+    {
+        // Check if application is in INTERVIEW_COMPLETED status
+        if ($this->application->status !== ApplicationStatus::INTERVIEW_COMPLETED) {
+            return false;
+        }
+        
+        // Check if payment is completed
+        if ($this->application->payment_completed_at) {
+            return true;
+        }
+        
+        // Check if payment transaction exists and is completed
+        if ($this->application->paymentTransaction && $this->application->paymentTransaction->status === 'completed') {
+            return true;
+        }
+        
+        return false;
+    }
+
+
+    /**
+     * Get payment status for display
+     */
+    public function getPaymentStatusAttribute()
+    {
+        if ($this->application->payment_completed_at) {
+            return [
+                'label' => 'Payment Completed',
+                'color' => 'success',
+                'icon' => 'fa-check-circle',
+                'date' => $this->application->payment_completed_at,
+            ];
+        }
+        
+        if ($this->application->paymentTransaction) {
+            $statusColors = [
+                'pending' => 'warning',
+                'processing' => 'info',
+                'failed' => 'danger',
+                'refunded' => 'danger',
+            ];
+            
+            return [
+                'label' => 'Payment ' . ucfirst($this->application->paymentTransaction->status),
+                'color' => $statusColors[$this->application->paymentTransaction->status] ?? 'secondary',
+                'icon' => $this->getPaymentIcon($this->application->paymentTransaction->status),
+                'status' => $this->application->paymentTransaction->status,
+            ];
+        }
+        
+        return [
+            'label' => 'Payment Required',
+            'color' => 'warning',
+            'icon' => 'fa-credit-card',
+            'status' => 'required',
+        ];
+    }
+    
+    protected function getPaymentIcon($status)
+    {
+        return match($status) {
+            'pending' => 'fa-clock',
+            'processing' => 'fa-spinner fa-pulse',
+            'completed' => 'fa-check-circle',
+            'failed' => 'fa-times-circle',
+            'refunded' => 'fa-undo',
+            default => 'fa-credit-card',
+        };
     }
 
     // Add this method
@@ -777,6 +813,147 @@ class Show extends Component
 
         $this->loadActivityLogs();
     }
+
+
+    /**
+     * Open offer modal with payment validation
+     */
+    public function openOfferModal()
+    {
+        // Check if payment is required and completed
+        if ($this->application->hasPaymentRequired()) {
+            $this->dispatch('show-toast', [
+                'type' => 'error',
+                'message' => 'Cannot send offer: Payment is required and not yet completed. Please wait for the student to complete payment or check payment status.'
+            ]);
+            return;
+        }
+
+        // Check if payment transaction exists and is completed
+        if ($this->application->paymentTransaction && $this->application->paymentTransaction->status !== 'completed') {
+            $this->dispatch('show-toast', [
+                'type' => 'error',
+                'message' => 'Cannot send offer: Payment is pending or failed. Payment status: ' . ucfirst($this->application->paymentTransaction->status)
+            ]);
+            return;
+        }
+
+        // Check if offer can be sent (status must be INTERVIEW_COMPLETED)
+        if ($this->application->status !== ApplicationStatus::INTERVIEW_COMPLETED) {
+            $this->dispatch('show-toast', [
+                'type' => 'error',
+                'message' => 'Cannot send offer: Application must be in "Interview Completed" status. Current status: ' . $this->application->status->label()
+            ]);
+            return;
+        }
+
+        // Reset offer form fields
+        $this->offerStipend = $this->application->opportunity->stipend ?? 0;
+        $this->offerStartDate = $this->application->opportunity->start_date?->format('Y-m-d') ?? now()->addDays(7)->format('Y-m-d');
+        $this->offerEndDate = $this->application->opportunity->end_date?->format('Y-m-d') ?? now()->addMonths(3)->format('Y-m-d');
+        $this->offerNotes = '';
+        $this->offerTerms = '';
+
+        $this->showOfferModal = true;
+    }
+
+    /**
+     * Send offer to student (with payment verification)
+     */
+    public function sendOffer()
+    {
+        // Validate offer details
+        $this->validate([
+            'offerStipend' => 'required|numeric|min:0',
+            'offerStartDate' => 'required|date|after_or_equal:today',
+            'offerEndDate' => 'required|date|after:offerStartDate',
+            'offerNotes' => 'nullable|string|max:1000',
+            'offerTerms' => 'nullable|string|max:2000',
+        ]);
+
+        // Double-check payment status before sending offer
+        if ($this->application->hasPaymentRequired()) {
+            $this->dispatch('show-toast', [
+                'type' => 'error',
+                'message' => 'Cannot send offer: Payment is required and not yet completed.'
+            ]);
+            $this->showOfferModal = false;
+            return;
+        }
+
+        if ($this->application->paymentTransaction && $this->application->paymentTransaction->status !== 'completed') {
+            $this->dispatch('show-toast', [
+                'type' => 'error',
+                'message' => 'Cannot send offer: Payment is not completed. Current status: ' . ucfirst($this->application->paymentTransaction->status)
+            ]);
+            $this->showOfferModal = false;
+            return;
+        }
+
+        DB::transaction(function () {
+            $oldStatus = $this->application->status;
+
+            // Update application with offer details
+            $this->application->status = ApplicationStatus::OFFER_SENT;
+            $this->application->offer_sent_at = now();
+            $this->application->offer_details = [
+                'stipend' => $this->offerStipend,
+                'start_date' => $this->offerStartDate,
+                'end_date' => $this->offerEndDate,
+                'notes' => $this->offerNotes,
+                'terms' => $this->offerTerms,
+                'sent_by' => auth()->user()->full_name,
+                'sent_at' => now()->toDateTimeString(),
+            ];
+            $this->application->save();
+
+            // Add application history
+            $this->application->addHistory(
+                'offer_sent',
+                $this->application->student_id,
+                $this->application->organization_id,
+                $oldStatus->value,
+                ApplicationStatus::OFFER_SENT->value,
+                $this->offerNotes ?: 'Offer sent to student',
+                [
+                    'stipend' => $this->offerStipend,
+                    'start_date' => $this->offerStartDate,
+                    'end_date' => $this->offerEndDate,
+                    'payment_completed_at' => $this->application->payment_completed_at,
+                    'payment_reference' => $this->application->payment_reference,
+                ]
+            );
+
+            // Log activity
+            activity_log(
+                "Offer sent for application #{$this->application->id} - Stipend: KSh {$this->offerStipend}",
+                'offer_sent',
+                [
+                    'application_id' => $this->application->id,
+                    'student_name' => $this->application->student->full_name,
+                    'opportunity' => $this->application->opportunity->title,
+                    'organization' => $this->application->opportunity->organization->name,
+                    'stipend' => $this->offerStipend,
+                    'payment_completed' => true,
+                    'payment_reference' => $this->application->payment_reference,
+                ],
+                'application'
+            );
+
+            // TODO: Send email notification to student with offer details
+            // $this->application->student->notify(new OfferSentNotification($this->application));
+        });
+
+        $this->showOfferModal = false;
+
+        $this->dispatch('show-toast', [
+            'type' => 'success',
+            'message' => 'Offer sent successfully to the student!'
+        ]);
+
+        $this->loadActivityLogs();
+    }
+
 
     // Document Management
     public function downloadDocument($type)

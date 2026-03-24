@@ -54,6 +54,42 @@ class Interview extends Model
     }
 
     /**
+     * Get the outcome for this interview.
+     */
+    public function outcome()
+    {
+        return $this->hasOne(InterviewOutcome::class)->latestOfMany();
+    }
+
+    /**
+     * Get all outcomes for this interview (if rescheduled multiple times).
+     */
+    public function outcomes()
+    {
+        return $this->hasMany(InterviewOutcome::class);
+    }
+
+    /**
+     * Check if interview has an outcome.
+     */
+    public function hasOutcome(): bool
+    {
+        return $this->outcome()->exists();
+    }
+
+    /**
+     * Get the outcome status for display.
+     */
+    public function getOutcomeStatusAttribute(): ?string
+    {
+        if (!$this->outcome) {
+            return null;
+        }
+
+        return $this->outcome->outcome_enum?->label();
+    }
+
+    /**
      * Get the user who scheduled this interview.
      */
     public function scheduledBy()
@@ -280,5 +316,34 @@ class Interview extends Model
         }
 
         return $nextStatuses;
+    }
+
+    /**
+     * Check if interview can be marked as completed
+     */
+    public function canBeCompleted(): bool
+    {
+        return in_array($this->status, [
+            InterviewStatus::SCHEDULED,
+            InterviewStatus::CONFIRMED,
+            InterviewStatus::IN_PROGRESS,
+            InterviewStatus::RESCHEDULED,
+        ]);
+    }
+    
+    /**
+     * Get the latest outcome for this interview
+     */
+    public function latestOutcome()
+    {
+        return $this->hasOne(InterviewOutcome::class)->latestOfMany();
+    }
+    
+    /**
+     * Get the outcome status label
+     */
+    public function getOutcomeLabelAttribute(): ?string
+    {
+        return $this->latestOutcome?->outcome_enum?->label();
     }
 }

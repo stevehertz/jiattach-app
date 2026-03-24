@@ -6,6 +6,7 @@ use App\Enums\ApplicationStatus;
 use App\Models\ActivityLog;
 use App\Models\Application;
 use App\Models\Interview;
+use App\Models\InterviewOutcome;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -38,6 +39,214 @@ class Show extends Component
     public $interviewPhoneNumber;
     public $interviewNotes;
     public $interviewerId;
+
+    // Add these properties
+    public $showCompleteInterviewModal = false;
+    public $selectedInterviewId;
+    public $interviewFeedback;
+    public $interviewRating = 5;
+    public $interviewOutcome = 'successful'; // successful, unsuccessful
+    public $studentStrengths = [];
+    public $studentWeaknesses = [];
+    public $skillsAssessment = [];
+    public $followUpRequired = false;
+    public $followUpDate;
+    public $nextSteps = '';
+
+    // Common skills list for assessment
+    public $commonSkills = [
+        'Technical Knowledge',
+        'Communication Skills',
+        'Problem Solving',
+        'Teamwork',
+        'Leadership',
+        'Time Management',
+        'Adaptability',
+        'Attention to Detail',
+        'Creativity',
+        'Work Ethic',
+    ];
+
+    // Add this method to open the modal
+    public function openCompleteInterviewModal($interviewId)
+    {
+        $this->selectedInterviewId = $interviewId;
+        $this->interviewFeedback = '';
+        $this->interviewRating = 5;
+        $this->interviewOutcome = 'successful';
+        $this->interviewNotes = '';
+        $this->studentStrengths = [];
+        $this->studentWeaknesses = [];
+        $this->skillsAssessment = [];
+        $this->followUpRequired = false;
+        $this->followUpDate = null;
+        $this->nextSteps = '';
+        $this->showCompleteInterviewModal = true;
+    }
+
+    // Update the completeInterview method
+    public function completeInterview()
+    {
+        $this->validate([
+            'interviewFeedback' => 'nullable|string|max:1000',
+            'interviewRating' => 'required|integer|min:1|max:5',
+            'interviewOutcome' => 'required|in:successful,unsuccessful',
+            'interviewNotes' => 'nullable|string|max:500',
+            'studentStrengths' => 'nullable|array',
+            'studentWeaknesses' => 'nullable|array',
+            'skillsAssessment' => 'nullable|array',
+            'followUpRequired' => 'boolean',
+            'followUpDate' => 'required_if:followUpRequired,true|nullable|date|after_or_equal:today',
+            'nextSteps' => 'nullable|string|max:500',
+        ]);
+
+        DB::transaction(function () {
+            $interview = Interview::findOrFail($this->selectedInterviewId);
+
+            // Update interview status
+            $interview->update([
+                'status' => 'completed',
+                'completed_at' => now(),
+                'feedback' => $this->interviewFeedback,
+            ]);
+
+            // Create interview outcome record
+            $outcome = InterviewOutcome::create([
+                'interview_id' => $interview->id,
+                'application_id' => $this->application->id,
+                'student_id' => $this->application->student_id,
+                'organization_id' => $this->application->organization_id,
+                'recorded_by' => auth()->id(),
+                'outcome' => $this->interviewOutcome,
+                'rating' => $this->interviewRating,
+                'feedback' => $this->interviewFeedback,
+                'notes' => $this->interviewNotes,
+                'strengths' => $this->studentStrengths,
+                'areas_for_improvement' => $this->studentWeaknesses,
+                'skills_assessment' => $this->skillsAssessment,
+                'decision_reason' => $this->interviewNotes,
+                'decision_date' => now(),
+                'next_steps' => $this->nextSteps,
+                'follow_up_required' => $this->followUpRequired,
+                'follow_up_date' => $this->followUpDate,
+                'metadata' => [
+                    'completed_by' => auth()->user()->full_name,
+                    'completed_at' => now()->toDateTimeString(),
+                    'rating_stars' => $this->interviewRating,
+                ],
+            ]);
+
+            // Add interview history
+            $interview->history()->create([
+                'application_id' => $this->application->id,
+                'user_id' => auth()->id(),
+                'action' => 'completed',
+                'notes' => $this->interviewNotes,
+                'metadata' => [
+                    'rating' => $this->interviewRating,
+                    'outcome' => $this->interviewOutcome,
+                    'feedback' => $this->interviewFeedback,
+                    'outcome_id' => $outcome->id,
+                    'completed_by' => auth()->user()->full_name,
+                ],
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ]);
+
+            // Update application status based on outcome
+            $oldStatus = $this->application->status;
+
+            if ($this->interviewOutcome === 'successful') {
+                // Move to offer stage
+                $this->application->status = ApplicationStatus::INTERVIEW_COMPLETED;
+                $this->application->interview_completed_at = now();
+                $this->application->save();
+
+                // Add application history
+                $this->application->addHistory(
+                    'interview_completed',
+                    $this->application->student_id,
+                    $this->application->organization_id,
+                    $oldStatus->value,
+                    ApplicationStatus::INTERVIEW_COMPLETED->value,
+                    'Interview completed successfully',
+                    [
+                        'interview_id' => $interview->id,
+                        'outcome_id' => $outcome->id,
+                        'rating' => $this->interviewRating,
+                        'outcome' => $this->interviewOutcome,
+                    ]
+                );
+            } else {
+                // Interview unsuccessful - move to rejected
+                $this->application->status = ApplicationStatus::REJECTED;
+                $this->application->declined_at = now();
+                $this->application->decline_reason = 'Interview unsuccessful';
+                $this->application->decline_feedback = $this->interviewFeedback;
+                $this->application->save();
+
+                // Update student profile status
+                $studentProfile = $this->application->student->studentProfile;
+                if ($studentProfile) {
+                    $hasOtherActiveApps = Application::where('student_id', $this->application->student_id)
+                        ->where('id', '!=', $this->application->id)
+                        ->whereIn('status', [
+                            ApplicationStatus::UNDER_REVIEW->value,
+                            ApplicationStatus::SHORTLISTED->value,
+                            ApplicationStatus::INTERVIEW_SCHEDULED->value,
+                            ApplicationStatus::OFFER_SENT->value,
+                        ])
+                        ->exists();
+
+                    if (!$hasOtherActiveApps) {
+                        $studentProfile->update(['attachment_status' => 'seeking']);
+                    }
+                }
+
+                // Add application history
+                $this->application->addHistory(
+                    'rejected',
+                    $this->application->student_id,
+                    $this->application->organization_id,
+                    $oldStatus->value,
+                    ApplicationStatus::REJECTED->value,
+                    'Interview unsuccessful',
+                    [
+                        'interview_id' => $interview->id,
+                        'outcome_id' => $outcome->id,
+                        'rating' => $this->interviewRating,
+                        'feedback' => $this->interviewFeedback,
+                    ]
+                );
+            }
+
+            // Log activity
+            activity_log(
+                "Interview #{$interview->id} completed - Outcome: {$this->interviewOutcome} (Rating: {$this->interviewRating}/5)",
+                'interview_completed',
+                [
+                    'application_id' => $this->application->id,
+                    'interview_id' => $interview->id,
+                    'outcome_id' => $outcome->id,
+                    'student_name' => $this->application->student->full_name,
+                    'outcome' => $this->interviewOutcome,
+                    'rating' => $this->interviewRating,
+                    'follow_up_required' => $this->followUpRequired,
+                ],
+                'interview'
+            );
+        });
+
+        $this->showCompleteInterviewModal = false;
+        $this->selectedInterviewId = null;
+
+        $this->dispatch('show-toast', [
+            'type' => 'success',
+            'message' => 'Interview completed and outcome recorded successfully!'
+        ]);
+
+        $this->loadActivityLogs();
+    }
 
     public function mount(Application $application)
     {

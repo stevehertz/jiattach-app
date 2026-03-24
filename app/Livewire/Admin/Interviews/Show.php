@@ -3,14 +3,19 @@
 namespace App\Livewire\Admin\Interviews;
 
 use App\Enums\ApplicationStatus;
+use App\Enums\InterviewOutcomeEnum;
+use App\Enums\InterviewStatus;
 use App\Models\ActivityLog;
+use App\Models\Application;
 use App\Models\Interview;
+use App\Models\InterviewOutcome;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 
 class Show extends Component
 {
     public Interview $interview;
+
     public $showRescheduleModal = false;
     public $showCancelModal = false;
     public $showCompleteModal = false;
@@ -28,6 +33,16 @@ class Show extends Component
     public $interviewFeedback;
     public $interviewRating = 5;
 
+    // Interview completion form fields
+    public $interviewOutcome = 'successful'; // successful, unsuccessful
+    public $interviewNotes = '';
+    public $studentStrengths = [];
+    public $studentWeaknesses = [];
+    public $skillsAssessment = [];
+    public $followUpRequired = false;
+    public $followUpDate;
+    public $nextSteps = '';
+
     // Feedback form
     public $feedbackMessage;
     public $feedbackType = 'general'; // general, technical, communication, etc.
@@ -35,9 +50,32 @@ class Show extends Component
     // Notes
     public $newNote;
 
+    public $showCompleteInterviewModal = false;
+    public $selectedInterviewId;
+
     // Activity logs
     public $activityLogs = [];
     public $timelineEvents = [];
+
+    // New properties for input fields
+    public $newStrengthInput = '';
+    public $newWeaknessInput = '';
+
+    // Common skills for assessment
+    public $commonSkills = [
+        'Technical Knowledge',
+        'Communication Skills',
+        'Problem Solving',
+        'Teamwork',
+        'Leadership',
+        'Time Management',
+        'Adaptability',
+        'Attention to Detail',
+        'Creativity',
+        'Work Ethic',
+        'Critical Thinking',
+        'Collaboration',
+    ];
 
     protected $listeners = [
         'refreshInterview' => '$refresh',
@@ -74,6 +112,376 @@ class Show extends Component
         ]);
 
         $this->loadTimeline();
+    }
+
+    /**
+     * Open the complete interview modal
+     */
+    public function openCompleteInterviewModal()
+    {
+        // Check if the interview can be completed
+        if (!$this->interview->canBeCompleted()) {
+            $this->dispatch('show-toast', [
+                'type' => 'error',
+                'message' => 'This interview cannot be marked as completed. Current status: ' . $this->interview->status->label()
+            ]);
+            return;
+        }
+
+        $this->resetCompletionForm();
+        $this->showCompleteInterviewModal = true;
+    }
+
+    /**
+     * Reset the completion form fields
+     */
+    protected function resetCompletionForm()
+    {
+        $this->interviewOutcome = 'successful';
+        $this->interviewFeedback = '';
+        $this->interviewRating = 5;
+        $this->interviewNotes = '';
+        $this->studentStrengths = [];
+        $this->studentWeaknesses = [];
+        $this->skillsAssessment = [];
+        $this->followUpRequired = false;
+        $this->followUpDate = null;
+        $this->nextSteps = '';
+        $this->newStrengthInput = '';
+        $this->newWeaknessInput = '';
+    }
+
+    /**
+     * Add a strength from the input field
+     */
+    public function addStrengthFromInput()
+    {
+        $strength = trim($this->newStrengthInput);
+
+        if ($strength && !in_array($strength, $this->studentStrengths)) {
+            $this->studentStrengths[] = $strength;
+            $this->newStrengthInput = ''; // Clear the input
+        }
+    }
+
+    /**
+     * Add a strength to the list
+     */
+    public function addStrength($strength)
+    {
+        if ($strength && !in_array($strength, $this->studentStrengths)) {
+            $this->studentStrengths[] = $strength;
+        }
+    }
+
+    /**
+     * Remove a strength from the list
+     */
+    public function removeStrength($index)
+    {
+        if (isset($this->studentStrengths[$index])) {
+            unset($this->studentStrengths[$index]);
+            $this->studentStrengths = array_values($this->studentStrengths);
+        }
+    }
+
+    /**
+     * Add a weakness from the input field
+     */
+    public function addWeaknessFromInput()
+    {
+        $weakness = trim($this->newWeaknessInput);
+
+        if ($weakness && !in_array($weakness, $this->studentWeaknesses)) {
+            $this->studentWeaknesses[] = $weakness;
+            $this->newWeaknessInput = ''; // Clear the input
+        }
+    }
+
+    /**
+     * Add a weakness to the list
+     */
+    public function addWeakness($weakness)
+    {
+        if ($weakness && !in_array($weakness, $this->studentWeaknesses)) {
+            $this->studentWeaknesses[] = $weakness;
+        }
+    }
+
+
+    /**
+     * Remove a weakness from the list
+     */
+    public function removeWeakness($index)
+    {
+        if (isset($this->studentWeaknesses[$index])) {
+            unset($this->studentWeaknesses[$index]);
+            $this->studentWeaknesses = array_values($this->studentWeaknesses);
+        }
+    }
+
+    /**
+     * Update skill assessment rating
+     */
+    public function updateSkillAssessment($skill, $rating)
+    {
+        $this->skillsAssessment[$skill] = (int) $rating;
+    }
+
+
+    /**
+     * Complete the interview with outcome
+     */
+    public function completeInterview()
+    {
+        $this->validate([
+            'interviewOutcome' => 'required|in:successful,unsuccessful',
+            'interviewFeedback' => 'nullable|string|max:2000',
+            'interviewRating' => 'required|integer|min:1|max:5',
+            'interviewNotes' => 'nullable|string|max:1000',
+            'studentStrengths' => 'nullable|array',
+            'studentWeaknesses' => 'nullable|array',
+            'skillsAssessment' => 'nullable|array',
+            'nextSteps' => 'nullable|string|max:500',
+        ]);
+
+        DB::transaction(function () {
+            $interview = $this->interview;
+            $application = $interview->application;
+            $oldInterviewStatus = $interview->status;
+
+            // Update interview status
+            $interview->update([
+                'status' => InterviewStatus::COMPLETED,
+                'completed_at' => now(),
+                'feedback' => $this->interviewFeedback,
+                'notes' => $this->interviewNotes ?: $interview->notes,
+            ]);
+
+            // Create interview outcome record
+            $outcome = InterviewOutcome::create([
+                'interview_id' => $interview->id,
+                'application_id' => $application->id,
+                'student_id' => $application->student_id,
+                'organization_id' => $application->organization_id,
+                'recorded_by' => auth()->id(),
+                'outcome' => $this->interviewOutcome === 'successful'
+                    ? InterviewOutcomeEnum::SUCCESSFUL->value
+                    : InterviewOutcomeEnum::UNSUCCESSFUL->value,
+                'rating' => $this->interviewRating,
+                'feedback' => $this->interviewFeedback,
+                'notes' => $this->interviewNotes,
+                'strengths' => $this->studentStrengths,
+                'areas_for_improvement' => $this->studentWeaknesses,
+                'skills_assessment' => $this->skillsAssessment,
+                'decision_reason' => $this->interviewNotes,
+                'decision_date' => now(),
+                'next_steps' => $this->nextSteps,
+                'follow_up_required' => false,
+                'follow_up_date' => null,
+                'metadata' => [
+                    'completed_by' => auth()->user()->full_name,
+                    'completed_at' => now()->toDateTimeString(),
+                    'rating_stars' => $this->interviewRating,
+                    'previous_status' => $oldInterviewStatus->value,
+                ],
+            ]);
+
+            // Add interview history
+            $interview->history()->create([
+                'interview_id' => $interview->id,
+                'application_id' => $application->id,
+                'user_id' => auth()->id(),
+                'action' => 'completed',
+                'old_values' => ['status' => $oldInterviewStatus->value],
+                'new_values' => ['status' => InterviewStatus::COMPLETED->value],
+                'notes' => $this->interviewNotes,
+                'metadata' => [
+                    'rating' => $this->interviewRating,
+                    'outcome' => $this->interviewOutcome,
+                    'feedback' => $this->interviewFeedback,
+                    'outcome_id' => $outcome->id,
+                    'completed_by' => auth()->user()->full_name,
+                    'strengths' => $this->studentStrengths,
+                    'areas_for_improvement' => $this->studentWeaknesses,
+                ],
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ]);
+
+            // Update application status based on outcome
+            $oldAppStatus = $application->status;
+
+            if ($this->interviewOutcome === 'successful') {
+                // Move to interview completed stage (ready for offer)
+                $application->status = ApplicationStatus::INTERVIEW_COMPLETED;
+                $application->save();
+
+                // Add application history
+                $application->addHistory(
+                    'interview_completed',
+                    $application->student_id,
+                    $application->organization_id,
+                    $oldAppStatus->value ?? null,
+                    ApplicationStatus::INTERVIEW_COMPLETED->value,
+                    'Interview completed successfully - Ready for offer',
+                    [
+                        'interview_id' => $interview->id,
+                        'outcome_id' => $outcome->id,
+                        'rating' => $this->interviewRating,
+                        'outcome' => $this->interviewOutcome,
+                        'strengths' => $this->studentStrengths,
+                        'weaknesses' => $this->studentWeaknesses,
+                    ]
+                );
+            } else {
+                // Interview unsuccessful - reject the application
+                $application->status = ApplicationStatus::REJECTED;
+                $application->declined_at = now();
+                $application->decline_reason = 'Interview unsuccessful';
+                $application->decline_feedback = $this->interviewFeedback;
+                $application->save();
+
+                // Update student profile status if no other active applications
+                $studentProfile = $application->student->studentProfile;
+                if ($studentProfile) {
+                    $hasOtherActiveApps = Application::where('student_id', $application->student_id)
+                        ->where('id', '!=', $application->id)
+                        ->whereIn('status', [
+                            ApplicationStatus::UNDER_REVIEW->value,
+                            ApplicationStatus::SHORTLISTED->value,
+                            ApplicationStatus::INTERVIEW_SCHEDULED->value,
+                            ApplicationStatus::INTERVIEW_COMPLETED->value,
+                            ApplicationStatus::OFFER_SENT->value,
+                        ])
+                        ->exists();
+
+                    if (!$hasOtherActiveApps) {
+                        $studentProfile->update(['attachment_status' => 'seeking']);
+                    }
+                }
+
+                // Add application history for rejection
+                $application->addHistory(
+                    'rejected',
+                    $application->student_id,
+                    $application->organization_id,
+                    $oldAppStatus->value ?? null,
+                    ApplicationStatus::REJECTED->value,
+                    'Application rejected after unsuccessful interview',
+                    [
+                        'interview_id' => $interview->id,
+                        'outcome_id' => $outcome->id,
+                        'rating' => $this->interviewRating,
+                        'feedback' => $this->interviewFeedback,
+                        'reason' => 'Interview unsuccessful',
+                    ]
+                );
+            }
+
+            // Log system activity
+            activity_log(
+                "Interview #{$interview->id} completed - Outcome: {$this->interviewOutcome} (Rating: {$this->interviewRating}/5)",
+                'interview_completed',
+                [
+                    'application_id' => $application->id,
+                    'interview_id' => $interview->id,
+                    'outcome_id' => $outcome->id,
+                    'student_name' => $application->student->full_name,
+                    'student_id' => $application->student_id,
+                    'opportunity_title' => $application->opportunity->title,
+                    'organization' => $application->organization->name,
+                    'outcome' => $this->interviewOutcome,
+                    'rating' => $this->interviewRating,
+                    'completed_by' => auth()->user()->full_name,
+                ],
+                'interview'
+            );
+        });
+
+        $this->showCompleteInterviewModal = false;
+
+        $this->dispatch('show-toast', [
+            'type' => 'success',
+            'message' => $this->interviewOutcome === 'successful'
+                ? 'Interview completed successfully! The application is now ready for offer.'
+                : 'Interview marked as unsuccessful. The application has been rejected.'
+        ]);
+
+        // Reload timeline and refresh component
+        $this->loadTimeline();
+        $this->dispatch('refreshInterview');
+    }
+
+
+    /**
+     * Send notification that interview is complete
+     */
+    protected function sendInterviewCompletionNotification($application, $interview)
+    {
+        // You can implement email/SMS notifications here
+        // This could use Laravel notifications or a custom service
+
+        // Example: Send to admin
+        // Notification::send(auth()->user(), new InterviewCompletedNotification($application, $interview));
+
+        // Log the notification
+        activity_log(
+            "Interview completion notification sent for application #{$application->id}",
+            'notification_sent',
+            [
+                'application_id' => $application->id,
+                'interview_id' => $interview->id,
+                'student_name' => $application->student->full_name,
+                'notified_by' => auth()->user()->full_name,
+            ],
+            'notification'
+        );
+    }
+
+    /**
+     * Schedule follow-up task
+     */
+    protected function scheduleFollowUp($interview, $application)
+    {
+        // You can create a follow-up task in your task system
+        // or send a reminder to be shown on dashboard
+
+        $followUpData = [
+            'type' => 'interview_followup',
+            'interview_id' => $interview->id,
+            'application_id' => $application->id,
+            'student_id' => $application->student_id,
+            'scheduled_date' => $this->followUpDate,
+            'notes' => $this->nextSteps,
+            'created_by' => auth()->id(),
+        ];
+
+        // Store follow-up in a FollowUp model if you have one
+        // FollowUp::create($followUpData);
+
+        activity_log(
+            "Follow-up scheduled for interview #{$interview->id} on {$this->followUpDate}",
+            'followup_scheduled',
+            $followUpData,
+            'followup'
+        );
+    }
+
+    /**
+     * Get rating stars HTML for display
+     */
+    public function getRatingStars($rating)
+    {
+        $stars = '';
+        for ($i = 1; $i <= 5; $i++) {
+            if ($i <= $rating) {
+                $stars .= '<i class="fas fa-star text-warning"></i>';
+            } else {
+                $stars .= '<i class="far fa-star text-warning"></i>';
+            }
+        }
+        return $stars;
     }
 
     protected function loadTimeline()
@@ -126,15 +534,15 @@ class Show extends Component
             ->toArray();
     }
 
-     protected function formatHistoryDescription($history)
+    protected function formatHistoryDescription($history)
     {
         return match ($history->action) {
             'scheduled' => "Interview scheduled for " . ($history->metadata['scheduled_at'] ?? ''),
-            'rescheduled' => "Interview rescheduled from " . 
-                (isset($history->old_values['scheduled_at']) ? 
+            'rescheduled' => "Interview rescheduled from " .
+                (isset($history->old_values['scheduled_at']) ?
                     \Carbon\Carbon::parse($history->old_values['scheduled_at'])->format('M d, Y h:i A') : '') .
-                " to " . 
-                (isset($history->new_values['scheduled_at']) ? 
+                " to " .
+                (isset($history->new_values['scheduled_at']) ?
                     \Carbon\Carbon::parse($history->new_values['scheduled_at'])->format('M d, Y h:i A') : ''),
             'confirmed' => "Interview confirmed",
             'completed' => "Interview completed" . ($history->notes ? ": {$history->notes}" : ''),
@@ -245,7 +653,7 @@ class Show extends Component
         $this->loadTimeline();
     }
 
-     // Cancel Interview
+    // Cancel Interview
     public function openCancelModal()
     {
         $this->cancelReason = '';
@@ -315,65 +723,7 @@ class Show extends Component
         $this->showCompleteModal = true;
     }
 
-    public function completeInterview()
-    {
-        $this->validate([
-            'interviewFeedback' => 'nullable|string|max:1000',
-            'interviewRating' => 'required|integer|min:1|max:5',
-        ]);
-
-        DB::transaction(function () {
-            // Update interview
-            $this->interview->update([
-                'status' => 'completed',
-                'completed_at' => now(),
-                'feedback' => $this->interviewFeedback,
-            ]);
-
-            // Update application status
-            $this->interview->application->update([
-                'status' => ApplicationStatus::INTERVIEW_COMPLETED,
-                'interview_completed_at' => now(),
-            ]);
-
-            // Add history
-            $this->interview->history()->create([
-                'application_id' => $this->interview->application_id,
-                'user_id' => auth()->id(),
-                'action' => 'completed',
-                'notes' => $this->interviewFeedback,
-                'metadata' => [
-                    'rating' => $this->interviewRating,
-                    'completed_by' => auth()->user()->full_name,
-                ],
-                'ip_address' => request()->ip(),
-                'user_agent' => request()->userAgent(),
-            ]);
-
-            // Log activity
-            activity_log(
-                "Interview #{$this->interview->id} completed",
-                'interview_completed',
-                [
-                    'interview_id' => $this->interview->id,
-                    'application_id' => $this->interview->application_id,
-                    'student_name' => $this->interview->application->student->full_name,
-                    'rating' => $this->interviewRating,
-                ],
-                'interview'
-            );
-        });
-
-        $this->showCompleteModal = false;
-        $this->dispatch('show-toast', [
-            'type' => 'success',
-            'message' => 'Interview marked as completed!'
-        ]);
-
-        $this->loadTimeline();
-    }
-
-     // Mark as No Show
+    // Mark as No Show
     public function markNoShow()
     {
         DB::transaction(function () {
@@ -476,7 +826,7 @@ class Show extends Component
         ]);
 
         $this->newNote = '';
-        
+
         $this->dispatch('show-toast', [
             'type' => 'success',
             'message' => 'Note added successfully!'
@@ -514,7 +864,7 @@ class Show extends Component
         ]);
 
         $this->showFeedbackModal = false;
-        
+
         $this->dispatch('show-toast', [
             'type' => 'success',
             'message' => 'Feedback submitted successfully!'

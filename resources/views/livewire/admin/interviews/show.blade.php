@@ -1,6 +1,6 @@
 <div>
     {{-- Be like water. --}}
-     <!-- Page Header -->
+    <!-- Page Header -->
     <div class="content-header">
         <div class="container-fluid">
             <div class="row mb-2">
@@ -13,8 +13,10 @@
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-                        <li class="breadcrumb-item"><a href="{{ route('admin.applications.index') }}">Applications</a></li>
-                        <li class="breadcrumb-item"><a href="{{ route('admin.applications.interviewing') }}">Interview Stage</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('admin.applications.index') }}">Applications</a>
+                        </li>
+                        <li class="breadcrumb-item"><a href="{{ route('admin.applications.interviewing') }}">Interview
+                                Stage</a></li>
                         <li class="breadcrumb-item active">Interview #{{ $interview->id }}</li>
                     </ol>
                 </div>
@@ -22,7 +24,7 @@
         </div>
     </div>
 
-     <!-- Main Content -->
+    <!-- Main Content -->
     <div class="content">
         <div class="container-fluid">
             <!-- Quick Stats Row -->
@@ -86,7 +88,7 @@
                                     <p class="text-muted mb-0">Type</p>
                                     <h5 class="mb-0">{{ ucfirst($interview->type) }}</h5>
                                     <small class="text-muted">
-                                        @if($interview->type === 'online')
+                                        @if ($interview->type === 'online')
                                             <i class="fas fa-video mr-1"></i> Video Call
                                         @elseif($interview->type === 'phone')
                                             <i class="fas fa-phone mr-1"></i> Phone Call
@@ -109,42 +111,39 @@
                             <div class="d-flex justify-content-between align-items-center flex-wrap">
                                 <div class="btn-group mb-2 mb-sm-0">
                                     <button type="button" class="btn btn-outline-secondary"
-                                            wire:click="goToPreviousInterview">
+                                        wire:click="goToPreviousInterview">
                                         <i class="fas fa-chevron-left mr-1"></i> Previous
                                     </button>
                                     <button type="button" class="btn btn-outline-secondary"
-                                            wire:click="goToNextInterview">
+                                        wire:click="goToNextInterview">
                                         Next <i class="fas fa-chevron-right ml-1"></i>
                                     </button>
                                 </div>
 
                                 <div class="btn-group">
-                                    <button type="button" class="btn btn-outline-primary"
-                                            wire:click="sendReminder"
-                                            @if($interview->reminder_sent_at) disabled @endif>
+                                    <button type="button" class="btn btn-outline-primary" wire:click="sendReminder"
+                                        @if ($interview->reminder_sent_at) disabled @endif>
                                         <i class="fas fa-bell mr-1"></i>
                                         {{ $interview->reminder_sent_at ? 'Reminder Sent' : 'Send Reminder' }}
                                     </button>
-                                    <button type="button" class="btn btn-outline-info"
-                                            wire:click="goToApplication">
+                                    <button type="button" class="btn btn-outline-info" wire:click="goToApplication">
                                         <i class="fas fa-file-alt mr-1"></i> View Application
                                     </button>
-                                    <button type="button" class="btn btn-outline-success"
-                                            wire:click="goToStudent">
+                                    <button type="button" class="btn btn-outline-success" wire:click="goToStudent">
                                         <i class="fas fa-user-graduate mr-1"></i> View Student
                                     </button>
-                                    
+
                                     <div class="btn-group">
                                         <button type="button" class="btn btn-outline-warning dropdown-toggle"
-                                                data-toggle="dropdown">
+                                            data-toggle="dropdown">
                                             <i class="fas fa-bolt mr-1"></i> Actions
                                         </button>
                                         <div class="dropdown-menu dropdown-menu-right">
-                                            @if($interview->status === 'scheduled')
+                                            @if ($interview->status === \App\Enums\InterviewStatus::SCHEDULED)
                                                 <button class="dropdown-item" wire:click="openRescheduleModal">
                                                     <i class="fas fa-calendar-alt text-warning mr-2"></i> Reschedule
                                                 </button>
-                                                <button class="dropdown-item" wire:click="openCompleteModal">
+                                                <button class="dropdown-item" wire:click="openCompleteInterviewModal">
                                                     <i class="fas fa-check-circle text-success mr-2"></i> Mark Completed
                                                 </button>
                                                 <button class="dropdown-item" wire:click="markNoShow">
@@ -152,18 +151,22 @@
                                                 </button>
                                                 <div class="dropdown-divider"></div>
                                                 <button class="dropdown-item" wire:click="openCancelModal">
-                                                    <i class="fas fa-times-circle text-danger mr-2"></i> Cancel Interview
+                                                    <i class="fas fa-times-circle text-danger mr-2"></i> Cancel
+                                                    Interview
                                                 </button>
-                                            @elseif($interview->status === 'rescheduled')
+                                            @elseif($interview->status === \App\Enums\InterviewStatus::RESCHEDULED)
                                                 <button class="dropdown-item" wire:click="openRescheduleModal">
-                                                    <i class="fas fa-calendar-alt text-warning mr-2"></i> Reschedule Again
+                                                    <i class="fas fa-calendar-alt text-warning mr-2"></i> Reschedule
+                                                    Again
                                                 </button>
                                                 <button class="dropdown-item" wire:click="openCompleteModal">
-                                                    <i class="fas fa-check-circle text-success mr-2"></i> Mark Completed
+                                                    <i class="fas fa-check-circle text-success mr-2"></i> Mark
+                                                    Completed
                                                 </button>
-                                            @elseif($interview->status === 'confirmed')
+                                            @elseif($interview->status === \App\Enums\InterviewStatus::CONFIRMED)
                                                 <button class="dropdown-item" wire:click="openCompleteModal">
-                                                    <i class="fas fa-check-circle text-success mr-2"></i> Mark Completed
+                                                    <i class="fas fa-check-circle text-success mr-2"></i> Mark
+                                                    Completed
                                                 </button>
                                             @endif
                                             <button class="dropdown-item" wire:click="openFeedbackModal">
@@ -220,34 +223,44 @@
                                             </h5>
                                             <div class="d-flex align-items-center mb-3">
                                                 <div class="avatar-circle bg-primary mr-3">
-                                                    <span class="initials">{{ getInitials($interview->application->student->full_name) }}</span>
+                                                    <span
+                                                        class="initials">{{ getInitials($interview->application->student->full_name) }}</span>
                                                 </div>
                                                 <div>
-                                                    <h5 class="mb-0">{{ $interview->application->student->full_name }}</h5>
+                                                    <h5 class="mb-0">
+                                                        {{ $interview->application->student->full_name }}</h5>
                                                     <small class="text-muted">Student</small>
                                                 </div>
                                             </div>
                                             <table class="table table-sm table-borderless">
                                                 <tr>
-                                                    <td width="35%"><i class="fas fa-envelope text-muted mr-2"></i>Email</td>
-                                                    <td><a href="mailto:{{ $interview->application->student->email }}">{{ $interview->application->student->email }}</a></td>
+                                                    <td width="35%"><i
+                                                            class="fas fa-envelope text-muted mr-2"></i>Email</td>
+                                                    <td><a
+                                                            href="mailto:{{ $interview->application->student->email }}">{{ $interview->application->student->email }}</a>
+                                                    </td>
                                                 </tr>
                                                 <tr>
                                                     <td><i class="fas fa-phone text-muted mr-2"></i>Phone</td>
-                                                    <td>{{ formatPhoneNumber($interview->application->student->phone) ?? 'N/A' }}</td>
+                                                    <td>{{ formatPhoneNumber($interview->application->student->phone) ?? 'N/A' }}
+                                                    </td>
                                                 </tr>
                                                 <tr>
-                                                    <td><i class="fas fa-university text-muted mr-2"></i>Institution</td>
-                                                    <td>{{ $interview->application->student->studentProfile?->institution_name ?? 'N/A' }}</td>
+                                                    <td><i class="fas fa-university text-muted mr-2"></i>Institution
+                                                    </td>
+                                                    <td>{{ $interview->application->student->studentProfile?->institution_name ?? 'N/A' }}
+                                                    </td>
                                                 </tr>
                                                 <tr>
                                                     <td><i class="fas fa-book text-muted mr-2"></i>Course</td>
-                                                    <td>{{ $interview->application->student->studentProfile?->course_name ?? 'N/A' }}</td>
+                                                    <td>{{ $interview->application->student->studentProfile?->course_name ?? 'N/A' }}
+                                                    </td>
                                                 </tr>
                                                 <tr>
                                                     <td><i class="fas fa-star text-muted mr-2"></i>CGPA</td>
                                                     <td>
-                                                        <span class="badge badge-{{ $interview->application->student->studentProfile?->cgpa >= 3.0 ? 'success' : 'warning' }}">
+                                                        <span
+                                                            class="badge badge-{{ $interview->application->student->studentProfile?->cgpa >= 3.0 ? 'success' : 'warning' }}">
                                                             {{ $interview->application->student->studentProfile?->cgpa ?? 'N/A' }}
                                                         </span>
                                                     </td>
@@ -263,11 +276,14 @@
                                             </h5>
                                             <table class="table table-sm table-borderless">
                                                 <tr>
-                                                    <td width="40%"><i class="fas fa-calendar text-muted mr-2"></i>Date & Time</td>
+                                                    <td width="40%"><i
+                                                            class="fas fa-calendar text-muted mr-2"></i>Date & Time
+                                                    </td>
                                                     <td>
                                                         <strong>{{ $interview->scheduled_at->format('l, M d, Y') }}</strong><br>
-                                                        <span class="text-muted">{{ $interview->scheduled_at->format('h:i A') }}</span>
-                                                        @if($interview->scheduled_at->isToday())
+                                                        <span
+                                                            class="text-muted">{{ $interview->scheduled_at->format('h:i A') }}</span>
+                                                        @if ($interview->scheduled_at->isToday())
                                                             <span class="badge badge-warning ml-2">Today</span>
                                                         @elseif($interview->scheduled_at->isFuture())
                                                             <span class="badge badge-info ml-2">
@@ -295,27 +311,32 @@
                                                     <td><i class="fas fa-info-circle text-muted mr-2"></i>Status</td>
                                                     <td>{!! $interview->status_badge !!}</td>
                                                 </tr>
-                                                @if($interview->meeting_details)
-                                                <tr>
-                                                    <td><i class="fas fa-link text-muted mr-2"></i>Meeting Details</td>
-                                                    <td>
-                                                        @if($interview->type === 'online')
-                                                            <a href="{{ $interview->meeting_link }}" target="_blank" class="text-primary">
-                                                                {{ $interview->meeting_link }}
-                                                            </a>
-                                                        @elseif($interview->type === 'phone')
-                                                            <a href="tel:{{ $interview->phone_number }}">{{ $interview->phone_number }}</a>
-                                                        @else
-                                                            {{ $interview->location }}
-                                                        @endif
-                                                    </td>
-                                                </tr>
+                                                @if ($interview->meeting_details)
+                                                    <tr>
+                                                        <td><i class="fas fa-link text-muted mr-2"></i>Meeting Details
+                                                        </td>
+                                                        <td>
+                                                            @if ($interview->type === 'online')
+                                                                <a href="{{ $interview->meeting_link }}"
+                                                                    target="_blank" class="text-primary">
+                                                                    {{ $interview->meeting_link }}
+                                                                </a>
+                                                            @elseif($interview->type === 'phone')
+                                                                <a
+                                                                    href="tel:{{ $interview->phone_number }}">{{ $interview->phone_number }}</a>
+                                                            @else
+                                                                {{ $interview->location }}
+                                                            @endif
+                                                        </td>
+                                                    </tr>
                                                 @endif
-                                                @if($interview->reminder_sent_at)
-                                                <tr>
-                                                    <td><i class="fas fa-bell text-muted mr-2"></i>Reminder Sent</td>
-                                                    <td>{{ $interview->reminder_sent_at->format('M d, Y h:i A') }}</td>
-                                                </tr>
+                                                @if ($interview->reminder_sent_at)
+                                                    <tr>
+                                                        <td><i class="fas fa-bell text-muted mr-2"></i>Reminder Sent
+                                                        </td>
+                                                        <td>{{ $interview->reminder_sent_at->format('M d, Y h:i A') }}
+                                                        </td>
+                                                    </tr>
                                                 @endif
                                             </table>
                                         </div>
@@ -336,7 +357,8 @@
                                             </p>
                                         </div>
                                         <div class="col-md-6 text-md-right">
-                                            <span class="badge badge-{{ $interview->application->opportunity->is_open ? 'success' : 'danger' }} p-2">
+                                            <span
+                                                class="badge badge-{{ $interview->application->opportunity->is_open ? 'success' : 'danger' }} p-2">
                                                 {{ $interview->application->opportunity->is_open ? 'Open' : 'Closed' }}
                                             </span>
                                         </div>
@@ -352,7 +374,8 @@
                                         </div>
                                         <div class="col-md-3 col-6 mb-2">
                                             <small class="text-muted d-block">Duration</small>
-                                            <span>{{ $interview->application->opportunity->duration_months }} months</span>
+                                            <span>{{ $interview->application->opportunity->duration_months }}
+                                                months</span>
                                         </div>
                                         <div class="col-md-3 col-6 mb-2">
                                             <small class="text-muted d-block">Stipend</small>
@@ -361,7 +384,7 @@
                                     </div>
 
                                     <!-- Interview Notes -->
-                                    @if($interview->notes)
+                                    @if ($interview->notes)
                                         <hr class="my-4">
                                         <h5 class="mb-3">
                                             <i class="fas fa-sticky-note text-info mr-2"></i>
@@ -384,20 +407,27 @@
                                                         Student
                                                     </h5>
                                                     <div class="d-flex align-items-center mb-3">
-                                                        <div class="avatar-circle bg-primary mr-3" style="width: 60px; height: 60px; line-height: 60px; font-size: 24px;">
+                                                        <div class="avatar-circle bg-primary mr-3"
+                                                            style="width: 60px; height: 60px; line-height: 60px; font-size: 24px;">
                                                             {{ getInitials($interview->application->student->full_name) }}
                                                         </div>
                                                         <div>
-                                                            <h5 class="mb-1">{{ $interview->application->student->full_name }}</h5>
-                                                            <p class="mb-1 text-muted">{{ $interview->application->student->email }}</p>
-                                                            <p class="mb-0 text-muted">{{ formatPhoneNumber($interview->application->student->phone) }}</p>
+                                                            <h5 class="mb-1">
+                                                                {{ $interview->application->student->full_name }}</h5>
+                                                            <p class="mb-1 text-muted">
+                                                                {{ $interview->application->student->email }}</p>
+                                                            <p class="mb-0 text-muted">
+                                                                {{ formatPhoneNumber($interview->application->student->phone) }}
+                                                            </p>
                                                         </div>
                                                     </div>
                                                     <hr>
                                                     <div class="small">
                                                         <strong>Academic Info:</strong><br>
                                                         {{ $interview->application->student->studentProfile?->institution_name }}<br>
-                                                        {{ $interview->application->student->studentProfile?->course_name }} (Year {{ $interview->application->student->studentProfile?->year_of_study }})
+                                                        {{ $interview->application->student->studentProfile?->course_name }}
+                                                        (Year
+                                                        {{ $interview->application->student->studentProfile?->year_of_study }})
                                                     </div>
                                                 </div>
                                             </div>
@@ -410,29 +440,37 @@
                                                         <i class="fas fa-user-tie text-success mr-2"></i>
                                                         Interviewer
                                                     </h5>
-                                                    @if($interview->interviewer)
+                                                    @if ($interview->interviewer)
                                                         <div class="d-flex align-items-center mb-3">
-                                                            <div class="avatar-circle bg-success mr-3" style="width: 60px; height: 60px; line-height: 60px; font-size: 24px;">
+                                                            <div class="avatar-circle bg-success mr-3"
+                                                                style="width: 60px; height: 60px; line-height: 60px; font-size: 24px;">
                                                                 {{ getInitials($interview->interviewer->full_name) }}
                                                             </div>
                                                             <div>
-                                                                <h5 class="mb-1">{{ $interview->interviewer->full_name }}</h5>
-                                                                <p class="mb-1 text-muted">{{ $interview->interviewer->email }}</p>
-                                                                <p class="mb-0 text-muted">{{ formatPhoneNumber($interview->interviewer->phone) }}</p>
+                                                                <h5 class="mb-1">
+                                                                    {{ $interview->interviewer->full_name }}</h5>
+                                                                <p class="mb-1 text-muted">
+                                                                    {{ $interview->interviewer->email }}</p>
+                                                                <p class="mb-0 text-muted">
+                                                                    {{ formatPhoneNumber($interview->interviewer->phone) }}
+                                                                </p>
                                                             </div>
                                                         </div>
                                                         <hr>
                                                         <div class="small">
-                                                            <strong>Role:</strong> {{ $interview->interviewer->getRoleNames()->first() ?? 'Interviewer' }}<br>
-                                                            @if($interview->interviewer->organizations->count() > 0)
-                                                                <strong>Organization:</strong> {{ $interview->interviewer->organizations->first()->name }}
+                                                            <strong>Role:</strong>
+                                                            {{ $interview->interviewer->getRoleNames()->first() ?? 'Interviewer' }}<br>
+                                                            @if ($interview->interviewer->organizations->count() > 0)
+                                                                <strong>Organization:</strong>
+                                                                {{ $interview->interviewer->organizations->first()->name }}
                                                             @endif
                                                         </div>
                                                     @else
                                                         <div class="text-center py-4">
                                                             <i class="fas fa-user-slash fa-3x text-muted mb-3"></i>
                                                             <p class="text-muted">No interviewer assigned</p>
-                                                            <button class="btn btn-sm btn-primary" wire:click="editInterview({{ $interview->id }})">
+                                                            <button class="btn btn-sm btn-primary"
+                                                                wire:click="editInterview({{ $interview->id }})">
                                                                 <i class="fas fa-plus mr-1"></i> Assign Interviewer
                                                             </button>
                                                         </div>
@@ -452,12 +490,14 @@
                                                         @forelse($interview->application->opportunity->organization->users as $user)
                                                             <div class="col-md-4 mb-3">
                                                                 <div class="d-flex align-items-center">
-                                                                    <div class="avatar-circle bg-info mr-2" style="width: 40px; height: 40px; line-height: 40px;">
+                                                                    <div class="avatar-circle bg-info mr-2"
+                                                                        style="width: 40px; height: 40px; line-height: 40px;">
                                                                         {{ getInitials($user->full_name) }}
                                                                     </div>
                                                                     <div>
                                                                         <strong>{{ $user->full_name }}</strong>
-                                                                        <div class="small text-muted">{{ $user->pivot->role }}</div>
+                                                                        <div class="small text-muted">
+                                                                            {{ $user->pivot->role }}</div>
                                                                         <div class="small">{{ $user->email }}</div>
                                                                     </div>
                                                                 </div>
@@ -479,7 +519,9 @@
                                     <div class="timeline-modern">
                                         @php
                                             $groupedEvents = collect($timelineEvents)->groupBy(
-                                                fn($event) => \Carbon\Carbon::parse($event['created_at'])->format('Y-m-d')
+                                                fn($event) => \Carbon\Carbon::parse($event['created_at'])->format(
+                                                    'Y-m-d',
+                                                ),
                                             );
                                         @endphp
 
@@ -500,7 +542,7 @@
                                                 </span>
                                             </div>
 
-                                            @foreach($events as $event)
+                                            @foreach ($events as $event)
                                                 <div class="timeline-item-modern">
                                                     <div class="timeline-dot bg-{{ $event['color'] }}">
                                                         <i class="fas {{ $event['icon'] }}"></i>
@@ -516,15 +558,15 @@
                                                             </div>
                                                         </div>
                                                         <p class="mb-2">{{ $event['description'] }}</p>
-                                                        
-                                                        @if(isset($event['properties']['notes']) && $event['properties']['notes'])
+
+                                                        @if (isset($event['properties']['notes']) && $event['properties']['notes'])
                                                             <div class="small bg-light p-2 rounded mt-2">
                                                                 <i class="fas fa-quote-left text-muted mr-1"></i>
                                                                 {{ $event['properties']['notes'] }}
                                                             </div>
                                                         @endif
 
-                                                        @if(isset($event['properties']['metadata']['rating']))
+                                                        @if (isset($event['properties']['metadata']['rating']))
                                                             <div class="mt-2">
                                                                 <span class="text-muted small">Rating:</span>
                                                                 {!! getRatingStars($event['properties']['metadata']['rating']) !!}
@@ -547,8 +589,7 @@
                                     <!-- Add Note Form -->
                                     <div class="mb-4">
                                         <div class="input-group">
-                                            <textarea wire:model="newNote" class="form-control" rows="2" 
-                                                      placeholder="Add a note or comment..."></textarea>
+                                            <textarea wire:model="newNote" class="form-control" rows="2" placeholder="Add a note or comment..."></textarea>
                                             <div class="input-group-append">
                                                 <button class="btn btn-primary" type="button" wire:click="addNote">
                                                     <i class="fas fa-plus mr-1"></i> Add Note
@@ -561,9 +602,12 @@
                                     <div class="notes-list">
                                         @php
                                             $notes = collect($timelineEvents)
-                                                ->filter(function($event) {
-                                                    return $event['type'] === 'history' && 
-                                                           in_array($event['properties']['action'], ['note_added', 'feedback_added']);
+                                                ->filter(function ($event) {
+                                                    return $event['type'] === 'history' &&
+                                                        in_array($event['properties']['action'], [
+                                                            'note_added',
+                                                            'feedback_added',
+                                                        ]);
                                                 })
                                                 ->sortByDesc('created_at');
                                         @endphp
@@ -572,15 +616,16 @@
                                             <div class="note-item-modern p-3 border-bottom">
                                                 <div class="d-flex justify-content-between mb-2">
                                                     <strong>{{ $note['causer'] }}</strong>
-                                                    <small class="text-muted">{{ timeAgo($note['created_at']) }}</small>
+                                                    <small
+                                                        class="text-muted">{{ timeAgo($note['created_at']) }}</small>
                                                 </div>
                                                 <p class="mb-1">{{ $note['description'] }}</p>
-                                                @if(isset($note['properties']['metadata']['type']))
+                                                @if (isset($note['properties']['metadata']['type']))
                                                     <small class="badge badge-info">
                                                         {{ ucfirst($note['properties']['metadata']['type']) }}
                                                     </small>
                                                 @endif
-                                                @if(isset($note['properties']['metadata']['rating']))
+                                                @if (isset($note['properties']['metadata']['rating']))
                                                     <div class="mt-1">
                                                         {!! getRatingStars($note['properties']['metadata']['rating']) !!}
                                                     </div>
@@ -619,12 +664,14 @@
                                 <h4 class="mt-3">
                                     {{ $interview->status }}
                                 </h4>
-                                @if($interview->status === 'scheduled' && $interview->scheduled_at->isToday())
+                                @if ($interview->status === 'scheduled' && $interview->scheduled_at->isToday())
                                     <span class="badge badge-warning p-2">Today</span>
                                 @elseif($interview->status === 'scheduled' && $interview->scheduled_at->isFuture())
-                                    <span class="badge badge-info p-2">{{ $interview->scheduled_at->diffForHumans() }}</span>
+                                    <span
+                                        class="badge badge-info p-2">{{ $interview->scheduled_at->diffForHumans() }}</span>
                                 @elseif($interview->status === 'completed')
-                                    <span class="badge badge-success p-2">Completed {{ timeAgo($interview->completed_at) }}</span>
+                                    <span class="badge badge-success p-2">Completed
+                                        {{ timeAgo($interview->completed_at) }}</span>
                                 @elseif($interview->status === 'cancelled')
                                     <span class="badge badge-danger p-2">Cancelled</span>
                                 @endif
@@ -632,7 +679,7 @@
 
                             <!-- Quick Actions -->
                             <div class="d-grid gap-2">
-                                @if($interview->status === 'scheduled')
+                                @if ($interview->status === 'scheduled')
                                     <button class="btn btn-warning btn-block" wire:click="openRescheduleModal">
                                         <i class="fas fa-calendar-alt mr-2"></i> Reschedule
                                     </button>
@@ -661,15 +708,16 @@
                                 <i class="fas fa-file-alt text-primary mr-2"></i>
                                 Application Summary
                             </h5>
-                            <a href="{{ route('admin.applications.show', $interview->application_id) }}" 
-                               class="btn btn-sm btn-link">
+                            <a href="{{ route('admin.applications.show', $interview->application_id) }}"
+                                class="btn btn-sm btn-link">
                                 <i class="fas fa-external-link-alt"></i>
                             </a>
                         </div>
                         <div class="card-body">
                             <table class="table table-sm table-borderless">
                                 <tr>
-                                    <td width="45%"><i class="fas fa-hashtag text-muted mr-2"></i>Application ID</td>
+                                    <td width="45%"><i class="fas fa-hashtag text-muted mr-2"></i>Application ID
+                                    </td>
                                     <td><strong>#{{ $interview->application_id }}</strong></td>
                                 </tr>
                                 <tr>
@@ -679,7 +727,8 @@
                                 <tr>
                                     <td><i class="fas fa-chart-line text-muted mr-2"></i>Match Score</td>
                                     <td>
-                                        <span class="badge badge-{{ $interview->application->match_score >= 80 ? 'success' : ($interview->application->match_score >= 60 ? 'warning' : 'danger') }}">
+                                        <span
+                                            class="badge badge-{{ $interview->application->match_score >= 80 ? 'success' : ($interview->application->match_score >= 60 ? 'warning' : 'danger') }}">
                                             {{ $interview->application->match_score ?? 'N/A' }}%
                                         </span>
                                     </td>
@@ -704,22 +753,34 @@
                             @php
                                 $profile = $interview->application->student->studentProfile;
                                 $documents = [
-                                    'cv' => ['label' => 'CV/Resume', 'icon' => 'fa-file-pdf text-danger', 'url' => $profile?->cv_url],
-                                    'transcript' => ['label' => 'Academic Transcript', 'icon' => 'fa-file-alt text-info', 'url' => $profile?->transcript_url],
-                                    'school_letter' => ['label' => 'School Letter', 'icon' => 'fa-file-signature text-warning', 'url' => $profile?->school_letter_url],
+                                    'cv' => [
+                                        'label' => 'CV/Resume',
+                                        'icon' => 'fa-file-pdf text-danger',
+                                        'url' => $profile?->cv_url,
+                                    ],
+                                    'transcript' => [
+                                        'label' => 'Academic Transcript',
+                                        'icon' => 'fa-file-alt text-info',
+                                        'url' => $profile?->transcript_url,
+                                    ],
+                                    'school_letter' => [
+                                        'label' => 'School Letter',
+                                        'icon' => 'fa-file-signature text-warning',
+                                        'url' => $profile?->school_letter_url,
+                                    ],
                                 ];
                             @endphp
 
-                            @foreach($documents as $key => $doc)
+                            @foreach ($documents as $key => $doc)
                                 <div class="list-group-item d-flex justify-content-between align-items-center">
                                     <div>
                                         <i class="fas {{ $doc['icon'] }} mr-2"></i>
                                         {{ $doc['label'] }}
                                     </div>
                                     <div>
-                                        @if($doc['url'])
-                                            <a href="{{ asset('storage/' . $doc['url']) }}" target="_blank" 
-                                               class="btn btn-sm btn-link">
+                                        @if ($doc['url'])
+                                            <a href="{{ asset('storage/' . $doc['url']) }}" target="_blank"
+                                                class="btn btn-sm btn-link">
                                                 <i class="fas fa-download"></i>
                                             </a>
                                         @else
@@ -732,7 +793,7 @@
                     </div>
 
                     <!-- Similar Applications -->
-                    @if($similarApplications && $similarApplications->count() > 0)
+                    @if ($similarApplications && $similarApplications->count() > 0)
                         <div class="card border-0 shadow-sm">
                             <div class="card-header bg-white border-0">
                                 <h5 class="mb-0">
@@ -741,7 +802,7 @@
                                 </h5>
                             </div>
                             <div class="list-group list-group-flush">
-                                @foreach($similarApplications as $app)
+                                @foreach ($similarApplications as $app)
                                     <div class="list-group-item">
                                         <div class="d-flex justify-content-between align-items-center">
                                             <div>
@@ -751,11 +812,12 @@
                                                 </div>
                                             </div>
                                             <div>
-                                                <span class="badge badge-{{ $app->status?->color() ?? 'secondary' }} mr-2">
+                                                <span
+                                                    class="badge badge-{{ $app->status?->color() ?? 'secondary' }} mr-2">
                                                     {{ $app->status?->label() ?? 'Pending' }}
                                                 </span>
-                                                <a href="{{ route('admin.applications.show', $app->id) }}" 
-                                                   class="btn btn-xs btn-default">
+                                                <a href="{{ route('admin.applications.show', $app->id) }}"
+                                                    class="btn btn-xs btn-default">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
                                             </div>
@@ -771,20 +833,24 @@
     </div>
 
     <!-- Modals -->
-    @if($showRescheduleModal)
+    @if ($showRescheduleModal)
         @include('livewire.admin.interviews.partials.reschedule-modal')
     @endif
 
-    @if($showCancelModal)
+    @if ($showCancelModal)
         @include('livewire.admin.interviews.partials.cancel-modal')
     @endif
 
-    @if($showCompleteModal)
+    @if ($showCompleteModal)
         @include('livewire.admin.interviews.partials.complete-modal')
     @endif
 
-    @if($showFeedbackModal)
+    @if ($showFeedbackModal)
         @include('livewire.admin.interviews.partials.feedback-modal')
+    @endif
+
+    @if ($showCompleteInterviewModal)
+        @include('livewire.admin.interviews.partials.complete-interview-modal')
     @endif
 
     @push('styles')
@@ -799,10 +865,21 @@
                 font-size: 1.25rem;
             }
 
-            .bg-primary-soft { background: rgba(0, 123, 255, 0.1); }
-            .bg-success-soft { background: rgba(40, 167, 69, 0.1); }
-            .bg-info-soft { background: rgba(23, 162, 184, 0.1); }
-            .bg-warning-soft { background: rgba(255, 193, 7, 0.1); }
+            .bg-primary-soft {
+                background: rgba(0, 123, 255, 0.1);
+            }
+
+            .bg-success-soft {
+                background: rgba(40, 167, 69, 0.1);
+            }
+
+            .bg-info-soft {
+                background: rgba(23, 162, 184, 0.1);
+            }
+
+            .bg-warning-soft {
+                background: rgba(255, 193, 7, 0.1);
+            }
 
             .avatar-circle {
                 width: 50px;
@@ -833,12 +910,29 @@
                 color: white;
             }
 
-            .status-scheduled { background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); }
-            .status-rescheduled { background: linear-gradient(135deg, #ffc107 0%, #d39e00 100%); }
-            .status-confirmed { background: linear-gradient(135deg, #17a2b8 0%, #117a8b 100%); }
-            .status-completed { background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%); }
-            .status-cancelled { background: linear-gradient(135deg, #dc3545 0%, #bd2130 100%); }
-            .status-no_show { background: linear-gradient(135deg, #6c757d 0%, #545b62 100%); }
+            .status-scheduled {
+                background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            }
+
+            .status-rescheduled {
+                background: linear-gradient(135deg, #ffc107 0%, #d39e00 100%);
+            }
+
+            .status-confirmed {
+                background: linear-gradient(135deg, #17a2b8 0%, #117a8b 100%);
+            }
+
+            .status-completed {
+                background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+            }
+
+            .status-cancelled {
+                background: linear-gradient(135deg, #dc3545 0%, #bd2130 100%);
+            }
+
+            .status-no_show {
+                background: linear-gradient(135deg, #6c757d 0%, #545b62 100%);
+            }
 
             .timeline-modern {
                 position: relative;

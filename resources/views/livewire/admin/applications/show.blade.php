@@ -124,10 +124,11 @@
                                             <!-- In the dropdown menu section, update the condition for SHORTLISTED -->
                                             @if (in_array($application->status->value, [\App\Enums\ApplicationStatus::SHORTLISTED->value]))
                                                 <button class="dropdown-item" wire:click="openInterviewModal">
-                                                    <i class="fas fa-calendar-plus text-warning mr-2"></i> Schedule
-                                                    Interview
+                                                    <i class="fas fa-calendar-plus text-warning mr-2"></i> Schedule Interview
                                                 </button>
                                             @endif
+
+                                            
 
                                             @if (in_array($application->status->value, [
                                                     \App\Enums\ApplicationStatus::INTERVIEW_COMPLETED->value,

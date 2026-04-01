@@ -77,7 +77,7 @@ class NotificationDropdown extends Component
         $user->unreadNotifications()->update(['read_at' => now()]);
         $this->loadNotifications();
         
-        $this->dispatchBrowserEvent('show-toast', [
+        $this->dispatch('show-toast', [
             'type' => 'success',
             'message' => 'All notifications marked as read'
         ]);

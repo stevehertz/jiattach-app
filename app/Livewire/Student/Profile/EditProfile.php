@@ -6,6 +6,7 @@ use App\Models\User;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use App\Models\StudentProfile;
+use App\Models\Course;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
@@ -13,7 +14,7 @@ class EditProfile extends Component
 {
     use WithFileUploads;
 
-     // User Fields (Personal)
+    // User Fields (Personal)
     public $first_name, $last_name, $phone, $bio, $gender, $county, $profile_photo;
 
     // Disability Fields
@@ -30,6 +31,11 @@ class EditProfile extends Component
     public $interests = [];
     public $newSkill = '';
     public $newInterest = '';
+
+    // Course Search Properties
+    public $courses = [];
+    public $course_search = '';
+    public $selectedCourseId = null;
 
     // Documents
     public $cv, $transcript, $school_letter;
@@ -56,6 +62,7 @@ class EditProfile extends Component
             $this->institution_name = $profile->institution_name;
             $this->institution_type = $profile->institution_type;
             $this->course_name = $profile->course_name;
+            $this->course_search = $profile->course_name; // Set search value
             $this->course_level = $profile->course_level;
             $this->year_of_study = $profile->year_of_study;
             $this->expected_graduation_year = $profile->expected_graduation_year;
@@ -64,10 +71,80 @@ class EditProfile extends Component
             $this->preferred_attachment_duration = $profile->preferred_attachment_duration;
             $this->skills = $profile->skills ?? [];
             $this->interests = $profile->interests ?? [];
+
+            // Check if the current course exists in the database
+            $this->checkExistingCourse();
+        }
+
+        // Load courses
+        $this->loadCourses();
+    }
+
+    /**
+     * Check if the current course exists in the database
+     */
+    protected function checkExistingCourse()
+    {
+        if (!empty($this->course_name)) {
+            $existingCourse = Course::where('name', $this->course_name)->first();
+            if ($existingCourse) {
+                $this->selectedCourseId = $existingCourse->id;
+            }
         }
     }
 
-     public function addSkill()
+    /**
+     * Load courses from database
+     */
+    public function loadCourses()
+    {
+        $this->courses = Course::orderBy('name')->get()->toArray();
+    }
+
+    /**
+     * Handle course search and selection
+     */
+    public function updatedCourseSearch($value)
+    {
+        // Update course_name when search changes
+        $this->course_name = $value;
+
+        // Find if the value matches an existing course
+        $matchingCourse = Course::where('name', $value)->first();
+
+        if ($matchingCourse) {
+            $this->selectedCourseId = $matchingCourse->id;
+        } else {
+            $this->selectedCourseId = null;
+        }
+
+        // Filter courses for datalist based on search
+        if (!empty($value)) {
+            $this->courses = Course::where('name', 'like', "%{$value}%")
+                ->orWhere('code', 'like', "%{$value}%")
+                ->orderBy('name')
+                ->limit(20)
+                ->get()
+                ->toArray();
+        } else {
+            $this->loadCourses();
+        }
+    }
+
+    /**
+     * Select a course (called from JavaScript)
+     */
+    public function selectCourse($courseId, $courseName)
+    {
+        $this->course_search = $courseName;
+        $this->course_name = $courseName;
+        $this->selectedCourseId = $courseId;
+
+        // Reset the courses list to show all
+        $this->loadCourses();
+    }
+
+    public function addSkill()
     {
         $this->newSkill = trim($this->newSkill);
         if ($this->newSkill && !in_array($this->newSkill, $this->skills)) {
@@ -79,6 +156,7 @@ class EditProfile extends Component
     public function removeSkill($skill)
     {
         $this->skills = array_diff($this->skills, [$skill]);
+        $this->skills = array_values($this->skills);
     }
 
     public function addInterest()
@@ -93,6 +171,7 @@ class EditProfile extends Component
     public function removeInterest($interest)
     {
         $this->interests = array_diff($this->interests, [$interest]);
+        $this->interests = array_values($this->interests);
     }
 
     public function save()
@@ -109,16 +188,10 @@ class EditProfile extends Component
             'course_name' => 'required|string',
             'cv' => 'nullable|mimes:pdf|max:2048',
             'transcript' => 'nullable|mimes:pdf|max:2048',
-            // Disability Validation
             'disability_status' => 'required|in:none,mobility,visual,hearing,cognitive,other,prefer_not_to_say',
             'disability_details' => 'nullable|required_unless:disability_status,none,prefer_not_to_say|string|max:500',
-            'cv' => 'nullable|mimes:pdf|max:2048',
-            'transcript' => 'nullable|mimes:pdf|max:2048',
-            // 2. Add validation for letter
             'school_letter' => 'nullable|mimes:pdf|max:2048',
         ]);
-
-        
 
         // 1. Update User
         $user->update([
@@ -133,7 +206,6 @@ class EditProfile extends Component
         ]);
 
         if ($this->profile_photo) {
-            // Using Jetstream's profile photo logic if available, otherwise manual
             $path = $this->profile_photo->store('profile-photos', 'public');
             $user->forceFill(['profile_photo_path' => $path])->save();
         }
@@ -157,20 +229,43 @@ class EditProfile extends Component
             ]
         );
 
+        // Handle file uploads
         if ($this->cv) {
+            // Delete old file if exists
+            if ($profile->cv_url) {
+                Storage::disk('public')->delete(str_replace('/storage/', '', $profile->cv_url));
+            }
             $profile->cv_url = Storage::url($this->cv->store('docs/cvs', 'public'));
         }
 
         if ($this->transcript) {
+            // Delete old file if exists
+            if ($profile->transcript_url) {
+                Storage::disk('public')->delete(str_replace('/storage/', '', $profile->transcript_url));
+            }
             $profile->transcript_url = Storage::url($this->transcript->store('docs/transcripts', 'public'));
         }
 
-        // Add School Letter Upload
         if ($this->school_letter) {
+            // Delete old file if exists
+            if ($profile->school_letter_url) {
+                Storage::disk('public')->delete(str_replace('/storage/', '', $profile->school_letter_url));
+            }
             $profile->school_letter_url = Storage::url($this->school_letter->store('docs/letters', 'public'));
         }
 
         $profile->save();
+
+        // Log the activity
+        activity_log(
+            'Student profile updated',
+            'profile_updated',
+            [
+                'student_id' => $user->id,
+                'student_name' => $user->full_name,
+            ],
+            'student'
+        );
 
         session()->flash('success', 'Profile updated successfully!');
 

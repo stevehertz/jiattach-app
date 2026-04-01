@@ -111,7 +111,7 @@
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">
-                        @if($viewType === 'active')
+                        @if ($viewType === 'active')
                             Active Opportunities List
                         @elseif($viewType === 'pending')
                             Pending Approval Opportunities
@@ -122,29 +122,29 @@
 
                     <div class="card-tools">
                         <div class="btn-group mr-2">
-                            <a href="{{ route('admin.opportunities.index') }}" 
-                               class="btn btn-sm btn-outline-secondary {{ $viewType === 'all' ? 'active' : '' }}">
+                            <a href="{{ route('admin.opportunities.index') }}"
+                                class="btn btn-sm btn-outline-secondary {{ $viewType === 'all' ? 'active' : '' }}">
                                 All
                             </a>
-                            <a href="{{ route('admin.opportunities.active') }}" 
-                               class="btn btn-sm btn-outline-success {{ $viewType === 'active' ? 'active' : '' }}">
+                            <a href="{{ route('admin.opportunities.active') }}"
+                                class="btn btn-sm btn-outline-success {{ $viewType === 'active' ? 'active' : '' }}">
                                 Active
                             </a>
-                            <a href="{{ route('admin.opportunities.pending') }}" 
-                               class="btn btn-sm btn-outline-warning {{ $viewType === 'pending' ? 'active' : '' }}">
+                            <a href="{{ route('admin.opportunities.pending') }}"
+                                class="btn btn-sm btn-outline-warning {{ $viewType === 'pending' ? 'active' : '' }}">
                                 Pending
                             </a>
-                            <a href="{{ route('admin.opportunities.create') }}" 
-                               class="btn btn-sm btn-outline-primary">
+                            <a href="{{ route('admin.opportunities.create') }}" class="btn btn-sm btn-outline-primary">
                                 <i class="fas fa-plus mr-1"></i> New
                             </a>
                         </div>
 
                         <div class="input-group input-group-sm" style="width: 250px;">
                             <input type="text" wire:model.live.debounce.300ms="search"
-                                   class="form-control float-right" placeholder="Search opportunities...">
+                                class="form-control float-right" placeholder="Search opportunities...">
                             <div class="input-group-append">
-                                <button type="button" class="btn btn-default" wire:click="$set('search', '')" title="Clear search">
+                                <button type="button" class="btn btn-default" wire:click="$set('search', '')"
+                                    title="Clear search">
                                     <i class="fas fa-times"></i>
                                 </button>
                             </div>
@@ -153,14 +153,14 @@
                 </div>
 
                 <!-- Filters -->
-                <div class="card-body border-bottom @if(!$showFilters) d-none @endif" id="filterSection">
+                <div class="card-body border-bottom @if (!$showFilters) d-none @endif" id="filterSection">
                     <div class="row">
                         <div class="col-md-3">
                             <div class="form-group">
                                 <label>Opportunity Type</label>
                                 <select wire:model.live="typeFilter" class="form-control">
                                     <option value="">All Types</option>
-                                    @foreach($opportunityTypes as $typeValue => $typeLabel)
+                                    @foreach ($opportunityTypes as $typeValue => $typeLabel)
                                         <option value="{{ $typeValue }}">{{ $typeLabel }}</option>
                                     @endforeach
                                 </select>
@@ -171,7 +171,7 @@
                                 <label>Status</label>
                                 <select wire:model.live="statusFilter" class="form-control">
                                     <option value="">All Status</option>
-                                    @foreach($statusOptions as $statusValue => $statusLabel)
+                                    @foreach ($statusOptions as $statusValue => $statusLabel)
                                         <option value="{{ $statusValue }}">{{ $statusLabel }}</option>
                                     @endforeach
                                 </select>
@@ -182,7 +182,7 @@
                                 <label>Location</label>
                                 <select wire:model.live="locationFilter" class="form-control">
                                     <option value="">All Locations</option>
-                                    @foreach($locations as $location)
+                                    @foreach ($locations as $location)
                                         <option value="{{ $location }}">{{ $location }}</option>
                                     @endforeach
                                 </select>
@@ -193,7 +193,7 @@
                                 <label>Employer</label>
                                 <select wire:model.live="employerFilter" class="form-control">
                                     <option value="">All Employers</option>
-                                    @foreach($employers as $employerId => $employerName)
+                                    @foreach ($employers as $employerId => $employerName)
                                         <option value="{{ $employerId }}">{{ $employerName }}</option>
                                     @endforeach
                                 </select>
@@ -220,7 +220,7 @@
                                 <tr>
                                     <th wire:click="sortBy('title')" style="cursor: pointer;">
                                         Opportunity
-                                        @if($sortField === 'title')
+                                        @if ($sortField === 'title')
                                             <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
                                         @else
                                             <i class="fas fa-sort text-muted"></i>
@@ -234,7 +234,7 @@
                                     <th>Status</th>
                                     <th wire:click="sortBy('created_at')" style="cursor: pointer;">
                                         Created
-                                        @if($sortField === 'created_at')
+                                        @if ($sortField === 'created_at')
                                             <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
                                         @else
                                             <i class="fas fa-sort text-muted"></i>
@@ -258,12 +258,25 @@
                                             <div class="d-flex align-items-center">
                                                 <div class="mr-2">
                                                     @php
-                                                        $initials = getInitials($opportunity->employer->company_name ?? 'Company');
-                                                        $colors = ['primary', 'success', 'info', 'warning', 'danger', 'secondary'];
-                                                        $color = $colors[crc32($opportunity->employer->company_name ?? '') % count($colors)];
+                                                        $initials = getInitials(
+                                                            $opportunity->employer->company_name ?? 'Company',
+                                                        );
+                                                        $colors = [
+                                                            'primary',
+                                                            'success',
+                                                            'info',
+                                                            'warning',
+                                                            'danger',
+                                                            'secondary',
+                                                        ];
+                                                        $color =
+                                                            $colors[
+                                                                crc32($opportunity->employer->company_name ?? '') %
+                                                                    count($colors)
+                                                            ];
                                                     @endphp
                                                     <div class="avatar-initials bg-{{ $color }} img-circle"
-                                                         style="width: 30px; height: 30px; line-height: 30px; text-align: center; color: white; font-weight: bold; font-size: 12px;">
+                                                        style="width: 30px; height: 30px; line-height: 30px; text-align: center; color: white; font-weight: bold; font-size: 12px;">
                                                         {{ $initials }}
                                                     </div>
                                                 </div>
@@ -285,17 +298,17 @@
                                         </td>
                                         <td>
                                             <div>
-                                                <strong>{{ $opportunity->location_type }}</strong>
+                                                <strong>{{ $opportunity->location }}</strong>
                                                 <div class="text-muted small">
-                                                    {{ $opportunity->full_location }}
+                                                    {{ $opportunity->county }}
                                                 </div>
                                             </div>
                                         </td>
                                         <td>
                                             <div class="progress-group">
                                                 <div class="progress progress-xs">
-                                                    <div class="progress-bar bg-{{ $opportunity->slots_filled >= $opportunity->slots_available ? 'danger' : 'success' }}" 
-                                                         style="width: {{ ($opportunity->slots_filled / max(1, $opportunity->slots_available)) * 100 }}%">
+                                                    <div class="progress-bar bg-{{ $opportunity->slots_filled >= $opportunity->slots_available ? 'danger' : 'success' }}"
+                                                        style="width: {{ ($opportunity->slots_filled / max(1, $opportunity->slots_available)) * 100 }}%">
                                                     </div>
                                                 </div>
                                                 <span class="progress-number">
@@ -307,8 +320,9 @@
                                             </div>
                                         </td>
                                         <td>
-                                            @if($opportunity->application_deadline)
-                                                <div class="{{ $opportunity->application_deadline_passed ? 'text-danger' : 'text-success' }}">
+                                            @if ($opportunity->application_deadline)
+                                                <div
+                                                    class="{{ $opportunity->application_deadline_passed ? 'text-danger' : 'text-success' }}">
                                                     {{ formatDate($opportunity->application_deadline) }}
                                                 </div>
                                                 <div class="text-muted small">
@@ -320,7 +334,7 @@
                                         </td>
                                         <td>
                                             {!! getOpportunityStatusBadge($opportunity->status) !!}
-                                            @if($opportunity->stipend)
+                                            @if ($opportunity->stipend)
                                                 <div class="text-muted small">
                                                     {{ $opportunity->stipend_formatted }}
                                                 </div>
@@ -335,49 +349,50 @@
                                         <td>
                                             <div class="btn-group btn-group-sm">
                                                 <button type="button" class="btn btn-info"
-                                                        wire:click="viewOpportunity({{ $opportunity->id }})"
-                                                        title="View Details">
+                                                    wire:click="viewOpportunity({{ $opportunity->id }})"
+                                                    title="View Details">
                                                     <i class="fas fa-eye"></i>
                                                 </button>
                                                 <div class="btn-group">
                                                     <button type="button" class="btn btn-secondary dropdown-toggle"
-                                                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                        data-toggle="dropdown" aria-haspopup="true"
+                                                        aria-expanded="false">
                                                         <i class="fas fa-cog"></i>
                                                     </button>
                                                     <div class="dropdown-menu dropdown-menu-right">
-                                                        @if($opportunity->status === 'pending_approval')
+                                                        @if ($opportunity->status === 'pending_approval')
                                                             <button class="dropdown-item text-success"
-                                                                    wire:click="publishOpportunity({{ $opportunity->id }})"
-                                                                    wire:confirm="Publish this opportunity?">
+                                                                wire:click="publishOpportunity({{ $opportunity->id }})"
+                                                                wire:confirm="Publish this opportunity?">
                                                                 <i class="fas fa-check mr-2"></i> Publish
                                                             </button>
                                                         @endif
-                                                        
-                                                        @if($opportunity->status === 'published')
+
+                                                        @if ($opportunity->status === 'published')
                                                             <button class="dropdown-item text-warning"
-                                                                    wire:click="closeOpportunity({{ $opportunity->id }})"
-                                                                    wire:confirm="Close this opportunity?">
+                                                                wire:click="closeOpportunity({{ $opportunity->id }})"
+                                                                wire:confirm="Close this opportunity?">
                                                                 <i class="fas fa-times mr-2"></i> Close
                                                             </button>
                                                             <button class="dropdown-item text-info"
-                                                                    wire:click="markAsFilled({{ $opportunity->id }})"
-                                                                    wire:confirm="Mark as filled?">
+                                                                wire:click="markAsFilled({{ $opportunity->id }})"
+                                                                wire:confirm="Mark as filled?">
                                                                 <i class="fas fa-check-circle mr-2"></i> Mark as Filled
                                                             </button>
                                                         @endif
-                                                        
-                                                        @if(in_array($opportunity->status, ['published', 'pending_approval', 'draft']))
+
+                                                        @if (in_array($opportunity->status, ['published', 'pending_approval', 'draft']))
                                                             <div class="dropdown-divider"></div>
-                                                            <a href="{{ route('admin.opportunities.edit', $opportunity->id) }}" 
-                                                               class="dropdown-item">
+                                                            <a href="{{ route('admin.opportunities.edit', $opportunity->id) }}"
+                                                                class="dropdown-item">
                                                                 <i class="fas fa-edit mr-2"></i> Edit
                                                             </a>
                                                         @endif
-                                                        
+
                                                         <div class="dropdown-divider"></div>
                                                         <button class="dropdown-item text-danger"
-                                                                wire:click="deleteOpportunity({{ $opportunity->id }})"
-                                                                wire:confirm="Delete this opportunity?">
+                                                            wire:click="deleteOpportunity({{ $opportunity->id }})"
+                                                            wire:confirm="Delete this opportunity?">
                                                             <i class="fas fa-trash mr-2"></i> Delete
                                                         </button>
                                                     </div>
@@ -390,10 +405,11 @@
                                         <td colspan="9" class="text-center py-5">
                                             <i class="fas fa-briefcase fa-3x text-muted mb-3"></i>
                                             <h5 class="text-muted">No opportunities found</h5>
-                                            @if($search || $typeFilter || $statusFilter || $locationFilter || $employerFilter)
+                                            @if ($search || $typeFilter || $statusFilter || $locationFilter || $employerFilter)
                                                 <p class="text-muted">Try adjusting your search or filters</p>
-                                                <button wire:click="$set(['search' => '', 'typeFilter' => '', 'statusFilter' => '', 'locationFilter' => '', 'employerFilter' => ''])"
-                                                        class="btn btn-sm btn-primary">
+                                                <button
+                                                    wire:click="$set(['search' => '', 'typeFilter' => '', 'statusFilter' => '', 'locationFilter' => '', 'employerFilter' => ''])"
+                                                    class="btn btn-sm btn-primary">
                                                     <i class="fas fa-times mr-1"></i> Clear Filters
                                                 </button>
                                             @endif
@@ -407,26 +423,99 @@
 
                 <!-- Card Footer -->
                 <div class="card-footer clearfix">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <span class="text-muted">
-                                Showing {{ $opportunities->firstItem() ?? 0 }} to {{ $opportunities->lastItem() ?? 0 }}
-                                of {{ $opportunities->total() }} entries
-                            </span>
+                    <div class="row align-items-center">
+                        <div class="col-sm-6">
+                            <div class="dataTables_info" role="status" aria-live="polite">
+                                <i class="fas fa-info-circle text-muted mr-1"></i>
+                                Showing
+                                <strong>{{ $opportunities->firstItem() ?? 0 }}</strong>
+                                to
+                                <strong>{{ $opportunities->lastItem() ?? 0 }}</strong>
+                                of
+                                <strong>{{ $opportunities->total() }}</strong>
+                                entries
+                            </div>
                         </div>
-                        <div>
-                            @if($opportunities->hasPages())
-                                {{ $opportunities->links() }}
-                            @endif
-                        </div>
-                        <div>
-                            <button type="button" class="btn btn-default" wire:click="$toggle('showFilters')">
-                                <i class="fas fa-filter mr-1"></i>
-                                {{ $showFilters ? 'Hide Filters' : 'Show Filters' }}
-                            </button>
-                            <a href="{{ route('admin.opportunities.create') }}" class="btn btn-primary ml-2">
-                                <i class="fas fa-plus mr-1"></i> New Opportunity
-                            </a>
+                        <div class="col-sm-6">
+                            <div class="d-flex justify-content-end align-items-center">
+                                @if ($opportunities->hasPages())
+                                    <nav aria-label="Page navigation" class="mr-3">
+                                        <ul class="pagination pagination-sm m-0">
+                                            {{-- Previous Page Link --}}
+                                            @if ($opportunities->onFirstPage())
+                                                <li class="page-item disabled">
+                                                    <span class="page-link">
+                                                        <i class="fas fa-chevron-left"></i>
+                                                    </span>
+                                                </li>
+                                            @else
+                                                <li class="page-item">
+                                                    <button type="button" class="page-link"
+                                                        wire:click="previousPage" wire:loading.attr="disabled">
+                                                        <i class="fas fa-chevron-left"></i>
+                                                    </button>
+                                                </li>
+                                            @endif
+
+                                            {{-- Pagination Elements --}}
+                                            @foreach ($opportunities->links()->elements as $element)
+                                                {{-- "Three Dots" Separator --}}
+                                                @if (is_string($element))
+                                                    <li class="page-item disabled">
+                                                        <span class="page-link">{{ $element }}</span>
+                                                    </li>
+                                                @endif
+
+                                                {{-- Array Of Links --}}
+                                                @if (is_array($element))
+                                                    @foreach ($element as $page => $url)
+                                                        @if ($page == $opportunities->currentPage())
+                                                            <li class="page-item active">
+                                                                <span class="page-link">{{ $page }}</span>
+                                                            </li>
+                                                        @else
+                                                            <li class="page-item">
+                                                                <button type="button" class="page-link"
+                                                                    wire:click="gotoPage({{ $page }})">
+                                                                    {{ $page }}
+                                                                </button>
+                                                            </li>
+                                                        @endif
+                                                    @endforeach
+                                                @endif
+                                            @endforeach
+
+                                            {{-- Next Page Link --}}
+                                            @if ($opportunities->hasMorePages())
+                                                <li class="page-item">
+                                                    <button type="button" class="page-link" wire:click="nextPage"
+                                                        wire:loading.attr="disabled">
+                                                        <i class="fas fa-chevron-right"></i>
+                                                    </button>
+                                                </li>
+                                            @else
+                                                <li class="page-item disabled">
+                                                    <span class="page-link">
+                                                        <i class="fas fa-chevron-right"></i>
+                                                    </span>
+                                                </li>
+                                            @endif
+                                        </ul>
+                                    </nav>
+                                @endif
+
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-default btn-sm"
+                                        wire:click="$toggle('showFilters')">
+                                        <i class="fas fa-filter mr-1"></i>
+                                        {{ $showFilters ? 'Hide Filters' : 'Show Filters' }}
+                                    </button>
+                                    <a href="{{ route('admin.opportunities.create') }}"
+                                        class="btn btn-primary btn-sm ml-2">
+                                        <i class="fas fa-plus mr-1"></i> New Opportunity
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -448,6 +537,167 @@
                 });
             });
         </script>
+    @endpush
+
+    @push('styles')
+        <style>
+            /* Existing styles... */
+
+            /* Pagination Styling */
+            .pagination {
+                margin: 0;
+                gap: 2px;
+            }
+
+            .pagination .page-item .page-link {
+                padding: 0.375rem 0.75rem;
+                font-size: 0.875rem;
+                line-height: 1.5;
+                border-radius: 0.25rem;
+                color: #007bff;
+                background-color: #fff;
+                border: 1px solid #dee2e6;
+                cursor: pointer;
+                transition: all 0.2s ease;
+            }
+
+            .pagination .page-item.active .page-link {
+                background-color: #007bff;
+                border-color: #007bff;
+                color: #fff;
+                z-index: 1;
+            }
+
+            .pagination .page-item.disabled .page-link {
+                color: #6c757d;
+                cursor: not-allowed;
+                background-color: #fff;
+                border-color: #dee2e6;
+                opacity: 0.6;
+            }
+
+            .pagination .page-item:not(.disabled):not(.active) .page-link:hover {
+                background-color: #e9ecef;
+                border-color: #dee2e6;
+                color: #0056b3;
+                transform: translateY(-1px);
+            }
+
+            .pagination .page-link:focus {
+                box-shadow: none;
+                outline: none;
+            }
+
+            .pagination .page-link i {
+                font-size: 0.75rem;
+            }
+
+            /* DataTables info styling */
+            .dataTables_info {
+                padding-top: 0.375rem;
+                font-size: 0.875rem;
+                color: #6c757d;
+            }
+
+            /* Responsive adjustments */
+            @media (max-width: 768px) {
+                .card-footer .row {
+                    flex-direction: column;
+                }
+
+                .card-footer .col-sm-6 {
+                    width: 100%;
+                    text-align: center !important;
+                }
+
+                .card-footer .col-sm-6:first-child {
+                    margin-bottom: 1rem;
+                }
+
+                .d-flex.justify-content-end {
+                    justify-content: center !important;
+                    flex-wrap: wrap;
+                    gap: 0.5rem;
+                }
+
+                .pagination {
+                    justify-content: center;
+                    flex-wrap: wrap;
+                }
+
+                .btn-group {
+                    margin-top: 0.5rem;
+                }
+            }
+
+            /* Progress bar styling */
+            .progress-group {
+                margin-bottom: 0;
+            }
+
+            .progress-group .progress {
+                margin-bottom: 2px;
+            }
+
+            .progress-group .progress-number {
+                font-size: 0.75rem;
+            }
+
+            /* Avatar styling */
+            .avatar-initials {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                font-weight: bold;
+            }
+
+            /* Table hover effect */
+            .table-hover tbody tr:hover {
+                background-color: rgba(0, 123, 255, 0.05);
+                cursor: pointer;
+            }
+
+            /* Badge styling */
+            .badge-sm {
+                font-size: 0.7em;
+                padding: 0.2em 0.4em;
+            }
+
+            /* Button group styling */
+            .btn-group-sm .btn {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.875rem;
+            }
+
+            .dropdown-item {
+                cursor: pointer;
+            }
+
+            .dropdown-item:hover {
+                background-color: #f8f9fa;
+            }
+
+            /* Card styling */
+            .info-box {
+                margin-bottom: 1rem;
+            }
+
+            .info-box .info-box-number {
+                font-size: 1.5rem;
+                font-weight: bold;
+            }
+
+            /* Filter section animation */
+            #filterSection {
+                transition: all 0.3s ease;
+            }
+
+            /* Tooltip styling */
+            [data-toggle="tooltip"] {
+                cursor: pointer;
+            }
+        </style>
     @endpush
 
 </div>

@@ -367,23 +367,77 @@
 
                 <!-- Card Footer -->
                 <div class="card-footer clearfix">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <span class="text-muted">
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="dataTables_info" id="example2_info" role="status" aria-live="polite">
                                 Showing {{ $users->firstItem() ?? 0 }} to {{ $users->lastItem() ?? 0 }}
                                 of {{ $users->total() }} entries
-                            </span>
+                            </div>
                         </div>
-                        <div>
-                            @if ($users->hasPages())
-                                {{ $users->links() }}
-                            @endif
-                        </div>
-                        <div>
-                            <button type="button" class="btn btn-default" wire:click="$toggle('showFilters')">
-                                <i class="fas fa-filter mr-1"></i>
-                                {{ $showFilters ? 'Hide Filters' : 'Show Filters' }}
-                            </button>
+                        <div class="col-sm-6">
+                            <div class="float-right">
+                                @if ($users->hasPages())
+                                    <nav aria-label="Page navigation">
+                                        <ul class="pagination pagination-sm m-0">
+                                            {{-- Previous Page Link --}}
+                                            @if ($users->onFirstPage())
+                                                <li class="page-item disabled">
+                                                    <span class="page-link">&laquo;</span>
+                                                </li>
+                                            @else
+                                                <li class="page-item">
+                                                    <button type="button" class="page-link"
+                                                        wire:click="previousPage" wire:loading.attr="disabled">
+                                                        <i class="fas fa-chevron-left"></i>
+                                                    </button>
+                                                </li>
+                                            @endif
+
+                                            {{-- Pagination Elements --}}
+                                            @foreach ($users->links()->elements as $element)
+                                                {{-- "Three Dots" Separator --}}
+                                                @if (is_string($element))
+                                                    <li class="page-item disabled">
+                                                        <span class="page-link">{{ $element }}</span>
+                                                    </li>
+                                                @endif
+
+                                                {{-- Array Of Links --}}
+                                                @if (is_array($element))
+                                                    @foreach ($element as $page => $url)
+                                                        @if ($page == $users->currentPage())
+                                                            <li class="page-item active" aria-current="page">
+                                                                <span class="page-link">{{ $page }}</span>
+                                                            </li>
+                                                        @else
+                                                            <li class="page-item">
+                                                                <button type="button" class="page-link"
+                                                                    wire:click="gotoPage({{ $page }})">
+                                                                    {{ $page }}
+                                                                </button>
+                                                            </li>
+                                                        @endif
+                                                    @endforeach
+                                                @endif
+                                            @endforeach
+
+                                            {{-- Next Page Link --}}
+                                            @if ($users->hasMorePages())
+                                                <li class="page-item">
+                                                    <button type="button" class="page-link" wire:click="nextPage"
+                                                        wire:loading.attr="disabled">
+                                                        <i class="fas fa-chevron-right"></i>
+                                                    </button>
+                                                </li>
+                                            @else
+                                                <li class="page-item disabled">
+                                                    <span class="page-link">&raquo;</span>
+                                                </li>
+                                            @endif
+                                        </ul>
+                                    </nav>
+                                @endif
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -609,180 +663,180 @@
     @endif
 
     @push('scripts')
-    <script>
-        // Global chart instances
-        let roleChartInstance = null;
-        let registrationChartInstance = null;
+        <script>
+            // Global chart instances
+            let roleChartInstance = null;
+            let registrationChartInstance = null;
 
-        function destroyCharts() {
-            if (roleChartInstance) {
-                roleChartInstance.destroy();
-                roleChartInstance = null;
-            }
-            if (registrationChartInstance) {
-                registrationChartInstance.destroy();
-                registrationChartInstance = null;
-            }
-        }
-
-        function initRoleChart() {
-            const ctx = document.getElementById('roleChart');
-            if (!ctx) return; // Guard clause if canvas doesn't exist
-            
-            // Destroy existing if any
-            if (roleChartInstance) {
-                roleChartInstance.destroy();
-            }
-
-            roleChartInstance = new Chart(ctx.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['Students', 'Employers', 'Mentors', 'Admins'],
-                    datasets: [{
-                        data: [
-                            @this.roleDistribution.students,
-                            @this.roleDistribution.employers,
-                            @this.roleDistribution.mentors,
-                            @this.roleDistribution.admins
-                        ],
-                        backgroundColor: [
-                            '#28a745',
-                            '#007bff',
-                            '#ffc107',
-                            '#dc3545'
-                        ],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    }
+            function destroyCharts() {
+                if (roleChartInstance) {
+                    roleChartInstance.destroy();
+                    roleChartInstance = null;
                 }
-            });
-        }
-
-        function initRegistrationChart() {
-            const ctx = document.getElementById('registrationChart');
-            if (!ctx) return; // Guard clause if canvas doesn't exist
-            
-            // Destroy existing if any
-            if (registrationChartInstance) {
-                registrationChartInstance.destroy();
+                if (registrationChartInstance) {
+                    registrationChartInstance.destroy();
+                    registrationChartInstance = null;
+                }
             }
 
-            registrationChartInstance = new Chart(ctx.getContext('2d'), {
-                type: 'line',
-                data: {
-                    labels: @json($monthlyRegistrations['months']),
-                    datasets: [{
-                        label: 'New Users',
-                        data: @json($monthlyRegistrations['counts']),
-                        borderColor: '#007bff',
-                        backgroundColor: 'rgba(0, 123, 255, 0.1)',
-                        fill: true,
-                        tension: 0.4,
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                precision: 0
+            function initRoleChart() {
+                const ctx = document.getElementById('roleChart');
+                if (!ctx) return; // Guard clause if canvas doesn't exist
+
+                // Destroy existing if any
+                if (roleChartInstance) {
+                    roleChartInstance.destroy();
+                }
+
+                roleChartInstance = new Chart(ctx.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Students', 'Employers', 'Mentors', 'Admins'],
+                        datasets: [{
+                            data: [
+                                @this.roleDistribution.students,
+                                @this.roleDistribution.employers,
+                                @this.roleDistribution.mentors,
+                                @this.roleDistribution.admins
+                            ],
+                            backgroundColor: [
+                                '#28a745',
+                                '#007bff',
+                                '#ffc107',
+                                '#dc3545'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
                             }
                         }
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
                     }
-                }
-            });
-        }
-
-        // Initialize when Livewire loads
-        document.addEventListener('livewire:initialized', () => {
-            // Small delay to ensure DOM is ready
-            setTimeout(() => {
-                initRoleChart();
-                initRegistrationChart();
-            }, 100);
-        });
-
-        // Handle Livewire updates
-        Livewire.on('refreshUsers', () => {
-            setTimeout(() => {
-                initRoleChart();
-                initRegistrationChart();
-            }, 100);
-        });
-
-        // Cleanup when navigating away (IMPORTANT!)
-        document.addEventListener('livewire:navigating', () => {
-            destroyCharts();
-        });
-
-        // Reinitialize when navigating back
-        document.addEventListener('livewire:navigated', () => {
-            setTimeout(() => {
-                initRoleChart();
-                initRegistrationChart();
-            }, 100);
-        });
-
-        // Toast notification handler
-        Livewire.on('show-toast', (event) => {
-            if (typeof toastr !== 'undefined') {
-                toastr[event.type](event.message, '', {
-                    closeButton: true,
-                    progressBar: true,
-                    positionClass: 'toast-top-right',
-                    timeOut: 5000
                 });
             }
-        });
 
-        // Initialize toastr
-        if (typeof toastr !== 'undefined') {
-            toastr.options = {
-                "closeButton": true,
-                "debug": false,
-                "newestOnTop": true,
-                "progressBar": true,
-                "positionClass": "toast-top-right",
-                "preventDuplicates": false,
-                "onclick": null,
-                "showDuration": "300",
-                "hideDuration": "1000",
-                "timeOut": "5000",
-                "extendedTimeOut": "1000",
-                "showEasing": "swing",
-                "hideEasing": "linear",
-                "showMethod": "fadeIn",
-                "hideMethod": "fadeOut"
-            };
-        }
+            function initRegistrationChart() {
+                const ctx = document.getElementById('registrationChart');
+                if (!ctx) return; // Guard clause if canvas doesn't exist
 
-        // Focus on confirmation input when modal opens
-        Livewire.on('showDeleteModal', () => {
-            setTimeout(() => {
-                const input = document.getElementById('deleteConfirmation');
-                if (input) {
-                    input.focus();
+                // Destroy existing if any
+                if (registrationChartInstance) {
+                    registrationChartInstance.destroy();
                 }
-            }, 100);
-        });
-    </script>
-@endpush
+
+                registrationChartInstance = new Chart(ctx.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: @json($monthlyRegistrations['months']),
+                        datasets: [{
+                            label: 'New Users',
+                            data: @json($monthlyRegistrations['counts']),
+                            borderColor: '#007bff',
+                            backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Initialize when Livewire loads
+            document.addEventListener('livewire:initialized', () => {
+                // Small delay to ensure DOM is ready
+                setTimeout(() => {
+                    initRoleChart();
+                    initRegistrationChart();
+                }, 100);
+            });
+
+            // Handle Livewire updates
+            Livewire.on('refreshUsers', () => {
+                setTimeout(() => {
+                    initRoleChart();
+                    initRegistrationChart();
+                }, 100);
+            });
+
+            // Cleanup when navigating away (IMPORTANT!)
+            document.addEventListener('livewire:navigating', () => {
+                destroyCharts();
+            });
+
+            // Reinitialize when navigating back
+            document.addEventListener('livewire:navigated', () => {
+                setTimeout(() => {
+                    initRoleChart();
+                    initRegistrationChart();
+                }, 100);
+            });
+
+            // Toast notification handler
+            Livewire.on('show-toast', (event) => {
+                if (typeof toastr !== 'undefined') {
+                    toastr[event.type](event.message, '', {
+                        closeButton: true,
+                        progressBar: true,
+                        positionClass: 'toast-top-right',
+                        timeOut: 5000
+                    });
+                }
+            });
+
+            // Initialize toastr
+            if (typeof toastr !== 'undefined') {
+                toastr.options = {
+                    "closeButton": true,
+                    "debug": false,
+                    "newestOnTop": true,
+                    "progressBar": true,
+                    "positionClass": "toast-top-right",
+                    "preventDuplicates": false,
+                    "onclick": null,
+                    "showDuration": "300",
+                    "hideDuration": "1000",
+                    "timeOut": "5000",
+                    "extendedTimeOut": "1000",
+                    "showEasing": "swing",
+                    "hideEasing": "linear",
+                    "showMethod": "fadeIn",
+                    "hideMethod": "fadeOut"
+                };
+            }
+
+            // Focus on confirmation input when modal opens
+            Livewire.on('showDeleteModal', () => {
+                setTimeout(() => {
+                    const input = document.getElementById('deleteConfirmation');
+                    if (input) {
+                        input.focus();
+                    }
+                }, 100);
+            });
+        </script>
+    @endpush
 
     @push('styles')
         <style>

@@ -48,12 +48,14 @@
                                 </select>
                             </div>
 
-                            @if(!in_array($disability_status, ['none', 'prefer_not_to_say', '']))
+                            @if (!in_array($disability_status, ['none', 'prefer_not_to_say', '']))
                                 <div class="form-group">
                                     <label>Required Accommodations</label>
                                     <textarea wire:model="disability_details" class="form-control" rows="2"
                                         placeholder="E.g., Wheelchair access, screen reader..."></textarea>
-                                    @error('disability_details') <span class="text-danger small">{{ $message }}</span> @enderror
+                                    @error('disability_details')
+                                        <span class="text-danger small">{{ $message }}</span>
+                                    @enderror
                                 </div>
                             @endif
                             <!-- Disability Section End -->
@@ -74,9 +76,12 @@
                             <div class="form-group">
                                 <label>CV / Resume (PDF)</label>
                                 <input type="file" wire:model="cv" class="form-control-file">
-                                @error('cv') <span class="text-danger small">{{ $message }}</span> @enderror
-                                @if(Auth::user()->studentProfile?->cv_url)
-                                    <small class="text-success"><i class="fas fa-check mr-1"></i> Current: Uploaded</small>
+                                @error('cv')
+                                    <span class="text-danger small">{{ $message }}</span>
+                                @enderror
+                                @if (Auth::user()->studentProfile?->cv_url)
+                                    <small class="text-success"><i class="fas fa-check mr-1"></i> Current:
+                                        Uploaded</small>
                                 @endif
                             </div>
 
@@ -84,9 +89,12 @@
                             <div class="form-group">
                                 <label>Academic Transcript (PDF)</label>
                                 <input type="file" wire:model="transcript" class="form-control-file">
-                                @error('transcript') <span class="text-danger small">{{ $message }}</span> @enderror
-                                @if(Auth::user()->studentProfile?->transcript_url)
-                                    <small class="text-success"><i class="fas fa-check mr-1"></i> Current: Uploaded</small>
+                                @error('transcript')
+                                    <span class="text-danger small">{{ $message }}</span>
+                                @enderror
+                                @if (Auth::user()->studentProfile?->transcript_url)
+                                    <small class="text-success"><i class="fas fa-check mr-1"></i> Current:
+                                        Uploaded</small>
                                 @endif
                             </div>
 
@@ -94,12 +102,15 @@
                             <div class="form-group">
                                 <label>School Attachment Letter (PDF)</label>
                                 <input type="file" wire:model="school_letter" class="form-control-file">
-                                @error('school_letter') <span class="text-danger small">{{ $message }}</span> @enderror
-                                @if(Auth::user()->studentProfile?->school_letter_url)
-                                    <small class="text-success"><i class="fas fa-check mr-1"></i> Current: Uploaded</small>
+                                @error('school_letter')
+                                    <span class="text-danger small">{{ $message }}</span>
+                                @enderror
+                                @if (Auth::user()->studentProfile?->school_letter_url)
+                                    <small class="text-success"><i class="fas fa-check mr-1"></i> Current:
+                                        Uploaded</small>
                                 @endif
                             </div>
-                            
+
                             <div class="alert alert-info small mt-3">
                                 <i class="fas fa-info-circle mr-1"></i>
                                 Uploading new documents will replace existing ones.
@@ -114,17 +125,14 @@
                         <div class="card-header p-2">
                             <ul class="nav nav-pills">
                                 <li class="nav-item">
-                                    <a class="nav-link {{ $activeTab === 'academic' ? 'active' : '' }}"
-                                        href="#"
-                                        wire:click.prevent="$set('activeTab', 'academic')"
-                                        style="cursor: pointer;">
+                                    <a class="nav-link {{ $activeTab === 'academic' ? 'active' : '' }}" href="#"
+                                        wire:click.prevent="$set('activeTab', 'academic')" style="cursor: pointer;">
                                         Academic Info
                                     </a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link {{ $activeTab === 'professional' ? 'active' : '' }}"
-                                        href="#"
-                                        wire:click.prevent="$set('activeTab', 'professional')"
+                                        href="#" wire:click.prevent="$set('activeTab', 'professional')"
                                         style="cursor: pointer;">
                                         Skills & Preferences
                                     </a>
@@ -154,10 +162,98 @@
                                                 <option value="technical">Technical Institute</option>
                                             </select>
                                         </div>
-                                        <div class="form-group col-md-6">
-                                            <label>Course Name</label>
-                                            <input type="text" wire:model="course_name" class="form-control">
+
+
+                                        <!-- Course Name with Searchable Dropdown -->
+                                        <div class="form-group col-md-6" x-data="{
+                                            init() {
+                                                    // Set initial value from Livewire
+                                                    this.$watch('$wire.course_search', (value) => {
+                                                        if (value && document.getElementById('course_name').value !== value) {
+                                                            document.getElementById('course_name').value = value;
+                                                        }
+                                                    });
+                                                },
+                                                syncCourse() {
+                                                    const inputValue = document.getElementById('course_name').value;
+                                                    @this.set('course_search', inputValue);
+                                                    @this.set('course_name', inputValue);
+                                                }
+                                        }"
+                                            x-init="init()">
+                                            <label>Course Name <span class="text-danger">*</span></label>
+                                            <div class="position-relative">
+                                                <input type="text" id="course_name" list="course-list"
+                                                    x-on:change="syncCourse()" x-on:blur="syncCourse()"
+                                                    class="form-control" placeholder="Search for your course..."
+                                                    autocomplete="off" :value="$wire.course_search" />
+
+                                                <!-- Datalist with Courses -->
+                                                <datalist id="course-list">
+                                                    @foreach ($courses as $course)
+                                                        <option value="{{ $course['name'] }}">
+                                                            {{ $course['name'] }} ({{ $course['code'] }})
+                                                        </option>
+                                                    @endforeach
+                                                </datalist>
+
+                                                <!-- Loading Indicator -->
+                                                <div wire:loading wire:target="course_search"
+                                                    class="position-absolute" style="right: 10px; top: 8px;">
+                                                    <div class="spinner-border spinner-border-sm text-primary"
+                                                        role="status">
+                                                        <span class="sr-only">Loading...</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Hint -->
+                                            <small class="form-text text-muted">
+                                                <i class="fas fa-info-circle mr-1"></i>
+                                                Start typing to search from {{ \App\Models\Course::count() }}+ courses
+                                            </small>
+
+                                            <!-- Display current selection status -->
+                                            @php
+                                                $isExistingCourse =
+                                                    !empty($course_name) &&
+                                                    \App\Models\Course::where('name', $course_name)->exists();
+                                            @endphp
+
+                                            @if ($course_name && $isExistingCourse)
+                                                <div class="mt-1">
+                                                    <span class="badge badge-success">
+                                                        <i class="fas fa-check-circle mr-1"></i> Existing course
+                                                    </span>
+                                                    @php $courseDetails = \App\Models\Course::where('name', $course_name)->first(); @endphp
+                                                    @if ($courseDetails)
+                                                        <span class="badge badge-info ml-1">
+                                                            <i class="fas fa-code mr-1"></i> Code:
+                                                            {{ $courseDetails->code }}
+                                                        </span>
+                                                        <span class="badge badge-secondary ml-1">
+                                                            <i class="fas fa-tag mr-1"></i>
+                                                            {{ ucfirst($courseDetails->category) }}
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                            @elseif($course_name)
+                                                <div class="mt-1">
+                                                    <span class="badge badge-warning">
+                                                        <i class="fas fa-info-circle mr-1"></i> Custom course name
+                                                    </span>
+                                                    <small class="form-text text-muted d-block mt-1">
+                                                        This course will be reviewed by administrators
+                                                    </small>
+                                                </div>
+                                            @endif
+
+                                            @error('course_name')
+                                                <span class="text-danger small d-block mt-1">{{ $message }}</span>
+                                            @enderror
                                         </div>
+
+
                                         <div class="form-group col-md-4">
                                             <label>Course Level</label>
                                             <select wire:model="course_level" class="form-control">
@@ -180,7 +276,8 @@
                                 </div>
 
                                 <!-- Professional Tab -->
-                                <div class="tab-pane  {{ $activeTab === 'professional' ? 'active' : '' }}" id="professional">
+                                <div class="tab-pane  {{ $activeTab === 'professional' ? 'active' : '' }}"
+                                    id="professional">
                                     <div class="form-group">
                                         <label>Professional Skills</label>
                                         <div class="input-group">

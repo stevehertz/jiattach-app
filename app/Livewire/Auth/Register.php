@@ -2,14 +2,15 @@
 
 namespace App\Livewire\Auth;
 
-use App\Models\User;
-use Livewire\Component;
-use Illuminate\Support\Str;
+use App\Models\Course;
 use App\Models\StudentProfile;
-use Illuminate\Validation\Rules;
-use Illuminate\Support\Facades\Log;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rules;
+use Livewire\Component;
 
 class Register extends Component
 {
@@ -58,6 +59,9 @@ class Register extends Component
     // Add this property to track initialization
     protected $hasInitialized = false;
 
+    public $courses = []; // Add this property to store courses
+    public $course_search = ''; // Add this for search functionality
+
     public function mount()
     {
         // Only initialize once
@@ -73,7 +77,70 @@ class Register extends Component
 
             $this->disability_status = 'none';
 
+            // Load courses
+            $this->loadCourses();
+
             $this->hasInitialized = true;
+        }
+    }
+
+    /**
+     * Load courses from database
+     */
+    public function loadCourses()
+    {
+        $this->courses = Course::orderBy('name')->get()->toArray();
+    }
+
+    /**
+     * Search courses dynamically
+     */
+    public function updatedCourseSearch($value)
+    {
+        // If the value matches a course name exactly, update course_name
+        $matchingCourse = collect($this->courses)->first(function ($course) use ($value) {
+            return strcasecmp($course['name'], $value) === 0;
+        });
+
+        if ($matchingCourse) {
+            // Exact match found - update course_name
+            $this->course_name = $matchingCourse['name'];
+        } else {
+            // No exact match - keep course_name as is or set to search value?
+            // Option 1: Clear course_name if no exact match
+            $this->course_name = '';
+
+            // Option 2: Keep the typed value as custom course
+            // $this->course_name = $value;
+        }
+        if (!empty($value)) {
+            $this->courses = Course::where('name', 'like', "%{$value}%")
+                ->orWhere('code', 'like', "%{$value}%")
+                ->orderBy('name')
+                ->limit(10)
+                ->get()
+                ->toArray();
+        } else {
+            $this->loadCourses();
+        }
+    }
+
+    /**
+     * Set course name when selected
+     */
+    public function selectCourse($courseId, $courseName)
+    {
+        $this->course_name = $courseName;
+        $this->course_search = $courseName;
+
+        // Verify if it's an existing course
+        $matchingCourse = collect($this->courses)->first(function ($course) use ($selectedValue) {
+            return strcasecmp($course['name'], $selectedValue) === 0;
+        });
+
+        if (!$matchingCourse) {
+            // It's a custom course, you might want to log this
+            Log::info('Custom course entered:', ['course' => $selectedValue]);
         }
     }
 

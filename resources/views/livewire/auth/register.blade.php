@@ -324,17 +324,44 @@
                 @enderror
             </div>
 
-            <!-- Course Name -->
+            <!-- Course Name with Searchable Dropdown -->
             <div class="flex flex-col gap-2">
-                <label class="text-[#0d141b] dark:text-gray-200 text-sm font-medium leading-normal"
-                    for="course_name">Course/Program Name</label>
+                <label class="text-[#0d141b] dark:text-gray-200 text-sm font-medium leading-normal" for="course_name">
+                    Course/Program Name
+                </label>
                 <div class="relative">
                     <span
-                        class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 material-symbols-outlined text-[20px]">menu_book</span>
-                    <input wire:model="course_name" id="course_name"
+                        class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 material-symbols-outlined text-[20px]">
+                        menu_book
+                    </span>
+
+                    <!-- Search Input with Datalist -->
+                    <input wire:model.live="course_search" id="course_name" list="course-list"
                         class="w-full h-12 rounded-lg border border-[#cfdbe7] dark:border-gray-600 bg-white dark:bg-gray-900 text-[#0d141b] dark:text-white px-3 pl-10 text-sm placeholder:text-[#91a6be] dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
-                        type="text" placeholder="Bachelor of Computer Science" required />
+                        type="text"
+                        placeholder="Search for your course (e.g., Computer Science, Civil Engineering)"
+                        autocomplete="off" />
+
+                    <!-- Datalist with Courses -->
+                    <datalist id="course-list">
+                        @foreach ($courses as $course)
+                            <option value="{{ $course['name'] }}">{{ $course['name'] }} ({{ $course['code'] }})
+                            </option>
+                        @endforeach
+                    </datalist>
+
+                    <!-- Loading Indicator -->
+                    <div wire:loading wire:target="course_search" class="absolute right-3 top-1/2 -translate-y-1/2">
+                        <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-primary"></div>
+                    </div>
                 </div>
+
+                <!-- Hint -->
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <span class="material-symbols-outlined text-xs inline-block mr-1">info</span>
+                    Start typing to search from {{ \App\Models\Course::count() }}+ courses
+                </p>
+
                 @error('course_name')
                     <span class="text-red-500 text-xs">{{ $message }}</span>
                 @enderror

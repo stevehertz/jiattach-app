@@ -36,7 +36,7 @@ class AttachmentOpportunitySeeder extends Seeder
                     'county' => 'Nairobi',
                     'min_gpa' => 3.0,
                     'skills_required' => ['PHP', 'Laravel', 'JavaScript'],
-                    'courses_required' => ['BS Computer Science', 'BS IT'],
+                    'courses_required' => ['BS Computer Science', 'BS IT', 'Computer Science'],
                     'start_date' => now()->addWeeks(2),
                     'end_date' => now()->addMonths(3),
                     'duration_months' => 3,

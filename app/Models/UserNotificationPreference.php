@@ -45,7 +45,8 @@ class UserNotificationPreference extends Model
             'document_approved' => 'Document Approved',
             'document_rejected' => 'Document Rejected',
             'system_alert' => 'System Alert',
-            'opportunity_deadline' => 'Opportunity Deadline'
+            'opportunity_deadline' => 'Opportunity Deadline',
+            'new_student_registration' => 'New Student Registration', // Add this
         ];
     }
 

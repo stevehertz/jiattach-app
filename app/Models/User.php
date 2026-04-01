@@ -474,4 +474,85 @@ class User extends Authenticatable
     {
         return $this->hasOne(UserTwoFactorSetting::class);
     }
+
+    /**
+     * Get notification preferences for the user.
+     */
+    public function notificationPreferences()
+    {
+        return $this->hasMany(UserNotificationPreference::class);
+    }
+
+    /**
+     * Get a specific notification preference by type.
+     */
+    public function getNotificationPreference($type)
+    {
+        return $this->notificationPreferences()
+            ->where('notification_type', $type)
+            ->first();
+    }
+
+    /**
+     * Update or create notification preference.
+     */
+    public function updateNotificationPreference($type, array $channels = null, $enabled = true)
+    {
+        $data = ['is_enabled' => $enabled];
+
+        if ($channels !== null) {
+            $data['channels'] = $channels;
+        }
+
+        return $this->notificationPreferences()->updateOrCreate(
+            ['notification_type' => $type],
+            $data
+        );
+    }
+
+    /**
+     * Get default notification channels for a user.
+     */
+    public function getDefaultNotificationChannels()
+    {
+        // Admins get more channels by default
+        if ($this->hasRole(['admin', 'super-admin'])) {
+            return ['in_app', 'push', 'email'];
+        }
+
+        // Students get basic channels
+        return ['in_app', 'email'];
+    }
+
+    /**
+     * Check if user wants to receive a specific notification type.
+     */
+    public function wantsNotification($type, $channel = null)
+    {
+        $preference = $this->getNotificationPreference($type);
+
+        // If no preference set, use defaults
+        if (!$preference) {
+            // By default, admins get all notifications, others get limited
+            if ($this->hasRole(['admin', 'super-admin'])) {
+                return true;
+            }
+
+            // For students, only specific types are enabled by default
+            $studentEnabledTypes = ['placement_match', 'placement_offered', 'mentorship_session'];
+            return in_array($type, $studentEnabledTypes);
+        }
+
+        // Check if notification type is enabled
+        if (!$preference->is_enabled) {
+            return false;
+        }
+
+        // If channel specified, check if it's in the allowed channels
+        if ($channel !== null) {
+            return in_array($channel, $preference->channels ?? []);
+        }
+
+        return true;
+    }
 }

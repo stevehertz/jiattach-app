@@ -262,6 +262,25 @@ class Register extends Component
             // Log the user in
             Auth::login($user);
 
+            // Send notification to all admins and super-admins
+            $admins = User::role(['admin', 'super-admin'])->get();
+
+            foreach ($admins as $admin) {
+                $admin->notify(new \App\Notifications\NewStudentRegistrationNotification($user));
+            }
+
+            // Log the activity
+            activity_log(
+                'New student registration',
+                'student_registered',
+                [
+                    'student_id' => $user->id,
+                    'student_name' => $user->full_name,
+                    'student_email' => $user->email,
+                ],
+                'student'
+            );
+
             // Clear component state
             $this->resetComponent();
 

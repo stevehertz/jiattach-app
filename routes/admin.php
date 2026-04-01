@@ -286,6 +286,23 @@ Route::middleware([
         Route::view('/backup', 'admin.settings.backup')->name('backup');
     });
 
+    Route::prefix('notifications')->name('notifications.')->group(function () {
+
+        Route::view('/', 'admin.notifications.index')->name('index');
+
+        Route::get('/test-notification', function () {
+            $admins = \App\Models\User::role(['admin', 'super-admin'])->get();
+
+            foreach ($admins as $admin) {
+                $admin->notify(new \App\Notifications\NewStudentRegistrationNotification(\App\Models\User::first()));
+            }
+
+            return 'Notifications sent to ' . $admins->count() . ' admins. Check the notifications table.';
+        })->name('test');
+    });
+
+
+
     Route::view('activity-logs', 'admin.utilities.activity-logs')->name('activity-logs');
 
     Route::view('system-health', 'admin.utilities.system-health')->name('system-health');

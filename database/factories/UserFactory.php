@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class UserFactory extends Factory
 {
+    protected $model = User::class;
     /**
      * Define the model's default state.
      *
@@ -21,19 +22,43 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
+        $disabilityStatuses = ['none', 'mobility', 'visual', 'hearing', 'cognitive', 'other', 'prefer_not_to_say'];
+        $disabilityStatus = $this->faker->randomElement($disabilityStatuses);
+
         return [
-            'first_name' => fake()->firstName(),
-            'last_name' => fake()->lastName(),
-            'email' => fake()->unique()->safeEmail(),
+            'first_name' => $this->faker->firstName(),
+            'last_name' => $this->faker->lastName(),
+            'email' => $this->faker->unique()->safeEmail(),
             'email_verified_at' => now(),
-            'password' => Hash::make('password'), // password
-            'phone' => fake()->phoneNumber(),
+            'password' => Hash::make('password'),
+            'phone' => $this->faker->phoneNumber(),
+            'national_id' => $this->faker->unique()->numerify('########'),
+            'date_of_birth' => $this->faker->dateTimeBetween('-30 years', '-20 years'),
+            'gender' => $this->faker->randomElement(['male', 'female', 'other']),
+            'county' => $this->faker->randomElement([
+                'Nairobi',
+                'Mombasa',
+                'Kisumu',
+                'Nakuru',
+                'Kiambu',
+                'Machakos',
+                'Uasin Gishu',
+                'Kilifi',
+                'Meru',
+                'Kakamega'
+            ]),
+            'constituency' => $this->faker->streetName(),
+            'ward' => $this->faker->streetName(),
+            'bio' => $this->faker->paragraph(),
+            'disability_status' => $disabilityStatus,
+            'disability_details' => $disabilityStatus !== 'none' && $disabilityStatus !== 'prefer_not_to_say'
+                ? $this->faker->sentence()
+                : null,
             'is_active' => true,
             'is_verified' => true,
+            'verification_token' => null,
+            'last_login_at' => $this->faker->dateTimeBetween('-1 month', 'now'),
             'remember_token' => Str::random(10),
-            // Add other fields from your fillable array if you want them seeded
-            'gender' => fake()->randomElement(['male', 'female']),
-            'county' => 'Nairobi',
         ];
     }
 
@@ -45,28 +70,19 @@ class UserFactory extends Factory
         return $this->state(function (array $attributes) {
             return [
                 'email_verified_at' => null,
+                'is_verified' => false,
             ];
         });
     }
 
-    /**
-     * Indicate that the user should have a personal team.
-     */
-    public function withPersonalTeam(callable $callback = null): static
+    public function withDisability($type = null): static
     {
-        if (! Features::hasTeamFeatures()) {
-            return $this->state([]);
-        }
-
-        return $this->has(
-            Team::factory()
-                ->state(fn(array $attributes, User $user) => [
-                    'name' => $user->name . '\'s Team',
-                    'user_id' => $user->id,
-                    'personal_team' => true,
-                ])
-                ->when(is_callable($callback), $callback),
-            'ownedTeams'
-        );
+        return $this->state(function (array $attributes) use ($type) {
+            $disabilityType = $type ?? $this->faker->randomElement(['mobility', 'visual', 'hearing', 'cognitive', 'other']);
+            return [
+                'disability_status' => $disabilityType,
+                'disability_details' => $this->faker->sentence(),
+            ];
+        });
     }
 }

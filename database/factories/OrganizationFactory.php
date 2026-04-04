@@ -22,25 +22,30 @@ class OrganizationFactory extends Factory
     {
         $name = fake()->company();
 
+        $industries = [
+            'Technology',
+            'Construction',
+            'Finance',
+            'Healthcare',
+            'Education',
+            'Agriculture',
+            'Manufacturing',
+            'Telecommunications',
+            'Hospitality',
+            'Energy',
+            'Transport',
+            'Real Estate'
+        ];
+
         return [
-            //
             'name' => $name,
-            'type' => fake()->randomElement(['company', 'non-profit', 'government', 'institution']),
-            'industry' => fake()->randomElement([
-                'Technology',
-                'Finance',
-                'Healthcare',
-                'Education',
-                'Agriculture',
-                'Manufacturing',
-                'Telecommunications',
-                'Energy'
-            ]),
-            'email' => fake()->companyEmail(),
-            'phone' => fake()->phoneNumber(),
-            'website' => fake()->url(),
-            'address' => fake()->streetAddress(),
-            'county' => fake()->randomElement([
+            'type' => $this->faker->randomElement(['company', 'non-profit', 'government', 'institution']),
+            'industry' => $this->faker->randomElement($industries),
+            'email' => $this->faker->companyEmail(),
+            'phone' => $this->faker->phoneNumber(),
+            'website' => $this->faker->url(),
+            'address' => $this->faker->streetAddress(),
+            'county' => $this->faker->randomElement([
                 'Nairobi',
                 'Mombasa',
                 'Kisumu',
@@ -52,32 +57,36 @@ class OrganizationFactory extends Factory
                 'Meru',
                 'Kakamega'
             ]),
-            'constituency' => fake()->streetName(),
-            'ward' => fake()->streetName(),
-            'contact_person_name' => fake()->name(),
-            'contact_person_email' => fake()->email(),
-            'contact_person_phone' => fake()->phoneNumber(),
-            'contact_person_position' => fake()->jobTitle(),
-            'description' => fake()->paragraph(3),
-            'departments' => json_encode(fake()->randomElements([
+            'constituency' => $this->faker->streetName(),
+            'ward' => $this->faker->streetName(),
+            'contact_person_name' => $this->faker->name(),
+            'contact_person_email' => $this->faker->email(),
+            'contact_person_phone' => $this->faker->phoneNumber(),
+            'contact_person_position' => $this->faker->jobTitle(),
+            'description' => $this->faker->paragraphs(3, true),
+            'departments' => $this->faker->randomElements([
                 'IT',
                 'Human Resources',
                 'Finance',
                 'Marketing',
                 'Operations',
                 'Research & Development',
-                'Customer Support'
-            ], rand(2, 4))),
-            'max_students_per_intake' => rand(3, 10),
+                'Customer Support',
+                'Sales',
+                'Engineering',
+                'Construction',
+                'Project Management'
+            ], rand(3, 6)),
+            'max_students_per_intake' => rand(5, 20),
             'is_active' => true,
-            'is_verified' => fake()->boolean(80), // 80% verified
-            'verified_at' => fake()->boolean(80) ? now() : null,
+            'is_verified' => $this->faker->boolean(90),
+            'verified_at' => $this->faker->boolean(90) ? now() : null,
         ];
     }
 
     public function verified(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(fn(array $attributes) => [
             'is_verified' => true,
             'verified_at' => now(),
         ]);
@@ -85,7 +94,7 @@ class OrganizationFactory extends Factory
 
     public function unverified(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(fn(array $attributes) => [
             'is_verified' => false,
             'verified_at' => null,
         ]);
@@ -93,15 +102,22 @@ class OrganizationFactory extends Factory
 
     public function active(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(fn(array $attributes) => [
             'is_active' => true,
         ]);
     }
 
     public function inactive(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(fn(array $attributes) => [
             'is_active' => false,
+        ]);
+    }
+
+    public function byIndustry(string $industry): static
+    {
+        return $this->state(fn(array $attributes) => [
+            'industry' => $industry,
         ]);
     }
 }

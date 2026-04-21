@@ -589,6 +589,7 @@ class StudentMatchingService
                     $opportunity = $match['opportunity'];
 
                     $application = Application::create([
+                        'user_id' => auth()->id(), // Admin who created the match
                         'student_id' => $student->id,
                         'attachment_opportunity_id' => $opportunity->id,
                         'organization_id' => $opportunity->organization_id,

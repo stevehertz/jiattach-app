@@ -45,6 +45,7 @@ class PlacementReportsTest extends TestCase
         foreach ($users as $i => $user) {
             // submitted_at for stats and duration analysis; updated_at for hired moment
             Application::create([
+                'user_id' => 1, // Admin user for testing
                 'student_id' => $user->id,
                 'status' => $i < 3 ? 'hired' : 'pending',
                 'submitted_at' => $dates[$i]->copy()->subDays(10),

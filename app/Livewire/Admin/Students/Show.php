@@ -202,10 +202,7 @@ class Show extends Component
             'student'
         );
 
-        $this->dispatch('show-toast', [
-            'type' => 'success',
-            'message' => "Student {$status} successfully!"
-        ]);
+        $this->dispatch('toastr:success', message: "Student {$status} successfully!");
 
         $this->dispatch('refreshStudent');
     }
@@ -253,10 +250,7 @@ class Show extends Component
     public function updateAttachmentStatus(string $status)
     {
         if (!$this->student->studentProfile) {
-            $this->dispatch('show-toast', [
-                'type' => 'error',
-                'message' => 'Student profile not found!'
-            ]);
+            $this->dispatch('toastr:error', message: 'Student profile not found!');
             return;
         }
 
@@ -279,10 +273,7 @@ class Show extends Component
             'student_profile'
         );
 
-        $this->dispatch('show-toast', [
-            'type' => 'success',
-            'message' => "Attachment status updated to " . ucfirst($status) . "!"
-        ]);
+        $this->dispatch('toastr:success', message: "Attachment status updated to " . ucfirst($status) . "!");
 
         $this->dispatch('refreshStudent');
     }
@@ -294,10 +285,7 @@ class Show extends Component
     {
         // Check if student has active placements
         if ($this->student->hasActivePlacement()) {
-            $this->dispatch('show-toast', [
-                'type' => 'error',
-                'message' => 'Cannot delete student with active placement!'
-            ]);
+            $this->dispatch('toastr:error', message: 'Cannot delete student with active placement!');
             return;
         }
 
@@ -356,18 +344,12 @@ class Show extends Component
 
         // Check if student is eligible for matching
         if (!$this->selectedStudentForMatch->studentProfile) {
-            $this->dispatch('show-toast', [
-                'type' => 'warning',
-                'message' => 'This student has no profile. Please complete profile first.'
-            ]);
+            $this->dispatch('toastr:warning', message: 'This student has no profile. Please complete profile first.');
             return;
         }
 
         if ($this->selectedStudentForMatch->studentProfile->attachment_status !== 'seeking') {
-            $this->dispatch('show-toast', [
-                'type' => 'warning',
-                'message' => 'This student is not seeking attachment. Only students with "Seeking" status can be matched.'
-            ]);
+            $this->dispatch('toastr:warning', message: 'This student is not seeking attachment. Only students with "Seeking" status can be matched.');
             return;
         }
 
@@ -399,10 +381,7 @@ class Show extends Component
         } catch (\Exception $e) {
             Log::error('Error finding matches: ' . $e->getMessage());
 
-            $this->dispatch('show-toast', [
-                'type' => 'error',
-                'message' => 'Error finding matches: ' . $e->getMessage()
-            ]);
+            $this->dispatch('toastr:error', message: 'Error finding matches: ' . $e->getMessage());
         }
 
         $this->matchLoading = false;
@@ -415,10 +394,7 @@ class Show extends Component
     {
         $this->findMatches();
 
-        $this->dispatch('show-toast', [
-            'type' => 'success',
-            'message' => 'Matches refreshed successfully!'
-        ]);
+        $this->dispatch('toastr:success', message: 'Matches refreshed successfully!');
     }
 
     /**
@@ -427,10 +403,7 @@ class Show extends Component
     public function saveMatches()
     {
         if (empty($this->selectedMatches)) {
-            $this->dispatch('show-toast', [
-                'type' => 'warning',
-                'message' => 'Please select at least one match to save.'
-            ]);
+            $this->dispatch('toastr:warning', message: 'Please select at least one match to save.');
             return;
         }
 
@@ -456,19 +429,13 @@ class Show extends Component
             // Refresh the student data to show new applications
             $this->student->load('studentApplications.opportunity.organization');
 
-            $this->dispatch('show-toast', [
-                'type' => 'success',
-                'message' => count($saved) . ' matches saved successfully!'
-            ]);
+            $this->dispatch('toastr:success', message: count($saved) . ' matches saved successfully!');
 
             $this->dispatch('refreshStudent');
         } catch (\Exception $e) {
             Log::error('Error saving matches: ' . $e->getMessage());
 
-            $this->dispatch('show-toast', [
-                'type' => 'error',
-                'message' => 'Error saving matches: ' . $e->getMessage()
-            ]);
+            $this->dispatch('toastr:error', message: 'Error saving matches: ' . $e->getMessage());
         }
     }
 
@@ -501,19 +468,13 @@ class Show extends Component
 
         // Check if application is offered
         if ($application->status !== 'offered') {
-            $this->dispatch('show-toast', [
-                'type' => 'warning',
-                'message' => 'Only offered applications can be converted to placements.'
-            ]);
+            $this->dispatch('toastr:warning', message: 'Only offered applications can be converted to placements.');
             return;
         }
 
         // Check if placement already exists
         if ($application->placement) {
-            $this->dispatch('show-toast', [
-                'type' => 'warning',
-                'message' => 'Placement already exists for this application.'
-            ]);
+            $this->dispatch('toastr:warning', message: 'Placement already exists for this application.');
             return;
         }
 
@@ -567,19 +528,13 @@ class Show extends Component
             // Refresh student data
             $this->student->load('studentApplications', 'placements');
 
-            $this->dispatch('show-toast', [
-                'type' => 'success',
-                'message' => 'Placement created successfully!'
-            ]);
+            $this->dispatch('toastr:success', message: 'Placement created successfully!');
         } catch (\Exception $e) {
             DB::rollBack();
 
             Log::error('Failed to create placement: ' . $e->getMessage());
 
-            $this->dispatch('show-toast', [
-                'type' => 'error',
-                'message' => 'Failed to create placement: ' . $e->getMessage()
-            ]);
+            $this->dispatch('toastr:error', message: 'Failed to create placement: ' . $e->getMessage());
         }
     }
 

@@ -732,9 +732,36 @@
     @push('scripts')
         <script>
             document.addEventListener('livewire:initialized', () => {
-                // Toast notification handler
-                Livewire.on('show-toast', (event) => {
-                    toastr[event.type](event.message, '', {
+                // Toast notification handlers
+                Livewire.on('toastr:success', ({ message }) => {
+                    toastr.success(message, '', {
+                        closeButton: true,
+                        progressBar: true,
+                        positionClass: 'toast-top-right',
+                        timeOut: 5000
+                    });
+                });
+
+                Livewire.on('toastr:error', ({ message }) => {
+                    toastr.error(message, '', {
+                        closeButton: true,
+                        progressBar: true,
+                        positionClass: 'toast-top-right',
+                        timeOut: 5000
+                    });
+                });
+
+                Livewire.on('toastr:warning', ({ message }) => {
+                    toastr.warning(message, '', {
+                        closeButton: true,
+                        progressBar: true,
+                        positionClass: 'toast-top-right',
+                        timeOut: 5000
+                    });
+                });
+
+                Livewire.on('toastr:info', ({ message }) => {
+                    toastr.info(message, '', {
                         closeButton: true,
                         progressBar: true,
                         positionClass: 'toast-top-right',

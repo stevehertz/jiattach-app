@@ -2,5 +2,4 @@
 
     <livewire:admin.students.index />
 
-
 </x-layouts.app>

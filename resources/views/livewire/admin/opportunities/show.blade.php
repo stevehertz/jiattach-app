@@ -1,7 +1,7 @@
 <div>
     <div class="content">
         <div class="container-fluid">
-            
+
             <!-- Flash Messages -->
             @if(session('message'))
                 <div class="alert alert-{{ session('alert-type', 'success') }} alert-dismissible fade show mb-4">
@@ -54,7 +54,7 @@
             <div class="row">
                 <!-- Main Content Column -->
                 <div class="col-lg-8">
-                    
+
                     <!-- Overview Cards -->
                     <div class="row mb-4">
                         <div class="col-md-3 col-6">
@@ -187,27 +187,27 @@
                                                         </span>
                                                     </td>
                                                     <td>
-                                                        <span class="badge badge-{{ match($application->status) {
-                                                            'accepted' => 'success',
-                                                            'offered' => 'primary',
+                                                        <span class="badge badge-{{ match($application->status->value) {
+                                                            'offer_accepted' => 'success',
+                                                            'offer_sent' => 'primary',
                                                             'shortlisted' => 'info',
-                                                            'reviewing' => 'warning',
+                                                            'under_review' => 'warning',
                                                             'rejected' => 'danger',
                                                             default => 'secondary'
                                                         } }}">
-                                                            {{ ucfirst($application->status) }}
+                                                            {{ ucfirst($application->status->value) }}
                                                         </span>
                                                     </td>
                                                     <td class="text-muted small">
                                                         {{ $application->created_at->diffForHumans() }}
                                                     </td>
                                                     <td>
-                                                        <a href="{{ route('admin.users.show', $application->student) }}" 
+                                                        <a href="{{ route('admin.users.show', $application->student) }}"
                                                            class="btn btn-sm btn-outline-primary" title="View Student">
                                                             <i class="fas fa-eye"></i>
                                                         </a>
                                                         @if($application->placement)
-                                                            <a href="{{ route('admin.placements.show', $application->placement) }}" 
+                                                            <a href="{{ route('admin.placements.show', $application->placement) }}"
                                                                class="btn btn-sm btn-outline-success" title="View Placement">
                                                                 <i class="fas fa-briefcase"></i>
                                                             </a>
@@ -238,7 +238,7 @@
 
                 <!-- Sidebar Column -->
                 <div class="col-lg-4">
-                    
+
                     <!-- Action Panel -->
                     <div class="card card-outline card-warning shadow-sm mb-4">
                         <div class="card-header">
@@ -247,10 +247,10 @@
                             </h3>
                         </div>
                         <div class="card-body">
-                            
+
                             {{-- DRAFT / PENDING APPROVAL ACTIONS --}}
                             @if(in_array($opportunity->status, ['draft', 'pending_approval']))
-                                <button type="button" 
+                                <button type="button"
                                     wire:click="confirmAction('publish', 'Publish Opportunity?', 'This will make the opportunity visible to all students.')"
                                     class="btn btn-success btn-block mb-3">
                                     <i class="fas fa-rocket mr-2"></i>Publish Now
@@ -328,27 +328,27 @@
                         <div class="card-body">
                             <ul class="list-group list-group-unbordered">
                                 <li class="list-group-item">
-                                    <b>Type</b> 
+                                    <b>Type</b>
                                     <span class="float-right badge badge-primary">{{ ucfirst($opportunity->type) }}</span>
                                 </li>
                                 <li class="list-group-item">
-                                    <b>Work Type</b> 
+                                    <b>Work Type</b>
                                     <span class="float-right badge badge-info">{{ ucfirst($opportunity->work_type) }}</span>
                                 </li>
                                 <li class="list-group-item">
-                                    <b>Duration</b> 
+                                    <b>Duration</b>
                                     <span class="float-right">{{ $opportunity->duration_months }} months</span>
                                 </li>
                                 <li class="list-group-item">
-                                    <b>Start Date</b> 
+                                    <b>Start Date</b>
                                     <span class="float-right">{{ $opportunity->start_date?->format('M d, Y') }}</span>
                                 </li>
                                 <li class="list-group-item">
-                                    <b>End Date</b> 
+                                    <b>End Date</b>
                                     <span class="float-right">{{ $opportunity->end_date?->format('M d, Y') }}</span>
                                 </li>
                                 <li class="list-group-item">
-                                    <b>Deadline</b> 
+                                    <b>Deadline</b>
                                     <span class="float-right {{ ($opportunity->daysRemaining ?? 0) > 7 ? 'text-success' : (($opportunity->daysRemaining ?? 0) > 0 ? 'text-warning' : 'text-danger') }}">
                                         {{ $opportunity->deadline?->format('M d, Y') }}
                                     </span>
@@ -371,14 +371,14 @@
                                     {{ ucfirst($opportunity->work_type) }}
                                 </span>
                             </div>
-                            
+
                             @if($opportunity->location)
                                 <div class="mb-3">
                                     <strong class="d-block text-muted mb-1">Location</strong>
                                     {{ $opportunity->location }}
                                 </div>
                             @endif
-                            
+
                             @if($opportunity->county)
                                 <div class="mb-3">
                                     <strong class="d-block text-muted mb-1">County</strong>
@@ -445,14 +445,14 @@
                         </div>
                         <div class="card-body">
                             <div class="text-center mb-3">
-                                <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-2" 
+                                <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-2"
                                      style="width: 80px; height: 80px;">
                                     <i class="fas fa-building fa-2x text-muted"></i>
                                 </div>
                                 <h5 class="mb-0">{{ $opportunity->organization->name ?? 'Unknown' }}</h5>
                                 <small class="text-muted">{{ $opportunity->organization->industry ?? '' }}</small>
                             </div>
-                            
+
                             <ul class="list-unstyled mb-0">
                                 @if($opportunity->organization->email)
                                     <li class="mb-2">

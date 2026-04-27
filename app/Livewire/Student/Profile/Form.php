@@ -211,7 +211,7 @@ class Form extends Component
         ]);
 
         // Emit event to parent component/controller
-        $this->emit('profileUpdated', $this->profile);
+        $this->dispatch('profileUpdated', $this->profile);
     }
 
     public function deleteDocument($type)
@@ -241,7 +241,7 @@ class Form extends Component
                 'message' => ucfirst($type) . ' deleted successfully.'
             ]);
 
-            $this->emit('documentDeleted', $type);
+            $this->dispatch('documentDeleted', $type);
         }
     }
 

@@ -41,5 +41,54 @@
         @stack('modals')
 
         @livewireScripts
+
+        <script>
+            // Toastr event listeners for Livewire 3
+            document.addEventListener('DOMContentLoaded', function() {
+                Livewire.on('toastr:success', ({ message }) => {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success(message, '', {
+                            closeButton: true,
+                            progressBar: true,
+                            positionClass: 'toast-top-right',
+                            timeOut: 5000
+                        });
+                    }
+                });
+
+                Livewire.on('toastr:error', ({ message }) => {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error(message, '', {
+                            closeButton: true,
+                            progressBar: true,
+                            positionClass: 'toast-top-right',
+                            timeOut: 5000
+                        });
+                    }
+                });
+
+                Livewire.on('toastr:warning', ({ message }) => {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.warning(message, '', {
+                            closeButton: true,
+                            progressBar: true,
+                            positionClass: 'toast-top-right',
+                            timeOut: 5000
+                        });
+                    }
+                });
+
+                Livewire.on('toastr:info', ({ message }) => {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.info(message, '', {
+                            closeButton: true,
+                            progressBar: true,
+                            positionClass: 'toast-top-right',
+                            timeOut: 5000
+                        });
+                    }
+                });
+            });
+        </script>
     </body>
 </html>

@@ -48,6 +48,8 @@ Route::middleware([
         Route::get('/{user}/users', [UsersController::class, 'show'])->name('show');
     });
 
+    Route::view('/chat', 'admin.chat.index')->name('chat');
+
     // Add this to your admin routes group, after the mentors routes
     Route::prefix('administrators')->name('administrators.')->group(function () {
 

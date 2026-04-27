@@ -19,7 +19,7 @@
                     $color = $colors[crc32(Auth::user()->email) % count($colors)];
                 @endphp
                 <div class="avatar-initials bg-{{ $color }} img-circle elevation-2"
-                     style="width: 45px; height: 45px; line-height: 45px; text-align: center; color: white; font-weight: bold; font-size: 16px;">
+                    style="width: 45px; height: 45px; line-height: 45px; text-align: center; color: white; font-weight: bold; font-size: 16px;">
                     {{ $initials }}
                 </div>
             </div>
@@ -29,14 +29,14 @@
                 </a>
                 <small class="text-muted">
                     Student
-                    @if(Auth::user()->studentProfile)
+                    @if (Auth::user()->studentProfile)
                         • {{ Auth::user()->studentProfile->institution_name }}
                     @endif
                 </small>
                 @php
                     $placement = Auth::user()->placements()->latest()->first();
                 @endphp
-                @if($placement && $placement->status == 'placed')
+                @if ($placement && $placement->status == 'placed')
                     <small class="text-success d-block mt-1">
                         <i class="fas fa-briefcase mr-1"></i>
                         Placed at {{ $placement->organization->name ?? 'Organization' }}
@@ -65,8 +65,7 @@
                 <!-- Dashboard -->
                 <li class="nav-item">
                     <a href="{{ route('student.dashboard') }}"
-                       class="nav-link {{ request()->routeIs('student.dashboard') ? 'active' : '' }}"
-                       wire:navigate>
+                        class="nav-link {{ request()->routeIs('student.dashboard') ? 'active' : '' }}" wire:navigate>
                         <i class="nav-icon fas fa-tachometer-alt"></i>
                         <p>Dashboard</p>
                     </a>
@@ -75,13 +74,13 @@
                 <!-- Profile -->
                 <li class="nav-item">
                     <a href="{{ route('student.profile.show') }}"
-                       class="nav-link {{ request()->routeIs('student.profile*') ? 'active' : '' }}">
+                        class="nav-link {{ request()->routeIs('student.profile*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-user"></i>
                         <p>My Profile</p>
                         @php
                             $profileCompleteness = Auth::user()->studentProfile->profile_completeness ?? 0;
                         @endphp
-                        @if($profileCompleteness < 80)
+                        @if ($profileCompleteness < 80)
                             <span class="badge badge-warning right">{{ $profileCompleteness }}%</span>
                         @endif
                     </a>
@@ -92,16 +91,16 @@
 
                 <li class="nav-item">
                     <a href="{{ route('student.placement.applications') }}"
-                       class="nav-link {{ request()->routeIs('student.placement.applications') ? 'active' : '' }}">
+                        class="nav-link {{ request()->routeIs('student.placement.applications') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-briefcase"></i>
                         <p>My Placement</p>
-                        @if($placement)
+                        @if ($placement)
                             @php
-                                $badgeClass = match($placement->status) {
+                                $badgeClass = match ($placement->status) {
                                     'placed' => 'badge-success',
                                     'processing' => 'badge-warning',
                                     'pending' => 'badge-secondary',
-                                    default => 'badge-info'
+                                    default => 'badge-info',
                                 };
                             @endphp
                             <span class="badge {{ $badgeClass }} right">
@@ -115,7 +114,7 @@
 
                 <li class="nav-item">
                     <a href="{{ route('student.placement.timeline') }}"
-                       class="nav-link {{ request()->routeIs('student.placement.timeline') ? 'active' : '' }}">
+                        class="nav-link {{ request()->routeIs('student.placement.timeline') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-road"></i>
                         <p>Placement Journey</p>
                     </a>
@@ -129,7 +128,7 @@
 
                 <li class="nav-item">
                     <a href="{{ route('student.mentorship.index') }}"
-                       class="nav-link {{ request()->routeIs('student.mentorship.index') ? 'active' : '' }}">
+                        class="nav-link {{ request()->routeIs('student.mentorship.index') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-hands-helping"></i>
                         <p>My Mentors</p>
                         @php
@@ -137,7 +136,7 @@
                                 ->where('status', 'active')
                                 ->count();
                         @endphp
-                        @if($activeMentorships > 0)
+                        @if ($activeMentorships > 0)
                             <span class="badge badge-primary right">{{ $activeMentorships }}</span>
                         @endif
                     </a>
@@ -145,7 +144,7 @@
 
                 <li class="nav-item">
                     <a href="{{ route('student.mentorship.find') }}"
-                       class="nav-link {{ request()->routeIs('student.mentorship.find') ? 'active' : '' }}">
+                        class="nav-link {{ request()->routeIs('student.mentorship.find') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-search"></i>
                         <p>Find a Mentor</p>
                     </a>
@@ -153,7 +152,7 @@
 
                 <li class="nav-item">
                     <a href="{{ route('student.mentorship.sessions') }}"
-                       class="nav-link {{ request()->routeIs('student.mentorship.sessions') ? 'active' : '' }}">
+                        class="nav-link {{ request()->routeIs('student.mentorship.sessions') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-calendar-alt"></i>
                         <p>Upcoming Sessions</p>
                     </a>
@@ -164,17 +163,21 @@
 
                 <li class="nav-item">
                     <a href="{{ route('student.documents.index') }}"
-                       class="nav-link {{ request()->routeIs('student.documents*') ? 'active' : '' }}">
+                        class="nav-link {{ request()->routeIs('student.documents*') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-folder"></i>
                         <p>My Documents</p>
                         @php
                             $docCount = 0;
                             if (Auth::user()->studentProfile) {
-                                if (Auth::user()->studentProfile->cv_url) $docCount++;
-                                if (Auth::user()->studentProfile->transcript_url) $docCount++;
+                                if (Auth::user()->studentProfile->cv_url) {
+                                    $docCount++;
+                                }
+                                if (Auth::user()->studentProfile->transcript_url) {
+                                    $docCount++;
+                                }
                             }
                         @endphp
-                        @if($docCount > 0)
+                        @if ($docCount > 0)
                             <span class="badge badge-secondary right">{{ $docCount }}</span>
                         @endif
                     </a>
@@ -185,15 +188,16 @@
 
                 <li class="nav-item">
                     <a href="{{ route('student.notifications') }}"
-                       class="nav-link {{ request()->routeIs('student.notifications') ? 'active' : '' }}">
+                        class="nav-link {{ request()->routeIs('student.notifications') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-bell"></i>
                         <p>Notifications</p>
                         @php
-                            $unreadNotifications = Auth::user()->unreadNotifications()
+                            $unreadNotifications = Auth::user()
+                                ->unreadNotifications()
                                 ->where('type', 'App\Notifications\PlacementNotification')
                                 ->count();
                         @endphp
-                        @if($unreadNotifications > 0)
+                        @if ($unreadNotifications > 0)
                             <span class="badge badge-danger right">{{ $unreadNotifications }}</span>
                         @endif
                     </a>
@@ -201,7 +205,7 @@
 
                 <li class="nav-item">
                     <a href="{{ route('student.activity') }}"
-                       class="nav-link {{ request()->routeIs('student.activity') ? 'active' : '' }}">
+                        class="nav-link {{ request()->routeIs('student.activity') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-history"></i>
                         <p>Activity Log</p>
                     </a>
@@ -211,16 +215,14 @@
                 <li class="nav-header">SUPPORT</li>
 
                 <li class="nav-item">
-                    <a href="#"
-                       class="nav-link {{ request()->routeIs('student.faq') ? 'active' : '' }}">
+                    <a href="#" class="nav-link {{ request()->routeIs('student.faq') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-question-circle"></i>
                         <p>FAQ & Help</p>
                     </a>
                 </li>
 
                 <li class="nav-item">
-                    <a href="#"
-                       class="nav-link {{ request()->routeIs('student.settings') ? 'active' : '' }}">
+                    <a href="#" class="nav-link {{ request()->routeIs('student.settings') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-cog"></i>
                         <p>Settings</p>
                     </a>
@@ -240,6 +242,24 @@
                     <a href="{{ route('student.placement.request') }}" class="nav-link bg-gradient-success">
                         <i class="nav-icon fas fa-bullhorn"></i>
                         <p>Request Placement</p>
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a href="{{ route('student.chat') }}"
+                        class="nav-link {{ request()->routeIs('student.chat') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-comments"></i>
+                        <p>Chat Support</p>
+                        @php
+                            $unreadMessages = \App\Models\Conversation::forUser(auth()->id())
+                                ->whereHas('messages', function ($q) {
+                                    $q->where('sender_id', '!=', auth()->id())->whereNull('read_at');
+                                })
+                                ->count();
+                        @endphp
+                        @if ($unreadMessages > 0)
+                            <span class="badge badge-danger right">{{ $unreadMessages }}</span>
+                        @endif
                     </a>
                 </li>
 

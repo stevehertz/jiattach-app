@@ -43,6 +43,8 @@ Route::middleware([
         Route::put('/update', [ProfileController::class, 'update'])->name('update');
     });
 
+    Route::view('/chat', 'student.chat.index')->name('chat');
+
     Route::prefix('placement')->name('placement.')->group(function () {
 
         // Placement Routes

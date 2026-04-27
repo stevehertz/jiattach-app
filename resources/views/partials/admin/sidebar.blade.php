@@ -315,8 +315,7 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="{{ route('admin.applications.interviewing') }}"
-                                class="nav-link ">
+                            <a href="{{ route('admin.applications.interviewing') }}" class="nav-link ">
                                 <i class="far fa-calendar-check nav-icon text-info"></i>
                                 <p>Interview Stage</p>
                             </a>
@@ -501,6 +500,30 @@
                         class="nav-link {{ $isRouteActive('admin.documentation') ? 'active' : '' }}">
                         <i class="nav-icon fas fa-book"></i>
                         <p>Documentation</p>
+                    </a>
+                </li>
+
+                {{-- Add this in the appropriate section of your sidebar --}}
+                <li class="nav-header">COMMUNICATION</li>
+
+                <li class="nav-item">
+                    <a href="{{ route('admin.chat') }}"
+                        class="nav-link {{ request()->routeIs('admin.chat') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-comments"></i>
+                        <p>
+                            Messages
+                            @php
+                                // Get total unread messages for admin
+                                $unreadMessages = \App\Models\Conversation::forUser(auth()->id())
+                                    ->whereHas('messages', function ($q) {
+                                        $q->where('sender_id', '!=', auth()->id())->whereNull('read_at');
+                                    })
+                                    ->count();
+                            @endphp
+                            @if ($unreadMessages > 0)
+                                <span class="badge badge-danger right">{{ $unreadMessages }}</span>
+                            @endif
+                        </p>
                     </a>
                 </li>
 

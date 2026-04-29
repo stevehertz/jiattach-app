@@ -8,10 +8,10 @@ use App\Services\ChatService;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
+use Livewire\Attributes\On;
 
 class ChatBox extends Component
 {
-
     use WithPagination, WithFileUploads;
 
     public $conversationId;
@@ -24,22 +24,6 @@ class ChatBox extends Component
 
     protected $chatService;
 
-    protected function getListeners()
-    {
-        $listeners = [
-            'conversationSelected' => 'loadConversation',
-            'messageReceived' => 'refreshMessages',
-            'showStudentList' => 'toggleStudentList',
-        ];
-
-        if ($this->conversationId) {
-            $listeners["echo-private:conversation.{$this->conversationId},message.sent"] = 'handleNewMessage';
-            $listeners["echo-private:conversation.{$this->conversationId},message.read"] = 'handleMessageRead';
-        }
-
-        return $listeners;
-    }
-
     protected $rules = [
         'messageBody' => 'nullable|string|max:5000',
         'attachments.*' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,gif,pdf,doc,docx,xlsx,xls'
@@ -50,6 +34,7 @@ class ChatBox extends Component
         $this->chatService = $chatService;
     }
 
+    #[On('conversationSelected')]
     public function loadConversation($conversationId)
     {
         $this->conversationId = $conversationId;
@@ -59,12 +44,19 @@ class ChatBox extends Component
         $this->showStudentList = false;
         $this->resetPage();
 
-            if ($this->conversation) {
-                $this->chatService->markAsRead($this->conversation, auth()->user());
-                $this->dispatch('refreshChatList');
-            }
+        if ($this->conversation) {
+            $this->chatService->markAsRead($this->conversation, auth()->user());
+            $this->dispatch('refreshChatList')->to('admin.chat.chat-list');
+        }
     }
 
+    #[On('messageReceived')]
+    public function refreshMessages()
+    {
+        $this->resetPage();
+    }
+
+    #[On('showStudentList')]
     public function toggleStudentList()
     {
         $this->showStudentList = !$this->showStudentList;
@@ -75,46 +67,76 @@ class ChatBox extends Component
     {
         try {
             $student = User::findOrFail($studentId);
-            $conversation = Conversation::createDirectConversation(
-                auth()->id(),
-                $studentId,
-                "Chat with {$student->full_name}"
-            );
+            
+            // Check if conversation already exists
+            $existingConversation = Conversation::where('type', 'direct')
+                ->whereHas('participants', function ($q) use ($studentId) {
+                    $q->where('user_id', $studentId);
+                })
+                ->whereHas('participants', function ($q) {
+                    $q->where('user_id', auth()->id());
+                })
+                ->first();
+
+            if ($existingConversation) {
+                $this->loadConversation($existingConversation->id);
+                $this->dispatch('conversationSelected', conversationId: $existingConversation->id)
+                    ->to('admin.chat.chat-list');
+                $this->showStudentList = false;
+                
+                $this->dispatch('toast', 
+                    type: 'info',
+                    message: "Conversation with {$student->full_name} already exists"
+                );
+                return;
+            }
+
+            // Create new conversation
+            $conversation = Conversation::create([
+                'title' => "Chat with {$student->full_name}",
+                'type' => 'direct',
+                'created_by' => auth()->id(),
+                'status' => 'active'
+            ]);
+
+            $conversation->participants()->createMany([
+                ['user_id' => auth()->id(), 'role' => 'member'],
+                ['user_id' => $studentId, 'role' => 'member']
+            ]);
 
             $this->loadConversation($conversation->id);
+            $this->dispatch('conversationSelected', conversationId: $conversation->id)
+                ->to('admin.chat.chat-list');
+            $this->showStudentList = false;
 
-            $this->dispatchBrowserEvent('toastr', [
-                'type' => 'success',
-                'message' => "Chat started with {$student->full_name}"
-            ]);
+            $this->dispatch('toast', 
+                type: 'success',
+                message: "Chat started with {$student->full_name}"
+            );
         } catch (\Exception $e) {
-            $this->dispatchBrowserEvent('toastr', [
-                'type' => 'error',
-                'message' => $e->getMessage()
-            ]);
+            $this->dispatch('toast', 
+                type: 'error',
+                message: 'Error: ' . $e->getMessage()
+            );
         }
     }
 
+    // Remove the echo listeners - handle real-time updates differently in Livewire 3
     public function handleNewMessage($event)
     {
-            if (isset($event['message']) && $event['message']['conversation_id'] == $this->conversationId) {
-                $this->refreshMessages();
-                $this->chatService->markAsRead($this->conversation, auth()->user());
-                $this->dispatch('refreshChatList');
-            }
+        if (isset($event['message']) && $event['message']['conversation_id'] == $this->conversationId) {
+            $this->refreshMessages();
+            $this->chatService->markAsRead($this->conversation, auth()->user());
+            $this->dispatch('refreshChatList')->to('admin.chat.chat-list');
+        }
     }
 
     public function handleMessageRead($event)
     {
-        $this->dispatchBrowserEvent('message-read', [
+        $this->dispatch('message-read', [
             'user_id' => $event['userId'],
             'read_at' => $event['lastReadAt']
         ]);
-    }
-
-    public function refreshMessages()
-    {
-        $this->resetPage();
     }
 
     public function sendMessage()
@@ -124,12 +146,14 @@ class ChatBox extends Component
         }
 
         if (!$this->conversation) {
-            $this->dispatchBrowserEvent('toastr', [
-                'type' => 'error',
-                'message' => 'No conversation selected'
-            ]);
+            $this->dispatch('toast', 
+                type: 'error',
+                message: 'No conversation selected'
+            );
             return;
         }
+
+        $this->validate();
 
         try {
             $message = $this->chatService->sendMessage(
@@ -144,12 +168,16 @@ class ChatBox extends Component
             $this->attachments = [];
             $this->resetPage();
 
-            $this->dispatch('messageSent');
-        } catch (\Exception $e) {
-            $this->dispatchBrowserEvent('toastr', [
-                'type' => 'error',
-                'message' => 'Failed to send message: ' . $e->getMessage()
+            $this->dispatch('messageSent')->to('admin.chat.chat-list');
+            $this->dispatch('newMessageReceived', [
+                'conversation_id' => $this->conversation->id,
+                'message' => $message->toArray()
             ]);
+        } catch (\Exception $e) {
+            $this->dispatch('toast', 
+                type: 'error',
+                message: 'Failed to send message: ' . $e->getMessage()
+            );
         }
     }
 
@@ -208,6 +236,7 @@ class ChatBox extends Component
 
         return $this->chatService->getConversationMessages($this->conversation, 50);
     }
+
     public function render()
     {
         return view('livewire.admin.chat.chat-box', [

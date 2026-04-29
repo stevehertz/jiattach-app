@@ -24,6 +24,8 @@ class RouteServiceProvider extends ServiceProvider
 
     public const STUDENT_DASHBOARD = '/student/dashboard';
 
+    public const EMPLOYER_DASHBOARD = '/employer/dashboard';
+
     /**
      * Define your route model bindings, pattern filters, and other route configuration.
      */
@@ -49,6 +51,9 @@ class RouteServiceProvider extends ServiceProvider
 
             Route::middleware('web')
                 ->group(base_path('routes/student.php'));
+
+            Route::middleware('web')
+                ->group(base_path('routes/employer.php'));
         });
     }
 }

@@ -162,13 +162,13 @@ class Show extends Component
     {
         $user = $this->user;
         
-        // Check employer opportunities
-        if ($user->employer && $user->employer->opportunities()->count() > 0) {
+        // Check organization opportunities (user is employer)
+        if ($user->organizations()->count() > 0) {
             return true;
         }
         
-        // Check applications
-        if ($user->applications()->count() > 0) {
+        // Check applications (as admin or student)
+        if ($user->adminApplications()->count() > 0 || $user->studentApplications()->count() > 0) {
             return true;
         }
         

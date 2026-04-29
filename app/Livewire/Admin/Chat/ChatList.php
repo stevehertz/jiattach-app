@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Services\ChatService;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Livewire\Attributes\On;
 
 class ChatList extends Component
 {
@@ -15,19 +16,12 @@ class ChatList extends Component
     public $search = '';
     public $activeConversationId = null;
     public $unreadCounts = [];
-    public $filter = 'all'; // all, unread, students, admins
+    public $filter = 'all';
     public $totalUnreadCount = 0;
 
     protected $chatService;
-    
-    protected $listeners = [
-        'messageSent' => 'refreshList',
-        'conversationSelected' => 'setActiveConversation',
-        'startNewChat' => 'showStudentList',
-        'refreshChatList' => 'refreshList'
-    ];
 
-     public function boot(ChatService $chatService)
+    public function boot(ChatService $chatService)
     {
         $this->chatService = $chatService;
     }
@@ -38,25 +32,40 @@ class ChatList extends Component
         $this->calculateTotalUnread();
     }
 
-    public function handleNewMessage($event)
-    {
-        $this->refreshList();
-        
-        // Play notification sound if not the active conversation
-        if (isset($event['message']['conversation_id']) && $event['message']['conversation_id'] != $this->activeConversationId) {
-            $this->dispatchBrowserEvent('play-notification-sound');
-            $this->dispatchBrowserEvent('toastr', [
-                'type' => 'info',
-                'message' => 'New message from ' . ($event['message']['sender']['full_name'] ?? 'a student')
-            ]);
-        }
-    }
-
+    #[On('messageSent')]
     public function refreshList()
     {
         $this->resetPage();
         $this->loadUnreadCounts();
         $this->calculateTotalUnread();
+    }
+
+    #[On('conversationSelected')]
+    public function setActiveConversation($conversationId)
+    {
+        $this->activeConversationId = $conversationId;
+        $this->loadUnreadCounts();
+    }
+
+    #[On('newMessageReceived')]
+    public function handleNewMessage($data)
+    {
+        $this->refreshList();
+        
+        // Play notification sound if not the active conversation
+        if (isset($data['conversation_id']) && $data['conversation_id'] != $this->activeConversationId) {
+            $this->dispatch('play-notification-sound');
+            
+            // Get sender name for toast
+            $conversation = Conversation::find($data['conversation_id']);
+            if ($conversation) {
+                $otherUser = $conversation->users->firstWhere('id', '!=', auth()->id());
+                $this->dispatch('toast', 
+                    type: 'info',
+                    message: 'New message from ' . ($otherUser ? $otherUser->full_name : 'a student')
+                );
+            }
+        }
     }
 
     public function loadUnreadCounts()
@@ -76,37 +85,20 @@ class ChatList extends Component
     public function selectConversation($conversationId)
     {
         $this->activeConversationId = $conversationId;
-        $this->dispatch('conversationSelected', $conversationId);
+        $this->dispatch('conversationSelected', conversationId: $conversationId)
+            ->to('admin.chat.chat-box');
     }
 
     public function showStudentList()
     {
-        $this->dispatch('showStudentList');
+        $this->dispatch('showStudentList')->to('admin.chat.chat-box');
     }
 
     public function startChatWithStudent($studentId)
     {
-        try {
-            $student = User::findOrFail($studentId);
-            $conversation = Conversation::createDirectConversation(
-                auth()->id(),
-                $studentId,
-                "Chat with {$student->full_name}"
-            );
-            
-            $this->selectConversation($conversation->id);
-            $this->refreshList();
-            
-            $this->dispatchBrowserEvent('toastr', [
-                'type' => 'success',
-                'message' => "Chat started with {$student->full_name}"
-            ]);
-        } catch (\Exception $e) {
-            $this->dispatchBrowserEvent('toastr', [
-                'type' => 'error',
-                'message' => $e->getMessage()
-            ]);
-        }
+        // This is handled by ChatBox component now
+        $this->dispatch('startChatWithStudent', studentId: $studentId)
+            ->to('admin.chat.chat-box');
     }
 
     public function setFilter($filter)
@@ -121,7 +113,6 @@ class ChatList extends Component
             ->with(['lastMessage', 'participants.user', 'creator'])
             ->orderBy('last_message_at', 'desc');
 
-        // Apply filters
         if ($this->filter === 'unread') {
             $query->whereHas('messages', function($q) {
                 $q->where('sender_id', '!=', auth()->id())
@@ -129,7 +120,6 @@ class ChatList extends Component
             });
         }
 
-        // Search functionality
         if ($this->search) {
             $query->where(function($q) {
                 $q->where('title', 'like', "%{$this->search}%")
@@ -144,11 +134,14 @@ class ChatList extends Component
         return $query->paginate(20);
     }
 
-
     public function render()
     {
         return view('livewire.admin.chat.chat-list', [
             'conversations' => $this->conversations,
+            'activeConversationId' => $this->activeConversationId,
+            'unreadCounts' => $this->unreadCounts,
+            'totalUnreadCount' => $this->totalUnreadCount,
+            'filter' => $this->filter,
         ]);
     }
 }

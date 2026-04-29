@@ -503,7 +503,6 @@
                     </a>
                 </li>
 
-                {{-- Add this in the appropriate section of your sidebar --}}
                 <li class="nav-header">COMMUNICATION</li>
 
                 <li class="nav-item">

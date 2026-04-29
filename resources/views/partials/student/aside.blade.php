@@ -183,6 +183,26 @@
                     </a>
                 </li>
 
+                <li class="nav-header">COMMUNICATION</li>
+
+                <li class="nav-item">
+                    <a href="{{ route('student.chat') }}"
+                        class="nav-link {{ request()->routeIs('student.chat') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-comments"></i>
+                        <p>Chat Support</p>
+                        @php
+                            $unreadMessages = \App\Models\Conversation::forUser(auth()->id())
+                                ->whereHas('messages', function ($q) {
+                                    $q->where('sender_id', '!=', auth()->id())->whereNull('read_at');
+                                })
+                                ->count();
+                        @endphp
+                        @if ($unreadMessages > 0)
+                            <span class="badge badge-danger right">{{ $unreadMessages }}</span>
+                        @endif
+                    </a>
+                </li>
+
                 <!-- ACTIVITY & NOTIFICATIONS -->
                 <li class="nav-header">ACTIVITY</li>
 
@@ -242,24 +262,6 @@
                     <a href="{{ route('student.placement.request') }}" class="nav-link bg-gradient-success">
                         <i class="nav-icon fas fa-bullhorn"></i>
                         <p>Request Placement</p>
-                    </a>
-                </li>
-                
-                <li class="nav-item">
-                    <a href="{{ route('student.chat') }}"
-                        class="nav-link {{ request()->routeIs('student.chat') ? 'active' : '' }}">
-                        <i class="nav-icon fas fa-comments"></i>
-                        <p>Chat Support</p>
-                        @php
-                            $unreadMessages = \App\Models\Conversation::forUser(auth()->id())
-                                ->whereHas('messages', function ($q) {
-                                    $q->where('sender_id', '!=', auth()->id())->whereNull('read_at');
-                                })
-                                ->count();
-                        @endphp
-                        @if ($unreadMessages > 0)
-                            <span class="badge badge-danger right">{{ $unreadMessages }}</span>
-                        @endif
                     </a>
                 </li>
 

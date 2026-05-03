@@ -42,7 +42,7 @@ class AnalyticsDashboard extends Component
         $this->recentActivity = $this->getRecentActivity();
     }
 
-     public function filter()
+    public function filter()
     {
         $this->loadData();
         $this->dispatch('chartsUpdated');
@@ -229,7 +229,7 @@ class AnalyticsDashboard extends Component
     private function getRecentActivity()
     {
         // Get recent applications
-        $applications = Application::with(['student.user', 'opportunity'])
+        $applications = Application::with(['student', 'opportunity'])
             ->latest('submitted_at')
             ->limit(5)
             ->get()
@@ -238,7 +238,7 @@ class AnalyticsDashboard extends Component
                     'description' => 'Application submitted for ' . ($app->opportunity->title ?? 'Opportunity'),
                     'type' => 'application',
                     'type_color' => 'info',
-                    'user' => $app->student->user ?? null,
+                    'user' => $app->student ?? null,
                     'created_at' => $app->submitted_at
                 ];
             });
@@ -258,7 +258,7 @@ class AnalyticsDashboard extends Component
             });
 
         // Get recent opportunity postings
-        $opportunities = AttachmentOpportunity::latest('published_at')
+        $opportunities = AttachmentOpportunity::with('organization.users')->latest('published_at')
             ->whereNotNull('published_at')
             ->limit(5)
             ->get()
@@ -267,7 +267,7 @@ class AnalyticsDashboard extends Component
                     'description' => 'New opportunity posted: ' . $opp->title,
                     'type' => 'opportunity',
                     'type_color' => 'warning',
-                    'user' => $opp->employer->user ?? null,
+                    'user' => $opp->organization->users->first() ?? null,
                     'created_at' => $opp->published_at
                 ];
             });

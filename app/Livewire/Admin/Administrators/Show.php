@@ -132,7 +132,7 @@ class Show extends Component
             ],
             [
                 'action' => 'Delete',
-                'description' => 'Deleted inactive user',
+                'description' => 'Deleted ina   ctive user',
                 'ip_address' => '192.168.1.100',
                 'user_agent' => 'Chrome on Windows',
                 'timestamp' => now()->subDays(2),

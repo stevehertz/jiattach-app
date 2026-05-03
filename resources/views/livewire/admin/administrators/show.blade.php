@@ -8,9 +8,9 @@
                     <div class="text-center">
                         {!! getUserAvatar($administrator, 100) !!}
                     </div>
-                    
+
                     <h3 class="profile-username text-center">{{ $administrator->full_name }}</h3>
-                    
+
                     <p class="text-muted text-center">
                         @php
                             $primaryRole = $administrator->getRoleNames()->first();
@@ -33,7 +33,7 @@
                             <span class="badge badge-info">Verified</span>
                         @endif
                     </p>
-                    
+
                     <ul class="list-group list-group-unbordered mb-3">
                         <li class="list-group-item">
                             <b>Email</b>
@@ -60,9 +60,9 @@
                             </span>
                         </li>
                     </ul>
-                    
+
                     <div class="btn-group w-100">
-                        {{-- <a href="{{ route('admin.administrators.edit', $administrator) }}" 
+                        {{-- <a href="{{ route('admin.administrators.edit', $administrator) }}"
                            class="btn btn-primary">
                             <i class="fas fa-edit"></i> Edit Profile
                         </a> --}}
@@ -91,7 +91,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Stats Card -->
             <div class="card card-info">
                 <div class="card-header">
@@ -141,26 +141,26 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-8">
             <!-- Tabs Navigation -->
             <div class="card">
                 <div class="card-header p-0">
                     <ul class="nav nav-tabs" id="custom-tabs-one-tab" role="tablist">
                         <li class="nav-item">
-                            <a class="nav-link {{ $activeTab === 'overview' ? 'active' : '' }}" 
+                            <a class="nav-link {{ $activeTab === 'overview' ? 'active' : '' }}"
                                wire:click="switchTab('overview')" href="#">
                                 <i class="fas fa-user-circle mr-1"></i> Overview
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {{ $activeTab === 'roles' ? 'active' : '' }}" 
+                            <a class="nav-link {{ $activeTab === 'roles' ? 'active' : '' }}"
                                wire:click="switchTab('roles')" href="#">
                                 <i class="fas fa-user-tag mr-1"></i> Roles & Permissions
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {{ $activeTab === 'activity' ? 'active' : '' }}" 
+                            <a class="nav-link {{ $activeTab === 'activity' ? 'active' : '' }}"
                                wire:click="switchTab('activity')" href="#">
                                 <i class="fas fa-history mr-1"></i> Recent Activity
                                 @if(count($recentActivity) > 0)
@@ -169,7 +169,7 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {{ $activeTab === 'security' ? 'active' : '' }}" 
+                            <a class="nav-link {{ $activeTab === 'security' ? 'active' : '' }}"
                                wire:click="switchTab('security')" href="#">
                                 <i class="fas fa-shield-alt mr-1"></i> Security
                             </a>
@@ -177,7 +177,7 @@
                     </ul>
                 </div>
                 <div class="card-body">
-                    
+
                     <!-- Overview Tab -->
                     @if($activeTab === 'overview')
                         <div class="tab-content">
@@ -205,7 +205,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        
+
                                         <div class="row">
                                             <div class="col-md-6">
                                                 <div class="form-group">
@@ -224,7 +224,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        
+
                                         <div class="row">
                                             <div class="col-md-6">
                                                 <div class="form-group">
@@ -243,7 +243,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        
+
                                         <div class="form-group">
                                             <label>Gender *</label>
                                             <select class="form-control @error('gender') is-invalid @enderror" wire:model="gender">
@@ -254,7 +254,7 @@
                                             </select>
                                             @error('gender') <span class="text-danger">{{ $message }}</span> @enderror
                                         </div>
-                                        
+
                                         <div class="d-flex justify-content-between">
                                             <button class="btn btn-secondary" wire:click="cancelEditing">
                                                 <i class="fas fa-times"></i> Cancel
@@ -270,7 +270,7 @@
                                     <div class="card-header">
                                         <h4 class="card-title">Personal Information</h4>
                                         <div class="card-tools">
-                                            <button class="btn btn-sm btn-outline-primary" 
+                                            <button class="btn btn-sm btn-outline-primary"
                                                     wire:click="startEditing('personal')">
                                                 <i class="fas fa-edit"></i> Edit
                                             </button>
@@ -288,7 +288,7 @@
                                                 <p><strong>Date of Birth:</strong> {{ formatDate($administrator->date_of_birth) }}</p>
                                                 <p><strong>Gender:</strong> {{ ucfirst($administrator->gender) }}</p>
                                                 <p><strong>Age:</strong> {{ \Carbon\Carbon::parse($administrator->date_of_birth)->age }} years</p>
-                                                <p><strong>Account Status:</strong> 
+                                                <p><strong>Account Status:</strong>
                                                     @if($administrator->is_active)
                                                         <span class="badge badge-success">Active</span>
                                                     @else
@@ -300,7 +300,7 @@
                                     </div>
                                 </div>
                             @endif
-                            
+
                             @if($isEditing && $editSection === 'location')
                                 <div class="card card-primary mt-3">
                                     <div class="card-header">
@@ -317,7 +317,7 @@
                                             </select>
                                             @error('county') <span class="text-danger">{{ $message }}</span> @enderror
                                         </div>
-                                        
+
                                         <div class="row">
                                             <div class="col-md-6">
                                                 <div class="form-group">
@@ -336,14 +336,14 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        
+
                                         <div class="form-group">
                                             <label>Bio</label>
-                                            <textarea class="form-control @error('bio') is-invalid @enderror" 
+                                            <textarea class="form-control @error('bio') is-invalid @enderror"
                                                       wire:model="bio" rows="3"></textarea>
                                             @error('bio') <span class="text-danger">{{ $message }}</span> @enderror
                                         </div>
-                                        
+
                                         <div class="d-flex justify-content-between">
                                             <button class="btn btn-secondary" wire:click="cancelEditing">
                                                 <i class="fas fa-times"></i> Cancel
@@ -359,7 +359,7 @@
                                     <div class="card-header">
                                         <h4 class="card-title">Location Information</h4>
                                         <div class="card-tools">
-                                            <button class="btn btn-sm btn-outline-primary" 
+                                            <button class="btn btn-sm btn-outline-primary"
                                                     wire:click="startEditing('location')">
                                                 <i class="fas fa-edit"></i> Edit
                                             </button>
@@ -384,7 +384,7 @@
                                     </div>
                                 </div>
                             @endif
-                            
+
                             <!-- Account Information -->
                             <div class="card card-info mt-3">
                                 <div class="card-header">
@@ -394,9 +394,9 @@
                                     <div class="row">
                                         <div class="col-md-6">
                                             <p><strong>Account Created:</strong> {{ formatDateTime($administrator->created_at) }}</p>
-                                            <p><strong>Email Verified:</strong> 
+                                            <p><strong>Email Verified:</strong>
                                                 @if($administrator->email_verified_at)
-                                                    <span class="badge badge-success">Yes</span> 
+                                                    <span class="badge badge-success">Yes</span>
                                                     ({{ formatDate($administrator->email_verified_at) }})
                                                 @else
                                                     <span class="badge badge-warning">No</span>
@@ -404,7 +404,7 @@
                                             </p>
                                         </div>
                                         <div class="col-md-6">
-                                            <p><strong>Last Login:</strong> 
+                                            <p><strong>Last Login:</strong>
                                                 @if($administrator->last_login_at)
                                                     {{ formatDateTime($administrator->last_login_at) }}
                                                 @else
@@ -418,7 +418,7 @@
                             </div>
                         </div>
                     @endif
-                    
+
                     <!-- Roles & Permissions Tab -->
                     @if($activeTab === 'roles')
                         <div class="tab-content">
@@ -442,9 +442,9 @@
                                                 };
                                             @endphp
                                             <div class="custom-control custom-checkbox mb-3">
-                                                <input type="checkbox" class="custom-control-input" 
+                                                <input type="checkbox" class="custom-control-input"
                                                        id="edit_role_{{ $role }}"
-                                                       wire:model="roles" 
+                                                       wire:model="roles"
                                                        value="{{ $role }}">
                                                 <label class="custom-control-label d-flex align-items-start" for="edit_role_{{ $role }}">
                                                     <div class="mr-2">
@@ -458,17 +458,17 @@
                                                 </label>
                                             </div>
                                         @endforeach
-                                        
-                                        @error('roles') 
+
+                                        @error('roles')
                                             <div class="alert alert-danger">{{ $message }}</div>
                                         @enderror
-                                        
+
                                         <div class="alert alert-info">
                                             <i class="fas fa-info-circle"></i>
                                             <strong>Note:</strong> Changing roles will affect the administrator's permissions.
                                             At least one role must be assigned.
                                         </div>
-                                        
+
                                         <div class="d-flex justify-content-between">
                                             <button class="btn btn-secondary" wire:click="cancelEditing">
                                                 <i class="fas fa-times"></i> Cancel
@@ -484,7 +484,7 @@
                                     <div class="card-header">
                                         <h4 class="card-title">Current Roles</h4>
                                         <div class="card-tools">
-                                            <button class="btn btn-sm btn-outline-warning" 
+                                            <button class="btn btn-sm btn-outline-warning"
                                                     wire:click="startEditing('roles')">
                                                 <i class="fas fa-edit"></i> Edit Roles
                                             </button>
@@ -507,18 +507,19 @@
                                                 </span>
                                             @endforeach
                                         </div>
-                                        
+
                                         <div class="alert alert-info">
                                             <i class="fas fa-info-circle"></i>
                                             <strong>Roles:</strong>
                                             <ul class="mb-0 mt-2">
                                                 @foreach($administrator->getRoleNames() as $role)
                                                     <li>
-                                                        <strong>{{ ucfirst(str_replace('-', ' ', $role)) }}:</strong> 
+                                                        <strong>{{ ucfirst(str_replace('-', ' ', $role)) }}:</strong>
                                                         {{ match($role) {
                                                             'super-admin' => 'Full system access, can manage all administrators and system settings.',
                                                             'admin' => 'Full access to manage users, opportunities, and mentorship programs.',
                                                             'moderator' => 'Limited access for content moderation and user management.',
+                                                            default => 'User role for platform access.',
                                                         } }}
                                                     </li>
                                                 @endforeach
@@ -526,7 +527,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <!-- Permissions Overview -->
                                 <div class="card card-primary mt-3">
                                     <div class="card-header">
@@ -561,7 +562,7 @@
                             @endif
                         </div>
                     @endif
-                    
+
                     <!-- Recent Activity Tab -->
                     @if($activeTab === 'activity')
                         <div class="tab-content">
@@ -591,7 +592,7 @@
                                                     <tr>
                                                         <td>
                                                             <span class="badge badge-{{ $activity['color'] }}">
-                                                                <i class="fas fa-{{ $activity['icon'] }}"></i> 
+                                                                <i class="fas fa-{{ $activity['icon'] }}"></i>
                                                                 {{ $activity['action'] }}
                                                             </span>
                                                         </td>
@@ -632,7 +633,7 @@
                             </div>
                         </div>
                     @endif
-                    
+
                     <!-- Security Tab -->
                     @if($activeTab === 'security')
                         <div class="tab-content">
@@ -648,17 +649,17 @@
                                         </div>
                                         <div class="card-body">
                                             <p class="mb-3">
-                                                <strong>Last Password Change:</strong> 
+                                                <strong>Last Password Change:</strong>
                                                 @php
                                                     $lastPasswordChange = $administrator->updated_at;
                                                 @endphp
                                                 {{ $lastPasswordChange ? formatDateTime($lastPasswordChange) : 'Unknown' }}
                                             </p>
-                                            
+
                                             <button class="btn btn-warning" wire:click="openPasswordModal">
                                                 <i class="fas fa-key"></i> Change Password
                                             </button>
-                                            
+
                                             <div class="alert alert-info mt-3">
                                                 <i class="fas fa-shield-alt"></i>
                                                 <strong>Security Recommendations:</strong>
@@ -671,7 +672,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    
+
                                     <!-- Session Management -->
                                     <div class="card card-info mt-3">
                                         <div class="card-header">
@@ -685,14 +686,14 @@
                                                 <br>
                                                 <strong>Browser:</strong> {{ request()->userAgent() }}
                                             </p>
-                                            
+
                                             <div class="alert alert-warning">
                                                 <i class="fas fa-exclamation-triangle"></i>
                                                 <strong>Note:</strong> Session management features will be available in future updates.
                                             </div>
                                         </div>
                                     </div>
-                                    
+
                                     <!-- Account Security -->
                                     <div class="card card-danger mt-3">
                                         <div class="card-header">
@@ -700,15 +701,15 @@
                                         </div>
                                         <div class="card-body">
                                             <div class="mb-3">
-                                                <p><strong>Account Status:</strong> 
+                                                <p><strong>Account Status:</strong>
                                                     @if($administrator->is_active)
                                                         <span class="badge badge-success">Active</span>
                                                     @else
                                                         <span class="badge badge-danger">Inactive</span>
                                                     @endif
                                                 </p>
-                                                
-                                                <p><strong>Email Verification:</strong> 
+
+                                                <p><strong>Email Verification:</strong>
                                                     @if($administrator->email_verified_at)
                                                         <span class="badge badge-success">Verified</span>
                                                     @else
@@ -716,7 +717,7 @@
                                                     @endif
                                                 </p>
                                             </div>
-                                            
+
                                             @if(!$isCurrentUser)
                                                 <button class="btn btn-outline-danger" wire:click="toggleStatus">
                                                     @if($administrator->is_active)
@@ -726,7 +727,7 @@
                                                     @endif
                                                 </button>
                                             @endif
-                                            
+
                                             <div class="alert alert-danger mt-3">
                                                 <i class="fas fa-exclamation-circle"></i>
                                                 <strong>Warning:</strong> Deactivating an account will prevent the user from logging in.
@@ -758,22 +759,22 @@
                             <i class="fas fa-info-circle"></i>
                             Changing password for: <strong>{{ $administrator->full_name }}</strong>
                         </div>
-                        
+
                         <div class="form-group">
                             <label for="newPassword">New Password *</label>
-                            <input type="password" id="newPassword" 
+                            <input type="password" id="newPassword"
                                    class="form-control @error('newPassword') is-invalid @enderror"
                                    wire:model="newPassword" placeholder="Enter new password">
                             @error('newPassword') <span class="text-danger">{{ $message }}</span> @enderror
                         </div>
-                        
+
                         <div class="form-group">
                             <label for="newPasswordConfirmation">Confirm New Password *</label>
-                            <input type="password" id="newPasswordConfirmation" 
+                            <input type="password" id="newPasswordConfirmation"
                                    class="form-control @error('newPasswordConfirmation') is-invalid @enderror"
                                    wire:model="newPasswordConfirmation" placeholder="Confirm new password">
                         </div>
-                        
+
                         <div class="alert alert-warning">
                             <i class="fas fa-exclamation-triangle"></i>
                             <strong>Note:</strong> The user will need to use this new password on their next login.
@@ -808,13 +809,13 @@
                             <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
                             <h5>Warning: This action cannot be undone!</h5>
                         </div>
-                        
+
                         <div class="text-center mb-4">
                             {!! getUserAvatar($administrator, 80) !!}
                             <h4 class="mt-3">{{ $administrator->full_name }}</h4>
                             <p class="text-muted">{{ $administrator->email }}</p>
                         </div>
-                        
+
                         <div class="alert alert-warning">
                             <i class="fas fa-info-circle"></i>
                             <strong>What will be deleted:</strong>
@@ -824,14 +825,14 @@
                                 <li>Account history and logs</li>
                             </ul>
                         </div>
-                        
+
                         <div class="alert alert-info">
                             <i class="fas fa-shield-alt"></i>
                             <strong>Security Check:</strong>
-                            <p class="mb-0">You are about to delete administrator <strong>{{ $administrator->full_name }}</strong>. 
+                            <p class="mb-0">You are about to delete administrator <strong>{{ $administrator->full_name }}</strong>.
                             Please type the administrator's email to confirm:</p>
                             <div class="mt-2">
-                                <input type="text" class="form-control" id="confirmEmailShow" 
+                                <input type="text" class="form-control" id="confirmEmailShow"
                                        placeholder="Type: {{ $administrator->email }}">
                             </div>
                         </div>
@@ -861,22 +862,22 @@
             // Extract expected email from placeholder - more robust
             let placeholder = input.getAttribute('placeholder') || '';
             let expected = placeholder.replace('Type: ', '').trim();
-            
+
             console.log('Expected email:', expected);
             console.log('Input value:', input.value);
-            
+
             // Update button state - normalize comparison
             const updateButtonState = () => {
                 const isMatch = input.value.trim().toLowerCase() === expected.toLowerCase();
                 console.log('Is match:', isMatch);
                 btn.disabled = !isMatch;
             };
-            
+
             updateButtonState();
-            
+
             // Add direct input listener (no cloning issues)
             input.addEventListener('input', updateButtonState);
-            
+
             // Add click listener to delete button
             btn.onclick = function(e) {
                 e.preventDefault();
@@ -892,7 +893,7 @@
         document.addEventListener('livewire:load', function () {
             setTimeout(() => setupDeleteConfirmShow(), 100);
         });
-        
+
         // Also run on modal open - watch for when modal appears
         const observer = new MutationObserver(() => {
             const modal = document.querySelector('.modal');
@@ -900,7 +901,7 @@
                 setupDeleteConfirmShow();
             }
         });
-        
+
         observer.observe(document.body, { attributes: true, subtree: true });
     </script>
 @endpush

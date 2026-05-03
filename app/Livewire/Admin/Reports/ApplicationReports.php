@@ -13,7 +13,7 @@ class ApplicationReports extends Component
     public $startDate;
     public $endDate;
     public $viewType = 'monthly'; // monthly, weekly, daily
-    
+
     // Filter options
     public $selectedStatus = '';
     public $selectedOrganization = '';
@@ -21,7 +21,7 @@ class ApplicationReports extends Component
     public $selectedCourse = '';
     public $minMatchScore = 0;
     public $maxMatchScore = 100;
-    
+
     // Data containers
     public $applicationStats = [];
     public $applicationTrends = [];
@@ -32,7 +32,7 @@ class ApplicationReports extends Component
     public $applicationByOrganization = [];
     public $applicationTimelineAnalysis = [];
     public $recentApplications = [];
-    
+
     // Filter options data
     public $organizations = [];
     public $opportunities = [];
@@ -110,14 +110,14 @@ class ApplicationReports extends Component
         $this->minMatchScore = 0;
         $this->maxMatchScore = 100;
         $this->viewType = 'monthly';
-        
+
         $this->filter();
     }
 
     public function updated($property)
     {
-        if (in_array($property, ['startDate', 'endDate', 'viewType', 'selectedStatus', 
-                                  'selectedOrganization', 'selectedOpportunity', 
+        if (in_array($property, ['startDate', 'endDate', 'viewType', 'selectedStatus',
+                                  'selectedOrganization', 'selectedOpportunity',
                                   'selectedCourse', 'minMatchScore', 'maxMatchScore'])) {
             $this->filter();
         }
@@ -170,27 +170,27 @@ class ApplicationReports extends Component
     private function getApplicationStats()
     {
         $query = $this->baseQuery();
-        
+
         $totalApplications = $query->count();
         $uniqueStudents = $query->distinct('user_id')->count('user_id');
         $uniqueOpportunities = $query->distinct('attachment_opportunity_id')->count('attachment_opportunity_id');
-        
+
         // Average match score
         $avgMatchScore = $query->avg('match_score') ?? 0;
-        
+
         // Conversion rates
         $acceptedApplications = (clone $query)->where('status', 'accepted')->count();
         $rejectedApplications = (clone $query)->where('status', 'rejected')->count();
         $pendingApplications = (clone $query)->whereIn('status', ['pending', 'reviewing', 'shortlisted', 'offered'])->count();
-        
-        $acceptanceRate = $totalApplications > 0 
-            ? round(($acceptedApplications / $totalApplications) * 100, 1) 
+
+        $acceptanceRate = $totalApplications > 0
+            ? round(($acceptedApplications / $totalApplications) * 100, 1)
             : 0;
-            
-        $rejectionRate = $totalApplications > 0 
-            ? round(($rejectedApplications / $totalApplications) * 100, 1) 
+
+        $rejectionRate = $totalApplications > 0
+            ? round(($rejectedApplications / $totalApplications) * 100, 1)
             : 0;
-        
+
         // Average review time (from submission to review)
         $avgReviewTime = Application::whereNotNull('reviewed_at')
             ->whereNotNull('submitted_at')
@@ -201,8 +201,8 @@ class ApplicationReports extends Component
             });
 
         // Applications per opportunity (average)
-        $appsPerOpportunity = $uniqueOpportunities > 0 
-            ? round($totalApplications / $uniqueOpportunities, 1) 
+        $appsPerOpportunity = $uniqueOpportunities > 0
+            ? round($totalApplications / $uniqueOpportunities, 1)
             : 0;
 
         return [
@@ -376,7 +376,7 @@ class ApplicationReports extends Component
                     'accepted' => $opportunity->accepted_count,
                     'rejected' => $opportunity->rejected_count,
                     'pending' => $opportunity->applications_count - $opportunity->accepted_count - $opportunity->rejected_count,
-                    'acceptance_rate' => $opportunity->applications_count > 0 
+                    'acceptance_rate' => $opportunity->applications_count > 0
                         ? round(($opportunity->accepted_count / $opportunity->applications_count) * 100, 1)
                         : 0,
                     'avg_match_score' => round(Application::where('attachment_opportunity_id', $opportunity->id)
@@ -399,8 +399,8 @@ class ApplicationReports extends Component
                 $total = $applications->count();
                 $accepted = $applications->where('status', 'accepted')->count();
                 $rejected = $applications->where('status', 'rejected')->count();
-                
-                return (object)[
+
+                return [
                     'course' => $course ?: 'Unknown',
                     'total_applications' => $total,
                     'accepted' => $accepted,
@@ -428,23 +428,23 @@ class ApplicationReports extends Component
                     ->whereHas('opportunity', function ($query) use ($organization) {
                         $query->where('organization_id', $organization->id);
                     });
-                
+
                 $total = $applications->count();
                 $accepted = (clone $applications)->where('status', 'accepted')->count();
-                
-                return (object)[
+
+                return [
                     'name' => $organization->name,
                     'total_applications' => $total,
                     'accepted' => $accepted,
                     'opportunities_count' => $organization->opportunities_count,
                     'acceptance_rate' => $total > 0 ? round(($accepted / $total) * 100, 1) : 0,
-                    'avg_applications_per_opportunity' => $organization->opportunities_count > 0 
-                        ? round($total / $organization->opportunities_count, 1) 
+                    'avg_applications_per_opportunity' => $organization->opportunities_count > 0
+                        ? round($total / $organization->opportunities_count, 1)
                         : 0
                 ];
             })
             ->filter(function ($org) {
-                return $org->total_applications > 0;
+                return $org['total_applications'] > 0;
             })
             ->sortByDesc('total_applications')
             ->take(10)
@@ -455,15 +455,15 @@ class ApplicationReports extends Component
     private function getApplicationTimelineAnalysis()
     {
         $query = $this->baseQuery();
-        
+
         // Average time in each status
         $statusTransitions = [];
         $applications = (clone $query)->whereNotNull('reviewed_at')->get();
-        
+
         $avgTimeToReview = $applications->avg(function ($app) {
             return $app->submitted_at->diffInHours($app->reviewed_at);
         });
-        
+
         // Applications by day of week
         $applicationsByDay = Application::whereBetween('submitted_at', [$this->startDate, $this->endDate])
             ->get()
@@ -478,7 +478,7 @@ class ApplicationReports extends Component
             })
             ->values()
             ->toArray();
-            
+
         // Applications by hour of day
         $applicationsByHour = Application::whereBetween('submitted_at', [$this->startDate, $this->endDate])
             ->get()
@@ -508,7 +508,7 @@ class ApplicationReports extends Component
     private function getPeakSubmissionTime($data, $key)
     {
         if (empty($data)) return 'N/A';
-        
+
         $peak = collect($data)->sortByDesc('count')->first();
         return $peak[$key] ?? 'N/A';
     }
@@ -528,8 +528,9 @@ class ApplicationReports extends Component
                     'opportunity_title' => $application->opportunity->title ?? 'N/A',
                     'organization' => $application->opportunity->organization->name ?? 'N/A',
                     'match_score' => $application->match_score,
-                    'status' => $application->status,
-                    'status_badge' => $application->status_badge,
+                    'status' => $application->status->value,
+                    'status_color' => $application->status_color,
+                    'status_label' => $application->status_label,
                     'submitted_at' => $application->submitted_at ? $application->submitted_at->format('M d, Y H:i') : 'N/A',
                     'reviewed_at' => $application->reviewed_at ? $application->reviewed_at->format('M d, Y H:i') : 'Not reviewed'
                 ];
@@ -541,9 +542,9 @@ class ApplicationReports extends Component
         $applications = $this->baseQuery()
             ->with(['student', 'opportunity.organization'])
             ->get();
-        
+
         $csvData = [];
-        
+
         // Headers
         $csvData[] = [
             'Student Name',
@@ -556,7 +557,7 @@ class ApplicationReports extends Component
             'Reviewed Date',
             'Cover Letter'
         ];
-        
+
         // Data rows
         foreach ($applications as $app) {
             $csvData[] = [
@@ -565,25 +566,25 @@ class ApplicationReports extends Component
                 $app->opportunity->title ?? 'N/A',
                 $app->opportunity->organization->name ?? 'N/A',
                 $app->match_score ?? 0,
-                ucfirst($app->status),
+                $app->status_label,
                 $app->submitted_at ? $app->submitted_at->format('Y-m-d H:i:s') : 'N/A',
                 $app->reviewed_at ? $app->reviewed_at->format('Y-m-d H:i:s') : 'N/A',
                 strip_tags($app->cover_letter ?? 'N/A')
             ];
         }
-        
+
         // Generate CSV file
         $fileName = 'applications_report_' . now()->format('Y-m-d_His') . '.csv';
         $handle = fopen('php://temp', 'w+');
-        
+
         foreach ($csvData as $row) {
             fputcsv($handle, $row);
         }
-        
+
         rewind($handle);
         $content = stream_get_contents($handle);
         fclose($handle);
-        
+
         return response()->streamDownload(function () use ($content) {
             echo $content;
         }, $fileName, [

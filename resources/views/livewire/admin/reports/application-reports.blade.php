@@ -368,8 +368,8 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <span class="badge badge-{{ $app->status_badge }}">
-                                            {{ ucfirst($app->status) }}
+                                        <span class="badge badge-{{ $app->status_color }}">
+                                            {{ $app->status_label }}
                                         </span>
                                     </td>
                                     <td>{{ $app->submitted_at }}</td>

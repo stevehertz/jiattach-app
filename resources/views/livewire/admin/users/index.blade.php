@@ -308,16 +308,28 @@
 
                                                             <div class="dropdown-divider"></div>
 
-                                                            <h6 class="dropdown-header">Change Role</h6>
+                                                            <h6 class="dropdown-header">Attach Role</h6>
                                                             @foreach ($roles as $roleName => $roleLabel)
                                                                 @if (!$user->hasRole($roleName))
                                                                     <button class="dropdown-item"
                                                                         wire:click="assignRole({{ $user->id }}, '{{ $roleName }}')">
-                                                                        <i class="fas fa-user-tag mr-2"></i>
-                                                                        {{ ucfirst($roleName) }}
+                                                                        <i class="fas fa-plus-circle mr-2 text-success"></i>
+                                                                        Attach {{ ucfirst($roleName) }}
                                                                     </button>
                                                                 @endif
                                                             @endforeach
+
+                                                            @if ($user->roles->count() > 0)
+                                                                <div class="dropdown-divider"></div>
+                                                                <h6 class="dropdown-header">Remove Role</h6>
+                                                                @foreach ($user->roles as $userRole)
+                                                                    <button class="dropdown-item text-danger"
+                                                                        wire:click="removeRole({{ $user->id }}, '{{ $userRole->name }}')">
+                                                                        <i class="fas fa-minus-circle mr-2"></i>
+                                                                        Remove {{ ucfirst($userRole->name) }}
+                                                                    </button>
+                                                                @endforeach
+                                                            @endif
 
                                                             <!-- Delete Option -->
                                                             <div class="dropdown-divider"></div>

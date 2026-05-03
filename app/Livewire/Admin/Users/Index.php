@@ -259,12 +259,43 @@ class Index extends Component
             return;
         }
 
-
-        $user->syncRoles([$role]);
+        // Add the role without removing existing roles
+        $user->assignRole($role);
 
         $this->dispatch('show-toast', [
             'type' => 'success',
-            'message' => 'Role assigned successfully!'
+            'message' => 'Role attached successfully!'
+        ]);
+    }
+
+    public function removeRole($userId, $role)
+    {
+        $user = User::findOrFail($userId);
+
+        // Prevent modifying super-admin
+        if ($this->isSuperAdmin($user)) {
+            $this->dispatch('show-toast', [
+                'type' => 'error',
+                'message' => 'Cannot modify super-admin user!'
+            ]);
+            return;
+        }
+
+        // Prevent modifying yourself
+        if ($user->id === Auth::id()) {
+            $this->dispatch('show-toast', [
+                'type' => 'error',
+                'message' => 'You cannot modify your own account!'
+            ]);
+            return;
+        }
+
+        // Remove the specific role
+        $user->removeRole($role);
+
+        $this->dispatch('show-toast', [
+            'type' => 'success',
+            'message' => 'Role removed successfully!'
         ]);
     }
 

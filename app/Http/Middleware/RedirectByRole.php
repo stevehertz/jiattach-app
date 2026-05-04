@@ -30,9 +30,10 @@ class RedirectByRole
             $user->assignRole('student');
         }
 
-         // Define dashboard routes
+        // Define dashboard routes
         $studentDashboard = 'student.dashboard';
         $adminDashboard = 'admin.dashboard'; // This will be for all non-student roles
+        $employerDashboard = 'employer.dashboard';
 
         // Check if user is trying to access login/register when already logged in
         $authRoutes = ['login', 'register', 'password.request', 'password.reset'];
@@ -62,23 +63,54 @@ class RedirectByRole
                 }
             }
 
+            // Also allow null routes (some routes might not have names)
+            if (!$currentRoute) {
+                $isAllowed = true;
+            }
+
+            // If trying to access admin routes, redirect to student dashboard
+            if ($currentRoute && str_starts_with($currentRoute, 'admin.') && str_starts_with($currentRoute, 'employer.')) {
+                return redirect()->route($studentDashboard);
+            }
+
+            // If accessing a non-student route (and it's not null), redirect to student dashboard
+            if (!$isAllowed && $currentRoute !== null) {
+                return redirect()->route($studentDashboard);
+            }
+        } elseif ($primaryRole === 'employer') {
+
+            // Allow student routes and general routes
+            $allowedPrefixes = ['employer.', 'logout'];
+
+            // Check if current route starts with allowed prefix or is logout
+            $isAllowed = false;
+
+            if ($currentRoute) {
+                foreach ($allowedPrefixes as $prefix) {
+                    if (str_starts_with($currentRoute, $prefix) || $currentRoute === $prefix) {
+                        $isAllowed = true;
+                        break;
+                    }
+                }
+            }
+
              // Also allow null routes (some routes might not have names)
             if (!$currentRoute) {
                 $isAllowed = true;
             }
 
             // If trying to access admin routes, redirect to student dashboard
-            if ($currentRoute && str_starts_with($currentRoute, 'admin.')) {
-                return redirect()->route($studentDashboard);
+            if ($currentRoute && str_starts_with($currentRoute, 'admin.') && str_starts_with($currentRoute, 'student.')) {
+                return redirect()->route($employerDashboard);
             }
 
-              // If accessing a non-student route (and it's not null), redirect to student dashboard
+            // If accessing a non-student route (and it's not null), redirect to student dashboard
             if (!$isAllowed && $currentRoute !== null) {
-                return redirect()->route($studentDashboard);
+                return redirect()->route($employerDashboard);
             }
 
         } else {
-             // Allow admin routes and general routes
+            // Allow admin routes and general routes
             $allowedPrefixes = ['admin.', 'logout'];
 
             // Check if current route starts with allowed prefix or is logout
@@ -97,8 +129,8 @@ class RedirectByRole
                 $isAllowed = true;
             }
 
-             // If trying to access student routes, redirect to admin dashboard
-            if ($currentRoute && str_starts_with($currentRoute, 'student.')) {
+            // If trying to access student routes, redirect to admin dashboard
+            if ($currentRoute && str_starts_with($currentRoute, 'student.') && str_starts_with($currentRoute, 'employer.')) {
                 return redirect()->route($adminDashboard);
             }
 

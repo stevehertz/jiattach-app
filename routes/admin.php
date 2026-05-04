@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdministratorsController;
 use App\Http\Controllers\Admin\ApplicationController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\EmployerController;
 use App\Http\Controllers\Admin\InterviewsController;
 use App\Http\Controllers\Admin\MentorController;
 use App\Http\Controllers\Admin\MentorshipController;
@@ -102,6 +103,23 @@ Route::middleware([
         Route::get('/{organization}/edit', [OrganizationsController::class, 'edit'])->name('edit');
 
         Route::get('/{organization}/opportunities', [OrganizationsController::class, 'opportunities'])->name('opportunities');
+    });
+
+    // Employer Management
+    Route::prefix('employers')->name('employers.')->group(function () {
+
+        Route::get('/', [EmployerController::class, 'index'])->name('index');
+        Route::get('verified', [EmployerController::class, 'verified'])->name('verified');
+        Route::get('pending', [EmployerController::class, 'pending'])->name('pending');
+        Route::get('create', [EmployerController::class, 'create'])->name('create');
+        Route::post('/', [EmployerController::class, 'store'])->name('store');
+        Route::get('{employer}', [EmployerController::class, 'show'])->name('show');
+        Route::get('{employer}/edit', [EmployerController::class, 'edit'])->name('edit');
+        Route::put('{employer}', [EmployerController::class, 'update'])->name('update');
+        Route::delete('{employer}', [EmployerController::class, 'destroy'])->name('destroy');
+        Route::put('{employer}/toggle-active', [EmployerController::class, 'toggleActive'])->name('toggle-active');
+        Route::put('{employer}/verify', [EmployerController::class, 'verify'])->name('verify');
+        
     });
 
     // Opportunities Management Routes

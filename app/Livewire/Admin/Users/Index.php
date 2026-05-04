@@ -74,9 +74,6 @@ class Index extends Component
                         })
                         ->orWhereHas('mentor', function ($q) use ($search) {
                             $q->where('company', 'like', '%' . $search . '%');
-                        })
-                        ->orWhereHas('employer', function ($q) use ($search) {
-                            $q->where('company_name', 'like', '%' . $search . '%');
                         });
                 });
             })

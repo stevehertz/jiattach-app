@@ -136,6 +136,72 @@
                     </ul>
                 </li>
 
+                <li class="nav-header">ORGANIZATION MANAGEMENT</li>
+
+                 <li class="nav-item {{ $isRouteActive('admin.organizations.*') ? 'menu-open' : '' }}">
+                    <a href="#" class="nav-link {{ $isRouteActive('admin.organizations.*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-building"></i>
+                        <p>
+                            Organizations
+                            <i class="fas fa-angle-left right"></i>
+                        </p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a href="{{ route('admin.organizations.index') }}"
+                                class="nav-link {{ $isRouteActive('admin.organizations.index') ? 'active' : '' }}">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>All Organizations</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('admin.organizations.create') }}"
+                                class="nav-link {{ $isRouteActive('admin.organizations.create') ? 'active' : '' }}">
+                                <i class="far fa-plus-square nav-icon"></i>
+                                <p>Add New</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- EMPLOYERS SECTION -->
+                <li class="nav-item {{ $isRouteActive('admin.employers.*') ? 'menu-open' : '' }}">
+                    <a href="#" class="nav-link {{ $isRouteActive('admin.employers.*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-user-tie"></i>
+                        <p>Employers <i class="fas fa-angle-left right"></i></p>
+                    </a>
+                    <ul class="nav nav-treeview">
+                        <li class="nav-item">
+                            <a href="{{ route('admin.employers.index') }}"
+                                class="nav-link {{ $isRouteActive('admin.employers.index') ? 'active' : '' }}">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>All Employers</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('admin.employers.verified') }}"
+                                class="nav-link {{ $isRouteActive('admin.employers.verified') ? 'active' : '' }}">
+                                <i class="far fa-check-circle nav-icon text-success"></i>
+                                <p>Verified Employers</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('admin.employers.pending') }}"
+                                class="nav-link {{ $isRouteActive('admin.employers.pending') ? 'active' : '' }}">
+                                <i class="far fa-clock nav-icon text-warning"></i>
+                                <p>Pending Verification</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{{ route('admin.employers.create') }}"
+                                class="nav-link {{ $isRouteActive('admin.employers.create') ? 'active' : '' }}">
+                                <i class="far fa-plus-square nav-icon"></i>
+                                <p>Add New Employer</p>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
                 <li class="nav-header">MENTORSHIP MANAGEMENT</li>
 
                 <!-- MENTORS SECTION -->
@@ -230,32 +296,6 @@
                                 class="nav-link {{ $isRouteActive('admin.mentorships.create') ? 'active' : '' }}">
                                 <i class="far fa-plus-square nav-icon"></i>
                                 <p>Create New</p>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-
-                <li class="nav-item {{ $isRouteActive('admin.organizations.*') ? 'menu-open' : '' }}">
-                    <a href="#" class="nav-link {{ $isRouteActive('admin.organizations.*') ? 'active' : '' }}">
-                        <i class="nav-icon fas fa-building"></i>
-                        <p>
-                            Organizations
-                            <i class="fas fa-angle-left right"></i>
-                        </p>
-                    </a>
-                    <ul class="nav nav-treeview">
-                        <li class="nav-item">
-                            <a href="{{ route('admin.organizations.index') }}"
-                                class="nav-link {{ $isRouteActive('admin.organizations.index') ? 'active' : '' }}">
-                                <i class="far fa-circle nav-icon"></i>
-                                <p>All Organizations</p>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="{{ route('admin.organizations.create') }}"
-                                class="nav-link {{ $isRouteActive('admin.organizations.create') ? 'active' : '' }}">
-                                <i class="far fa-plus-square nav-icon"></i>
-                                <p>Add New</p>
                             </a>
                         </li>
                     </ul>

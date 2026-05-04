@@ -1,6 +1,6 @@
 @if ($paginator->hasPages())
     <nav>
-        <ul class="pagination pagination-sm m-0">
+        <ul class="pagination pagination-sm m-0 float-right">
             {{-- Previous Page Link --}}
             @if ($paginator->onFirstPage())
                 <li class="page-item disabled" aria-disabled="true">
@@ -30,11 +30,14 @@
                     @foreach ($element as $page => $url)
                         @if ($page == $paginator->currentPage())
                             <li class="page-item active" aria-current="page">
-                                <span class="page-link">{{ $page }}</span>
+                                <span class="page-link">
+                                    {{ $page }}
+                                    <span class="sr-only">(current)</span>
+                                </span>
                             </li>
                         @else
                             <li class="page-item">
-                                <button type="button" class="page-link" wire:click="gotoPage({{ $page }})">
+                                <button type="button" class="page-link" wire:click="gotoPage({{ $page }})" wire:loading.attr="disabled">
                                     {{ $page }}
                                 </button>
                             </li>

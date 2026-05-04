@@ -18,7 +18,6 @@ Route::middleware([
         Route::view('/edit', 'employer.organization.edit')->name('edit');
 
         Route::view('/members', 'employer.organization.members')->name('members');
-        
     });
 
     Route::prefix('opportunities')->name('opportunities.')->group(function () {
@@ -28,15 +27,15 @@ Route::middleware([
         Route::view('/create', '')->name('create');
     });
 
-    
+
 
     Route::prefix('applications')->name('applications.')->group(function () {
 
-        Route::view('/', '')->name('index');
+        Route::view('/', 'employer.applications.index')->name('index');
 
-        Route::view('/create', '')->name('create');
-
-        Route::view('/edit', '')->name('edit');
+        Route::get('/{application}', function ($applicationId) {
+            return view('employer.applications.show', ['applicationId' => $applicationId]);
+        })->name('show');
     });
 
     Route::prefix('placements')->name('placements.')->group(function () {
